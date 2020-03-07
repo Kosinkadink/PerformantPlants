@@ -6,15 +6,13 @@ import me.kosinkadink.performantplants.executors.PPCommandExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CommandManager {
 
     private Main main;
-
     private PPCommandExecutor PPCommandExecutor;
-
     private List<PPCommand> registeredCommands = new ArrayList<>();
-
     private String commandRoot = "pp";
 
     public CommandManager(Main mainClass) {
@@ -27,7 +25,7 @@ public class CommandManager {
     }
 
     public void registerCommand(PPCommand ppCommand) {
-        main.getCommand(commandRoot).setExecutor(PPCommandExecutor);
+        Objects.requireNonNull(main.getCommand(commandRoot)).setExecutor(PPCommandExecutor);
         registeredCommands.add(ppCommand);
     }
 
