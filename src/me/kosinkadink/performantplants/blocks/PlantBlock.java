@@ -1,11 +1,14 @@
 package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import org.bukkit.scheduler.BukkitTask;
 
 public class PlantBlock {
     private final BlockLocation location;
+    private long duration;
+    private BukkitTask task;
 
-    PlantBlock(BlockLocation blockLocation) {
+    public PlantBlock(BlockLocation blockLocation) {
         location = blockLocation;
     }
 
@@ -19,6 +22,11 @@ public class PlantBlock {
 
     public void pauseTask() {
         // do stuff here
+    }
+
+    @Override
+    public String toString() {
+        return "PlantBlock @ " + location.toString();
     }
 
 }

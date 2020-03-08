@@ -5,10 +5,8 @@ import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 import org.bukkit.command.CommandSender;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TotalPlantChunksCommand extends PPCommand {
 
@@ -37,8 +35,8 @@ public class TotalPlantChunksCommand extends PPCommand {
             }
         }
         commandSender.sendMessage(
-                "Chunks: " + (loadedCount+unloadedCount) + "\n"
-                + "Loaded: " + loadedCount + "\n"
-                + "Unloaded: " + unloadedCount);
+                "Chunks: " + (loadedCount+unloadedCount)
+                + " Loaded: " + loadedCount
+                + " Unloaded: " + unloadedCount);
     }
 }

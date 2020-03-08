@@ -73,6 +73,10 @@ public class ChunkLocation {
         return Bukkit.getWorld(world);
     }
 
+    public Chunk getChunk() {
+        return getWorld().getChunkAt(x, z);
+    }
+
     public boolean equals(Object o) {
         // true if refers to this object
         if (this == o) {

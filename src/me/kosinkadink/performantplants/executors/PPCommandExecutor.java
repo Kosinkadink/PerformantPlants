@@ -25,8 +25,9 @@ public class PPCommandExecutor implements CommandExecutor {
             return true;
         }
         // find if args match a set of command words
-        boolean matches = true;
+        boolean matches;
         for (PPCommand ppCommand : main.getCommandManager().getRegisteredCommands()) {
+            matches = true;
             // if command words are longer than args, go to next command
             if (ppCommand.getCommandNameWords().length > args.length) {
                 continue;
@@ -51,11 +52,11 @@ public class PPCommandExecutor implements CommandExecutor {
                     commandSender.sendMessage(ppCommand.getUsage());
                     return true;
                 }
-                commandSender.sendMessage("You don't have permission to use this PerformantPlants command.");
+                commandSender.sendMessage("You don't have permission to use this PerformantPlants command");
                 return true;
             }
         }
-        commandSender.sendMessage("Command not recognized by PerformantPlants.");
+        commandSender.sendMessage("Command not recognized by PerformantPlants");
         return true;
     }
 }

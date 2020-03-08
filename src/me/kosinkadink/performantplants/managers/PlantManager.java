@@ -33,6 +33,7 @@ public class PlantManager {
         }
         // add plantBlock to plantChunk
         plantChunk.addPlantBlock(block);
+        main.getLogger().info("Added PlantBlock: " + block.toString());
     }
 
     public void removePlantBlock(PlantBlock block) {
@@ -61,6 +62,9 @@ public class PlantManager {
     }
 
     private void addPlantChunk(PlantChunk plantChunk) {
+        if (plantChunk.isChunkLoaded() && !plantChunk.isLoaded()) {
+            plantChunk.load();
+        }
         plantChunks.put(plantChunk.getLocation(), plantChunk);
     }
 

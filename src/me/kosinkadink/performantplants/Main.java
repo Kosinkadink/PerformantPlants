@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants;
 
+import me.kosinkadink.performantplants.commands.AddPlantCommand;
 import me.kosinkadink.performantplants.commands.TotalPlantChunksCommand;
 import me.kosinkadink.performantplants.listeners.ChunkEventListener;
 import me.kosinkadink.performantplants.managers.CommandManager;
@@ -8,8 +9,6 @@ import me.kosinkadink.performantplants.managers.DatabaseManager;
 import me.kosinkadink.performantplants.managers.PlantManager;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import javax.security.auth.login.Configuration;
 
 public class Main extends JavaPlugin {
 
@@ -45,6 +44,7 @@ public class Main extends JavaPlugin {
 
     private void registerCommands() {
         commandManager.registerCommand(new TotalPlantChunksCommand(this));
+        commandManager.registerCommand(new AddPlantCommand(this));
     }
 
     public CommandManager getCommandManager() {

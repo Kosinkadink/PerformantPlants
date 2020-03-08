@@ -28,7 +28,9 @@ public class PlantChunk {
         // add plantBlock to hash map
         plantBlocks.put(plantBlock.getLocation(), plantBlock);
         // start task for plantBlock
-        plantBlock.startTask();
+        if (loaded) {
+            plantBlock.startTask();
+        }
     }
 
     public void removePlantBlock(PlantBlock plantBlock) {
@@ -44,6 +46,10 @@ public class PlantChunk {
 
     public boolean isLoaded() {
         return loaded;
+    }
+
+    public boolean isChunkLoaded() {
+        return location.getChunk().isLoaded();
     }
 
     public void load() {
