@@ -9,12 +9,11 @@ import java.util.HashMap;
 public class PlantChunk {
 
     private final ChunkLocation location;
-    private HashMap<BlockLocation, PlantBlock> plantBlocks;
+    private HashMap<BlockLocation, PlantBlock> plantBlocks = new HashMap<>();
     private boolean loaded = false;
 
-    PlantChunk(ChunkLocation chunkLocation) {
+    public PlantChunk(ChunkLocation chunkLocation) {
         location = chunkLocation;
-        plantBlocks = new HashMap<>();
     }
 
     public ChunkLocation getLocation() {
@@ -28,18 +27,34 @@ public class PlantChunk {
     public void addPlantBlock(PlantBlock plantBlock) {
         // add plantBlock to hash map
         plantBlocks.put(plantBlock.getLocation(), plantBlock);
+        // start task for plantBlock
+        plantBlock.startTask();
     }
 
     public void removePlantBlock(PlantBlock plantBlock) {
+        // pause task for plantBlock
+        plantBlock.pauseTask();
         // remove plantBlock from hash map
         plantBlocks.remove(plantBlock.getLocation());
     }
 
+    public PlantBlock getPlantBlock(BlockLocation blockLocation) {
+        return plantBlocks.get(blockLocation);
+    }
+
+    public boolean isLoaded() {
+        return loaded;
+    }
+
     public void load() {
+        // start up task for each plantBlock
+        plantBlocks.forEach((blockLocation, plantBlock) -> plantBlock.startTask());
         loaded = true;
     }
 
     public void unload() {
+        // pause task for each plantBlock
+        plantBlocks.forEach((blockLocation, plantBlock) -> plantBlock.pauseTask());
         loaded = false;
     }
 }

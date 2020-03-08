@@ -13,4 +13,12 @@ public class PlantBlock {
         return location;
     }
 
+    public void startTask() {
+        // do stuff here
+    }
+
+    public void pauseTask() {
+        // do stuff here
+    }
+
 }

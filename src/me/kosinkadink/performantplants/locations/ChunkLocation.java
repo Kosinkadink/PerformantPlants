@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.locations;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -46,6 +47,14 @@ public class ChunkLocation {
      */
     public ChunkLocation(BlockLocation blockLocation) {
         this(blockLocation.getWorld().getBlockAt(blockLocation.getX(),blockLocation.getY(),blockLocation.getZ()));
+    }
+
+    /**
+     * @param plantBlock
+     * Create ChunkLocation from PlantBlock object
+     */
+    public ChunkLocation(PlantBlock plantBlock) {
+        this(plantBlock.getLocation());
     }
 
     public int getX() {
