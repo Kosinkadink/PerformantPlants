@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 import org.bukkit.Chunk;
+import org.bukkit.block.Block;
 
 import java.util.HashMap;
 
@@ -42,6 +43,11 @@ public class PlantManager {
         // if exists, remove plantBlock from plantChunk
         if (plantChunk != null) {
             plantChunk.removePlantBlock(block);
+            main.getLogger().info("Removed PlantBlock: " + block.toString());
+            // if no more plant blocks in plantChunk, remove plantChunk
+            if (plantChunk.isEmpty()) {
+                removePlantChunk(plantChunk);
+            }
         }
     }
 
@@ -61,11 +67,21 @@ public class PlantManager {
         return null;
     }
 
-    private void addPlantChunk(PlantChunk plantChunk) {
-        if (plantChunk.isChunkLoaded() && !plantChunk.isLoaded()) {
-            plantChunk.load();
+    public PlantBlock getPlantBlock(Block block) {
+        return getPlantBlock(new BlockLocation(block));
+    }
+
+    private void addPlantChunk(PlantChunk chunk) {
+        if (chunk.isChunkLoaded() && !chunk.isLoaded()) {
+            chunk.load();
         }
-        plantChunks.put(plantChunk.getLocation(), plantChunk);
+        plantChunks.put(chunk.getLocation(), chunk);
+        main.getLogger().info("Added PlantChunk: " + chunk.toString());
+    }
+
+    private void removePlantChunk(PlantChunk chunk) {
+        plantChunks.remove(chunk.getLocation());
+        main.getLogger().info("Removed PlantChunk: " + chunk.toString());
     }
 
 }

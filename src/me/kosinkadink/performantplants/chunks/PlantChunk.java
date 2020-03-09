@@ -44,6 +44,10 @@ public class PlantChunk {
         return plantBlocks.get(blockLocation);
     }
 
+    public boolean isEmpty() {
+        return plantBlocks.isEmpty();
+    }
+
     public boolean isLoaded() {
         return loaded;
     }
@@ -63,4 +67,10 @@ public class PlantChunk {
         plantBlocks.forEach((blockLocation, plantBlock) -> plantBlock.pauseTask());
         loaded = false;
     }
+
+    @Override
+    public String toString() {
+        return "PlantBlock @ " + location.toString();
+    }
+
 }

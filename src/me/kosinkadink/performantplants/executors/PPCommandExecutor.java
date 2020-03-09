@@ -32,6 +32,7 @@ public class PPCommandExecutor implements CommandExecutor {
             if (ppCommand.getCommandNameWords().length > args.length) {
                 continue;
             }
+            // check if command words match arguments provided
             for (int i = 0; i < ppCommand.getCommandNameWords().length; i++) {
                 if (!args[i].equalsIgnoreCase(ppCommand.getCommandNameWords()[i])) {
                     matches = false;

@@ -6,13 +6,14 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class AddPlantCommand extends PPCommand {
+public class PlantAddCommand extends PPCommand {
 
     private Main main;
 
-    public AddPlantCommand(Main mainClass) {
+    public PlantAddCommand(Main mainClass) {
         super(new String[] { "plant", "add" },
                 "Creates plant block at player's location.",
                 "/pp plant add",
@@ -29,7 +30,8 @@ public class AddPlantCommand extends PPCommand {
         }
         else {
             Player player = (Player) commandSender;
-            PlantBlock plantBlock = new PlantBlock(new BlockLocation(player.getLocation()));
+            PlantBlock plantBlock = new PlantBlock(new BlockLocation(player.getLocation()),
+                    main.getPlantTypeManager().getPlantById("test.seed"));
             main.getPlantManager().addPlantBlock(plantBlock);
         }
     }

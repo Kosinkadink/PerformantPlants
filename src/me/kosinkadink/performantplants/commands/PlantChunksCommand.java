@@ -8,11 +8,11 @@ import org.bukkit.command.CommandSender;
 import java.util.List;
 import java.util.Map;
 
-public class TotalPlantChunksCommand extends PPCommand {
+public class PlantChunksCommand extends PPCommand {
 
     private Main main;
 
-    public TotalPlantChunksCommand(Main mainClass) {
+    public PlantChunksCommand(Main mainClass) {
         super(new String[] { "chunks" },
                 "Returns total amount of plant chunks in world.",
                 "/pp chunks",
