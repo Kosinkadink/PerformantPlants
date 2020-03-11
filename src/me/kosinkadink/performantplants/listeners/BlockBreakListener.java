@@ -32,7 +32,6 @@ public class BlockBreakListener implements Listener {
             else {
                 event.getBlock().removeMetadata("performantplants-plant",main);
             }
-
         }
     }
 

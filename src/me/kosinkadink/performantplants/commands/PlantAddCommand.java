@@ -6,7 +6,6 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class PlantAddCommand extends PPCommand {

@@ -13,7 +13,7 @@ public class Plant {
 
     public Plant(String name, String id, ItemStack itemStack) {
         this.name = name;
-        displayName = ChatColor.BLACK + name + ChatColor.RESET;
+        displayName = ChatColor.LIGHT_PURPLE + name + ChatColor.RESET;
         this.id = id;
         plantItem = itemStack;
         updateItemDisplayName();

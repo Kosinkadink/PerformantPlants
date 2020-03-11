@@ -10,6 +10,7 @@ import org.bukkit.event.HandlerList;
 public class PlantPlaceEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
+    private boolean isCancelled;
 
     private Player player;
     private Plant plant;
@@ -43,11 +44,11 @@ public class PlantPlaceEvent extends Event implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return isCancelled;
     }
 
     @Override
     public void setCancelled(boolean b) {
-
+        isCancelled = b;
     }
 }

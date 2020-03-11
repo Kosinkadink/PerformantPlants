@@ -29,7 +29,7 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        databaseManager.saveDatabases();
     }
 
     private void registerManagers() {

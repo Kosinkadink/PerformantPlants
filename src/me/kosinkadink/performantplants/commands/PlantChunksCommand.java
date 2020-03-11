@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.commands;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
+import me.kosinkadink.performantplants.storage.PlantChunkStorage;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;
@@ -24,19 +25,23 @@ public class PlantChunksCommand extends PPCommand {
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
-        int loadedCount = 0;
-        int unloadedCount = 0;
-        for (Map.Entry<ChunkLocation, PlantChunk> entry : main.getPlantManager().getPlantChunks().entrySet()) {
-            if (entry.getValue().isLoaded()) {
-                loadedCount++;
+        for (Map.Entry<String, PlantChunkStorage> storageMap : main.getPlantManager().getPlantChunkStorageMap().entrySet()) {
+            int loadedCount = 0;
+            int unloadedCount = 0;
+            PlantChunkStorage storage = storageMap.getValue();
+            for (Map.Entry<ChunkLocation, PlantChunk> entry : storage.getPlantChunks().entrySet()) {
+                if (entry.getValue().isLoaded()) {
+                    loadedCount++;
+                }
+                else {
+                    unloadedCount++;
+                }
             }
-            else {
-                unloadedCount++;
-            }
+            commandSender.sendMessage(
+                    "World '" + storage.getWorldName()
+                        + "' Chunks: " + (loadedCount+unloadedCount)
+                        + " Loaded: " + loadedCount
+                        + " Unloaded: " + unloadedCount);
         }
-        commandSender.sendMessage(
-                "Chunks: " + (loadedCount+unloadedCount)
-                + " Loaded: " + loadedCount
-                + " Unloaded: " + unloadedCount);
     }
 }

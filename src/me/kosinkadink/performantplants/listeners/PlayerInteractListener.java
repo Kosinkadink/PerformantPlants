@@ -41,7 +41,8 @@ public class PlayerInteractListener implements Listener {
             return;
         }
         // check if trying to place down plant
-        if (itemStack.getType() != Material.AIR) {
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
+                itemStack.getType() != Material.AIR) {
             Plant plant = main.getPlantTypeManager().getPlant(itemStack);
             if (plant != null) {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&

@@ -10,7 +10,6 @@ import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -41,7 +40,6 @@ public class PlantBlockEventListener implements Listener {
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant());
                 main.getPlantManager().addPlantBlock(plantBlock);
                 block.setType(Material.CRACKED_STONE_BRICKS);
-                block.setMetadata("performantplants-plant", new FixedMetadataValue(main, blockLocation.toString()));
             }
         }
     }
@@ -51,9 +49,8 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
             // TODO: manage children blocks if applicable
-            // set block to air and remove metadata
+            // set block to air
             event.getBlock().setType(Material.AIR);
-            event.getBlock().removeMetadata("performantplants-plant", main);
             // TODO: create drops
             // remove plantBlock from plantManager
             main.getPlantManager().removePlantBlock(event.getPlantBlock());

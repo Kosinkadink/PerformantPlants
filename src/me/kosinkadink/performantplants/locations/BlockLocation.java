@@ -14,6 +14,13 @@ public class BlockLocation {
     private final int z;
     private final String world;
 
+    public BlockLocation(int x, int y, int z, String world) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.world = world;
+    }
+
     /**
      * @param location
      * Create BlockLocation from Location object
@@ -51,6 +58,10 @@ public class BlockLocation {
 
     public World getWorld() {
         return Bukkit.getWorld(world);
+    }
+
+    public Block getBlock() {
+        return getWorld().getBlockAt(x, y, z);
     }
 
     public boolean equals(Object o) {
