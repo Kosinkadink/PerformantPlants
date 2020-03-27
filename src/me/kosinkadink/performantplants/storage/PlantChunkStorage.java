@@ -90,7 +90,7 @@ public class PlantChunkStorage {
 
     public void addPlantChunk(PlantChunk chunk) {
         if (chunk.isChunkLoaded() && !chunk.isLoaded()) {
-            chunk.load();
+            chunk.load(main);
         }
         plantChunks.put(chunk.getLocation(), chunk);
         main.getLogger().info("Added PlantChunk: " + chunk.toString());
@@ -105,8 +105,12 @@ public class PlantChunkStorage {
         blockLocationsToDelete.add(block.getLocation());
     }
 
-    void removeBlockFromRemoval(PlantBlock block) {
-        blockLocationsToDelete.remove(block.getLocation());
+    public void removeBlockFromRemoval(BlockLocation location) {
+        blockLocationsToDelete.remove(location);
+    }
+
+    public void removeBlockFromRemoval(PlantBlock block) {
+        removeBlockFromRemoval(block.getLocation());
     }
 
     public HashSet<BlockLocation> getBlockLocationsToDelete() {

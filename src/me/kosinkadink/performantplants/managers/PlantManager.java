@@ -51,6 +51,8 @@ public class PlantManager {
             addPlantChunkStorage(plantChunkStorage);
         }
         plantChunkStorage.addPlantBlock(block);
+        // TODO: start growth task
+        // startGrowthTask(block);
     }
 
     public void removePlantBlock(PlantBlock block) {
@@ -58,6 +60,37 @@ public class PlantManager {
         PlantChunkStorage plantChunkStorage = getPlantChunkStorage(block.getLocation().getWorldName());
         if (plantChunkStorage != null) {
             plantChunkStorage.removePlantBlock(block);
+        }
+        // TODO: pause growth task
+        // pauseGrowthTask(block);
+        // if plant block has a parent, remove from parent's children list
+        if (block.hasParent()) {
+            PlantBlock parent = getPlantBlock(block.getParentLocation());
+            if (parent != null) {
+                parent.removeChildLocation(block.getLocation());
+            }
+        }
+        // if plant block has a guardian, remove from guardian's children list
+        if (block.hasGuardian()) {
+            PlantBlock guardian = getPlantBlock(block.getGuardianLocation());
+            if (guardian != null) {
+                guardian.removeChildLocation(block.getLocation());
+            }
+        }
+        // if block has children, remove self as parent/guardian of them
+        for (BlockLocation location : block.getChildLocations()) {
+            PlantBlock child = getPlantBlock(location);
+            if (child != null) {
+                child.removeParentOrGuardian(block.getLocation());
+            }
+        }
+    }
+
+    public void removePlantBlock(Block block) {
+        // get plantBlock if exists at block location
+        PlantBlock plantBlock = getPlantBlock(block);
+        if (plantBlock != null) {
+            removePlantBlock(plantBlock);
         }
     }
 
@@ -84,6 +117,43 @@ public class PlantManager {
     public PlantBlock getPlantBlock(Block block) {
         return getPlantBlock(new BlockLocation(block));
     }
+
+    //region Task Control
+
+    public void startGrowthTask(PlantBlock plantBlock) {
+        plantBlock.startTask(main);
+    }
+
+    public void startGrowthTask(BlockLocation blockLocation) {
+        PlantBlock plantBlock = getPlantBlock(blockLocation);
+        if (plantBlock != null) {
+            startGrowthTask(plantBlock);
+        }
+    }
+
+    public void pauseGrowthTask(PlantBlock plantBlock) {
+        plantBlock.pauseTask();
+    }
+
+    public void pauseGrowthTask(BlockLocation blockLocation) {
+        PlantBlock plantBlock = getPlantBlock(blockLocation);
+        if (plantBlock != null) {
+            pauseGrowthTask(plantBlock);
+        }
+    }
+
+    public void setGrowthTaskToStage(PlantBlock plantBlock, int stage) {
+        plantBlock.setTaskStage(main, stage);
+    }
+
+    public void setGrowthTaskToStage(BlockLocation blockLocation, int stage) {
+        PlantBlock plantBlock = getPlantBlock(blockLocation);
+        if (plantBlock != null) {
+            setGrowthTaskToStage(plantBlock, stage);
+        }
+    }
+
+    //endregion
 
 //    private void removePlantChunk(PlantChunk chunk) {
 //        PlantChunkStorage plantChunkStorage = getPlantChunkStorage(chunk.getLocation());

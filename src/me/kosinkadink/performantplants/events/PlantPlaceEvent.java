@@ -15,11 +15,13 @@ public class PlantPlaceEvent extends Event implements Cancellable {
     private Player player;
     private Plant plant;
     private Block block;
+    private boolean grows;
 
-    public PlantPlaceEvent(Player player, Plant plant, Block block) {
+    public PlantPlaceEvent(Player player, Plant plant, Block block, boolean grows) {
         this.player = player;
         this.plant = plant;
         this.block = block;
+        this.grows = grows;
     }
 
     public Player getPlayer() {
@@ -32,6 +34,10 @@ public class PlantPlaceEvent extends Event implements Cancellable {
 
     public Block getBlock() {
         return block;
+    }
+
+    public boolean getGrows() {
+        return grows;
     }
 
     public HandlerList getHandlers() {
@@ -51,4 +57,5 @@ public class PlantPlaceEvent extends Event implements Cancellable {
     public void setCancelled(boolean b) {
         isCancelled = b;
     }
+
 }

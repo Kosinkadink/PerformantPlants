@@ -31,8 +31,20 @@ public class PlantGiveCommand extends PPCommand {
         if (player != null) {
             // get plant type
             String plantId = argList.get(1);
+            // if plant id ends with '.seed', need to get seed item
+            boolean isSeed = false;
+            if (plantId.endsWith(".seed")) {
+                isSeed = true;
+                // remove .seed from end of id to get plant id
+                plantId = plantId.split(".seed", 2)[0];
+            }
             Plant plant = main.getPlantTypeManager().getPlantById(plantId);
             if (plant != null) {
+                // if seed item requested and plant doesn't have one, warn sender and do nothing
+                if (isSeed && !plant.hasSeed()) {
+                    commandSender.sendMessage("Requested plant does not have an associated seed");
+                    return;
+                }
                 // get amount; default to 1 if not provided
                 int amount = 1;
                 if (argList.size() == 3) {
@@ -45,7 +57,13 @@ public class PlantGiveCommand extends PPCommand {
                     }
                 }
                 // get item stack with appropriate amount
-                ItemStack requestedItem = new ItemBuilder(plant.getItem()).amount(amount).build();
+                ItemStack requestedItem;
+                if (!isSeed) {
+                    requestedItem = new ItemBuilder(plant.getItem()).amount(amount).build();
+                }
+                else {
+                    requestedItem = new ItemBuilder(plant.getSeedItem()).amount(amount).build();
+                }
                 // check if player has room in inventory
                 if (player.getInventory().firstEmpty() != -1) {
                     // give item stack to player

@@ -18,4 +18,8 @@ public class MetadataHelper {
         block.removeMetadata("performantplants-plant", main);
     }
 
+    public static boolean hasPlantBlockMetadata(Block block) {
+        return block.hasMetadata("performantplants-plant");
+    }
+
 }

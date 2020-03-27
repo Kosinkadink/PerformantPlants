@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.chunks;
 
+import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
@@ -27,15 +28,9 @@ public class PlantChunk {
     public void addPlantBlock(PlantBlock plantBlock) {
         // add plantBlock to hash map
         plantBlocks.put(plantBlock.getLocation(), plantBlock);
-        // start task for plantBlock
-        if (loaded) {
-            plantBlock.startTask();
-        }
     }
 
     public void removePlantBlock(PlantBlock plantBlock) {
-        // pause task for plantBlock
-        plantBlock.pauseTask();
         // remove plantBlock from hash map
         plantBlocks.remove(plantBlock.getLocation());
     }
@@ -56,15 +51,15 @@ public class PlantChunk {
         return location.getChunk().isLoaded();
     }
 
-    public void load() {
+    public void load(Main main) {
         // start up task for each plantBlock
-        plantBlocks.forEach((blockLocation, plantBlock) -> plantBlock.startTask());
+        plantBlocks.forEach((blockLocation, plantBlock) -> main.getPlantManager().startGrowthTask(plantBlock));
         loaded = true;
     }
 
-    public void unload() {
+    public void unload(Main main) {
         // pause task for each plantBlock
-        plantBlocks.forEach((blockLocation, plantBlock) -> plantBlock.pauseTask());
+        plantBlocks.forEach((blockLocation, plantBlock) -> main.getPlantManager().pauseGrowthTask(plantBlock));
         loaded = false;
     }
 

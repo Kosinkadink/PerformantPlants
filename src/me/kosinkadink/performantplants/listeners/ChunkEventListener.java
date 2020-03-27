@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
@@ -16,6 +17,18 @@ public class ChunkEventListener implements Listener {
     }
 
     @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        // check if player logged in at plant chunk
+        main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+            PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getPlayer().getLocation().getChunk());
+            if (plantChunk != null && !plantChunk.isLoaded()) {
+                // load plantChunk
+                plantChunk.load(main);
+            }
+        });
+    }
+
+    @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         // check if not new chunk
         if (!event.isNewChunk()) {
@@ -24,7 +37,7 @@ public class ChunkEventListener implements Listener {
                 PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getChunk());
                 if (plantChunk != null) {
                     // load plantChunk
-                    plantChunk.load();
+                    plantChunk.load(main);
                 }
             });
         }
@@ -37,7 +50,7 @@ public class ChunkEventListener implements Listener {
             PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getChunk());
             if (plantChunk != null) {
                 // unload plantChunk
-                plantChunk.unload();
+                plantChunk.unload(main);
             }
         });
     }

@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.listeners;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBreakEvent;
+import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -19,7 +20,7 @@ public class BlockBreakListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         // check that event is not cancelled and block has right metadata
         if (!event.isCancelled() &&
-                event.getBlock().hasMetadata("performantplants-plant")) {
+                MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
             PlantBlock plantBlock = main.getPlantManager().getPlantBlock(event.getBlock());
             // if plant block is registered, call plant break event
@@ -30,7 +31,7 @@ public class BlockBreakListener implements Listener {
             }
             // otherwise, remove faulty metadata
             else {
-                event.getBlock().removeMetadata("performantplants-plant",main);
+                MetadataHelper.removePlantBlockMetadata(main, event.getBlock());
             }
         }
     }

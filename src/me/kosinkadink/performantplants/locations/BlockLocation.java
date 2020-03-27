@@ -64,6 +64,15 @@ public class BlockLocation {
         return getWorld().getBlockAt(x, y, z);
     }
 
+    public BlockLocation getLocationFromRelative(RelativeLocation relativeLocation) {
+        return new BlockLocation(
+                x+relativeLocation.getX(),
+                y+relativeLocation.getY(),
+                z+relativeLocation.getZ(),
+                world
+        );
+    }
+
     public boolean equals(Object o) {
         // true if refers to this object
         if (this == o) {

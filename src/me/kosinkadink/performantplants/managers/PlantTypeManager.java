@@ -1,10 +1,12 @@
 package me.kosinkadink.performantplants.managers;
 
+import com.sun.istack.internal.NotNull;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.plants.Plant;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -16,12 +18,15 @@ public class PlantTypeManager {
     public PlantTypeManager(Main mainClass) {
         main = mainClass;
         // TODO: remove once done testing
-        String testPlantName = "Test Seed";
-        String testPlantId = "test.seed";
-        ItemStack testItemStack = new ItemBuilder(Material.STICK)
+        String testPlantName = "Test Plant";
+        String testPlantId = "test";
+        ItemStack testItemStack = new ItemBuilder(Material.OAK_LOG)
                 .lore(Collections.singletonList("Plant for testing purposes"))
                 .build();
-        Plant testPlant = new Plant(testPlantName, testPlantId, testItemStack);
+        ItemStack testSeedItemStack = new ItemBuilder(Material.STICK)
+                .lore(Collections.singletonList("Plant seed for testing purposes"))
+                .build();
+        Plant testPlant = new Plant(testPlantName, testPlantId, testItemStack, testSeedItemStack);
         addPlantType(testPlant);
     }
 
@@ -33,6 +38,27 @@ public class PlantTypeManager {
         for (Plant plantType : plantTypes) {
             if (plantType.getDisplayName().equalsIgnoreCase(displayName)) {
                 return plantType;
+            }
+        }
+        return null;
+    }
+
+    public Plant getPlantPlacedWith(@NotNull ItemStack itemStack) {
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null) {
+            return null;
+        }
+        String displayName = itemMeta.getDisplayName();
+        for (Plant plantType : plantTypes) {
+            //if (plantType.isPlaceable()) {
+            if (plantType.getDisplayName().equalsIgnoreCase(displayName)) {
+                return plantType;
+            }
+            //}
+            if (plantType.hasSeed()) {
+                if (plantType.getSeedDisplayName().equalsIgnoreCase(displayName)) {
+                    return plantType;
+                }
             }
         }
         return null;
