@@ -1,6 +1,5 @@
 package me.kosinkadink.performantplants;
 
-import me.kosinkadink.performantplants.commands.PlantAddCommand;
 import me.kosinkadink.performantplants.commands.PlantGiveCommand;
 import me.kosinkadink.performantplants.commands.PlantChunksCommand;
 import me.kosinkadink.performantplants.listeners.BlockBreakListener;
@@ -50,7 +49,6 @@ public class Main extends JavaPlugin {
 
     private void registerCommands() {
         commandManager.registerCommand(new PlantChunksCommand(this));
-        commandManager.registerCommand(new PlantAddCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
     }
 

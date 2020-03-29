@@ -8,7 +8,6 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;

@@ -190,7 +190,7 @@ public class DatabaseManager {
             pstmt.setInt(    5,chunk.getLocation().getZ());
             pstmt.setString( 6,block.getPlant().getId());
             pstmt.setBoolean(7,block.getGrows());
-            pstmt.setInt(    8,block.getStage());
+            pstmt.setInt(    8,block.getStageIndex());
             pstmt.setString( 9,block.getStageBlockId());
             pstmt.setLong(  10,block.getDuration());
             pstmt.setString(11,block.getPlayerUUID().toString());
@@ -409,6 +409,7 @@ public class DatabaseManager {
                     rs.getInt("y"),
                     rs.getInt("z"),
                     worldName);
+            // TODO: check if plant type exists (returned not null)
             Plant plant = main.getPlantTypeManager().getPlantById(rs.getString("plant"));
             PlantBlock plantBlock;
             String uuidString = rs.getString("playerUUID");
@@ -419,6 +420,11 @@ public class DatabaseManager {
             else {
                 plantBlock = new PlantBlock(blockLocation, plant, grows);
             }
+            // set stageIndex + stageBlockId
+            plantBlock.setStageIndex(rs.getInt("stage"));
+            plantBlock.setStageBlockId(rs.getString("block_id"));
+            // set duration
+            plantBlock.setDuration(rs.getLong("duration"));
             // add plantBlock to plantManager
             main.getPlantManager().addPlantBlock(plantBlock);
         } catch (SQLException e) {

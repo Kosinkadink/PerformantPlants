@@ -1,11 +1,13 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
@@ -16,6 +18,14 @@ public class Plant {
     private ItemStack plantItem;
     private ItemStack plantSeedItem;
     private ArrayList<GrowthStage> stages = new ArrayList<>();
+    // growth requirements
+    private boolean waterRequired;
+    private boolean lavaRequired;
+    private ArrayList<RequiredBlock> requiredBlocksToGrow = new ArrayList<>();
+    // growth time - overridden by specific stage growth times
+    private int minGrowthTime = -1;
+    private int maxGrowthTime = -1;
+
 
     public Plant(String name, String id, ItemStack itemStack) {
         this.name = name;
@@ -81,6 +91,8 @@ public class Plant {
         return plantItem.clone();
     }
 
+    //region Growth Stage Actions
+
     public GrowthStage getGrowthStage(int stageIndex) {
         return stages.get(stageIndex);
     }
@@ -92,6 +104,16 @@ public class Plant {
     public int getTotalGrowthStages() {
         return stages.size();
     }
+
+    public boolean hasGrowthStages() {
+        return getTotalGrowthStages() > 0;
+    }
+
+    public boolean isValidStage(int stage) {
+        return stage >=0 && stage < stages.size();
+    }
+
+    //endregion
 
     public boolean isSimilar(ItemStack itemStack) {
         return plantItem.isSimilar(itemStack);
@@ -108,4 +130,59 @@ public class Plant {
     public void setPlaceable(boolean placeable) {
         this.placeable = placeable;
     }
+
+    public boolean isWaterRequired() {
+        return waterRequired;
+    }
+
+    public void setWaterRequired(boolean waterRequired) {
+        this.waterRequired = waterRequired;
+    }
+
+    public boolean isLavaRequired() {
+        return lavaRequired;
+    }
+
+    public void setLavaRequired(boolean lavaRequired) {
+        this.lavaRequired = lavaRequired;
+    }
+
+    public ArrayList<RequiredBlock> getRequiredBlocksToGrow() {
+        return requiredBlocksToGrow;
+    }
+
+    public boolean hasRequiredBlocksToGrow() {
+        return requiredBlocksToGrow.size() > 0;
+    }
+
+    public void addRequiredBlockToGrow(RequiredBlock block) {
+        requiredBlocksToGrow.add(block);
+    }
+
+    public void setMinGrowthTime(int time) {
+        minGrowthTime = time;
+    }
+
+    public void setMaxGrowthTime(int time) {
+        maxGrowthTime = time;
+    }
+
+    public int generateGrowthTime(int stageIndex) {
+        if (isValidStage(stageIndex)) {
+            // first check if stage has it's own growth time
+            GrowthStage growthStage = getGrowthStage(stageIndex);
+            if (growthStage.hasValidGrowthTimeSet()) {
+                return growthStage.generateGrowthTime();
+            }
+            // otherwise use plant's growth time
+            if (minGrowthTime >= 0 && maxGrowthTime >= 0) {
+                if (minGrowthTime == maxGrowthTime) {
+                    return minGrowthTime;
+                }
+                return ThreadLocalRandom.current().nextInt(minGrowthTime, maxGrowthTime + 1);
+            }
+        }
+        return 0;
+    }
+
 }

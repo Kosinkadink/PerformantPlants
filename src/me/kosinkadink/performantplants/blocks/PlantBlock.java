@@ -2,19 +2,19 @@ package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
-import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.*;
 
 public class PlantBlock {
     private final BlockLocation location;
@@ -22,33 +22,24 @@ public class PlantBlock {
     private BlockLocation guardianLocation;
     private HashSet<BlockLocation> childLocations;
     private Plant plant;
-    private int stage;
+    private int stageIndex;
     private String stageBlockId;
-    private boolean grows = false;
+    private boolean grows;
     private long taskStartTime;
     private long duration;
     private BukkitTask growthTask;
     private UUID playerUUID;
     private ArrayList<Drop> drops = new ArrayList<>();
 
-    public PlantBlock(BlockLocation blockLocation, Plant plant) {
+    public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
         location = blockLocation;
         this.plant = plant;
-    }
-
-    public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
-        this(blockLocation, plant);
         this.grows = grows;
-    }
-
-    public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID) {
-        this(blockLocation,plant);
-        this.playerUUID = playerUUID;
     }
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID, boolean grows) {
-        this(blockLocation, plant, playerUUID);
-        this.grows = grows;
+        this(blockLocation, plant, grows);
+        this.playerUUID = playerUUID;
     }
 
     public BlockLocation getLocation() {
@@ -108,12 +99,22 @@ public class PlantBlock {
         return plant;
     }
 
-    public int getStage() {
-        return stage;
+    public int getStageIndex() {
+        return stageIndex;
+    }
+
+    public void setStageIndex(int index) {
+        if (index > 0) {
+            stageIndex = index;
+        }
     }
 
     public String getStageBlockId() {
         return stageBlockId;
+    }
+
+    public void setStageBlockId(String id) {
+        stageBlockId = id;
     }
 
     public boolean getGrows() {
@@ -124,15 +125,21 @@ public class PlantBlock {
         return duration;
     }
 
+    public void setDuration(long dur) {
+        if (dur > 0) {
+            duration = dur;
+        }
+    }
+
     public UUID getPlayerUUID() {
         return playerUUID;
     }
 
     public ArrayList<Drop> getDrops() {
-        if (!hasGrowthStages()) {
+        if (!plant.hasGrowthStages()) {
             return drops;
         } else {
-            GrowthStage growthStage = plant.getGrowthStage(stage);
+            GrowthStage growthStage = plant.getGrowthStage(stageIndex);
             if (growthStage != null) {
                 GrowthStageBlock stageBlock = growthStage.getGrowthStageBlock(stageBlockId);
                 // get stageBlock's drops if exist
@@ -146,21 +153,22 @@ public class PlantBlock {
         return new ArrayList<>();
     }
 
-    public boolean hasGrowthStages() {
-        return plant.getTotalGrowthStages() > 0;
-    }
-
     //region Task Control
 
     public void startTask(Main main) {
-        // if plantBlock doesn't grow, then do nothing
-        if (!grows || growthTask != null) {
+        // if plantBlock doesn't grow or is already growing, then do nothing
+        if (!grows || growthTask != null || !plant.hasGrowthStages()) {
             return;
         }
+        // check if plant is done growing (if invalid, done growing)
+        if (!plant.isValidStage(stageIndex)) {
+            return;
+        }
+
         // set new growth start time
         taskStartTime = System.currentTimeMillis();
         // start task for current growth stage
-        growthTask = Bukkit.getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
+        growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
     }
 
     public void pauseTask() {
@@ -179,12 +187,16 @@ public class PlantBlock {
         }
     }
 
-    public void setTaskStage(Main main, int growthStage) {
+    public void setTaskStage(Main main, int growthStageIndex) {
+        // check if proposed growth stage is valid; if not, do nothing
+        if (!plant.isValidStage(growthStageIndex)) {
+            return;
+        }
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
-        stage = growthStage;
-        // TODO: set duration to valid length for stage
-        duration = 0;
+        stageIndex = growthStageIndex;
+        // set duration to valid length for stage
+        duration = plant.generateGrowthTime(stageIndex);
         startTask(main);
     }
 
@@ -193,13 +205,163 @@ public class PlantBlock {
         if (!MetadataHelper.hasPlantBlockMetadata(getBlock())) {
             return;
         }
-        // TODO: do what's required of growth stage
-        // increment growth stage
-        stage++;
-        // set new growth start time
-        taskStartTime = System.currentTimeMillis();
-        // queue up new task
-        growthTask = Bukkit.getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
+        // check if requirements are met for stage growth
+        boolean canGrow = true;
+        // check that grow block requirements are met
+        if (!checkGrowthRequirements(main)) {
+            canGrow = false;
+        }
+        // check that space is available for blocks that are required to be placed
+        if (!checkSpaceRequirements(main)) {
+            canGrow = false;
+        }
+        // if requirements are met, perform growth actions
+        if (canGrow) {
+            Block thisBlock = getBlock();
+            HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
+            for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
+                // if keep block vanilla, just change blockData
+                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
+                // if not air, continue
+                if (!block.isEmpty()) {
+                    continue;
+                }
+                // update block data at location
+                block.setBlockData(growthStageBlock.getBlockData());
+                // create plant blocks at location
+                PlantBlock newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false);
+                // set stage index and stage block id
+                newPlantBlock.setStageIndex(stageIndex);
+                newPlantBlock.setStageBlockId(growthStageBlock.getId());
+                // set parent to be this block
+                newPlantBlock.setParentLocation(location);
+                // add block as child
+                addChildLocation(newPlantBlock.getLocation());
+                // add plant block via plantManager
+                main.getPlantManager().addPlantBlock(newPlantBlock);
+                // if has childOf set, add to blocksAdded
+                blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
+            }
+            // add children/guardians to any blocks that require them
+            for (Map.Entry<GrowthStageBlock,PlantBlock> entry : blocksWithGuardiansAdded.entrySet()) {
+                GrowthStageBlock growthStageBlock = entry.getKey();
+                PlantBlock newPlantBlock = entry.getValue();
+                // get guardian location
+                BlockLocation guardianLocation = location.getLocationFromRelative(growthStageBlock.getLocation());
+                // add guardian to plant block
+                newPlantBlock.setGuardianLocation(guardianLocation);
+                // get guardian block
+                PlantBlock guardianBlock = main.getPlantManager().getPlantBlock(guardianLocation);
+                // add child to guardian block
+                guardianBlock.addChildLocation(newPlantBlock.getLocation());
+            }
+            // increment growth stage
+            stageIndex++;
+        }
+        // queue new task only if new stage exists; otherwise done growing
+        if (plant.isValidStage(stageIndex)) {
+            // set new growth start time
+            taskStartTime = System.currentTimeMillis();
+            // set new growth duration
+            duration = plant.generateGrowthTime(stageIndex);
+            // queue up new task
+            growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
+        }
+    }
+
+    //endregion
+
+    //region Requirements Check
+
+    boolean checkGrowthRequirements(Main main) {
+        if (plant.isWaterRequired()) {
+            if (!checkWaterPresent(main)) {
+                return false;
+            }
+        }
+        if (plant.isLavaRequired()) {
+            if (!checkLavaPresent(main)) {
+                return false;
+            }
+        }
+        // check if required blocks are present
+        if (plant.hasRequiredBlocksToGrow()) {
+            boolean enoughMatch = false;
+            Block thisBlock = getBlock();
+            for (RequiredBlock requiredBlock : plant.getRequiredBlocksToGrow()) {
+                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, requiredBlock.getLocation());
+                if (requiredBlock.checkIfMatches(block)) {
+                    enoughMatch = true;
+                } else if (requiredBlock.isRequired()) {
+                    return false;
+                }
+            }
+            return enoughMatch;
+        }
+        return true;
+    }
+
+    boolean checkSpaceRequirements(Main main) {
+        // check that growth stage blocks can be placed, if required
+        Block thisBlock = getBlock();
+        HashMap<String,GrowthStageBlock> blocks = plant.getGrowthStage(stageIndex).getBlocks();
+        for (GrowthStageBlock growthStageBlock : blocks.values()) {
+            if (!growthStageBlock.isIgnoreSpace()) {
+                if (!BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation()).isEmpty()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    boolean checkWaterPresent(Main main) {
+        // check if there is a water or water-logged block adjacent
+        ArrayList<Block> blocksToCheck = new ArrayList<>();
+        Block thisBlock = getBlock();
+        // check 1 block to the west
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        // check 1 block to the east
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        // check 1 block to the north
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        // check 1 block to the south
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        for (Block block : blocksToCheck) {
+            if (!(block.getType() == Material.WATER)) {
+                // if not a water block, check if block is waterlogged
+                if (block.getBlockData() instanceof Waterlogged) {
+                    if (((Waterlogged) block.getBlockData()).isWaterlogged()) {
+                        return true;
+                    }
+                }
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean checkLavaPresent(Main main) {
+        // check if there is a water or water-logged block adjacent
+        ArrayList<Block> blocksToCheck = new ArrayList<>();
+        Block thisBlock = getBlock();
+        // check 1 block to the west
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        // check 1 block to the east
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        // check 1 block to the north
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        // check 1 block to the south
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        for (Block block : blocksToCheck) {
+            // if any lava found, return true
+            if (block.getType() == Material.LAVA) {
+                return true;
+            }
+        }
+        // otherwise return false
+        return false;
     }
 
     //endregion

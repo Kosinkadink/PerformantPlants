@@ -1,12 +1,15 @@
 package me.kosinkadink.performantplants.util;
 
+import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.locations.RelativeLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 
 import java.util.ArrayList;
 
-public class BlockDataHelper {
+public class BlockHelper {
 
     public static BlockData createBlockData(Material material, ArrayList<String> blockDataStrings) {
         // if any blockData provided, format it into string and include it
@@ -29,6 +32,14 @@ public class BlockDataHelper {
         }
         // otherwise blockData just contains material
         return Bukkit.createBlockData(material);
+    }
+
+    public static Block getAbsoluteBlock(Main main, Block anchor, RelativeLocation relative) {
+        return anchor.getWorld().getBlockAt(
+                 anchor.getX() + relative.getX(),
+                anchor.getY() + relative.getY(),
+                anchor.getZ() + relative.getZ()
+        );
     }
 
 }

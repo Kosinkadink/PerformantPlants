@@ -52,7 +52,7 @@ public class PlantManager {
         }
         plantChunkStorage.addPlantBlock(block);
         // TODO: start growth task
-        // startGrowthTask(block);
+        startGrowthTask(block);
     }
 
     public void removePlantBlock(PlantBlock block) {
@@ -62,7 +62,7 @@ public class PlantManager {
             plantChunkStorage.removePlantBlock(block);
         }
         // TODO: pause growth task
-        // pauseGrowthTask(block);
+        pauseGrowthTask(block);
         // if plant block has a parent, remove from parent's children list
         if (block.hasParent()) {
             PlantBlock parent = getPlantBlock(block.getParentLocation());
