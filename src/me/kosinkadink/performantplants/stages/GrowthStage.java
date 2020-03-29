@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GrowthStage {
 
     private int id;
-    private HashMap<String,GrowthStageBlock> blocks;
+    private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private int minGrowthTime = -1;
     private int maxGrowthTime = -1;
     private int dropLimit = 0;
@@ -26,6 +26,10 @@ public class GrowthStage {
 
     public ArrayList<Drop> getDrops() {
         return drops;
+    }
+
+    public void addDrop(Drop drop) {
+        drops.add(drop);
     }
 
     public void addGrowthStageBlock(GrowthStageBlock block) {
@@ -64,6 +68,14 @@ public class GrowthStage {
 
     public int getDropLimit() {
         return dropLimit;
+    }
+
+    public int getDropLimit(String growthBlockId) {
+        GrowthStageBlock growthStageBlock = getGrowthStageBlock(growthBlockId);
+        if (growthStageBlock != null) {
+            return growthStageBlock.getDropLimit();
+        }
+        return getDropLimit();
     }
 
     public void setDropLimit(int limit) {

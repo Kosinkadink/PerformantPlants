@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBreakEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -14,6 +15,8 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -44,7 +47,6 @@ public class PlantBlockEventListener implements Listener {
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
                 main.getPlantManager().addPlantBlock(plantBlock);
-                block.setType(Material.CRACKED_STONE_BRICKS);
             }
         }
     }
@@ -201,15 +203,43 @@ public class PlantBlockEventListener implements Listener {
         main.getPlantManager().removePlantBlock(plantBlock);
         // TODO: handle drops
         if (drops) {
-
+            ArrayList<Drop> dropsList = plantBlock.getDrops();
+            int dropLimit = plantBlock.getDropLimit();
+            boolean limited = dropLimit >= 1;
+            int dropCount = 0;
+            for (Drop drop : dropsList) {
+                // if there is a limit and have reached it, stop dropping
+                if (limited && dropCount >= dropLimit) {
+                    break;
+                }
+                ItemStack dropStack = drop.generateDrop();
+                if (dropStack.getAmount() != 0) {
+                    dropCount++;
+                    block.getWorld().dropItemNaturally(block.getLocation(), dropStack);
+                }
+            }
         }
         // TODO: handle children
+        // if block's children should be removed, remove them
+        if (plantBlock.getBreakChildren()) {
+            ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());
+            for (BlockLocation childLocation : childLocations) {
+                destroyPlantBlock(childLocation, drops);
+            }
+        }
     }
 
     void destroyPlantBlock(Block block, boolean drops) {
         PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
         if (plantBlock != null) {
             destroyPlantBlock(block, plantBlock, drops);
+        }
+    }
+
+    void destroyPlantBlock(BlockLocation blockLocation, boolean drops) {
+        PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
+        if (plantBlock != null) {
+            destroyPlantBlock(plantBlock.getBlock(), plantBlock, drops);
         }
     }
 

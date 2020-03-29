@@ -19,13 +19,13 @@ public class ChunkEventListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         // check if player logged in at plant chunk
-        main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+        main.getServer().getScheduler().runTaskLaterAsynchronously(main, () -> {
             PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getPlayer().getLocation().getChunk());
-            if (plantChunk != null && !plantChunk.isLoaded()) {
+            if (plantChunk != null) {
                 // load plantChunk
                 plantChunk.load(main);
             }
-        });
+        }, 5);
     }
 
     @EventHandler

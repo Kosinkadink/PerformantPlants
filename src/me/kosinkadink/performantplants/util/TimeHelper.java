@@ -11,7 +11,7 @@ public class TimeHelper {
     }
 
     public static long millisToTicks(long millis) {
-        return (millis/1000) * 20;
+        return (long)((millis/1000.0) * 20);
     }
 
 }

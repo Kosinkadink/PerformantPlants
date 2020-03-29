@@ -24,6 +24,14 @@ public class PlantChunkStorage {
         this.world = world;
     }
 
+    public void unloadAll() {
+        for (PlantChunk plantChunk : plantChunks.values()) {
+            if (plantChunk.isLoaded()) {
+                plantChunk.unload(main);
+            }
+        }
+    }
+
     public HashMap<ChunkLocation, PlantChunk> getPlantChunks() {
         return plantChunks;
     }

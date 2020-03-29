@@ -20,7 +20,7 @@ public class PlantBlock {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
-    private HashSet<BlockLocation> childLocations;
+    private HashSet<BlockLocation> childLocations = new HashSet<>();
     private Plant plant;
     private int stageIndex;
     private String stageBlockId;
@@ -135,6 +135,16 @@ public class PlantBlock {
         return playerUUID;
     }
 
+    public int getDropLimit() {
+        if (plant.hasGrowthStages()) {
+            GrowthStage growthStage = plant.getGrowthStage(stageIndex);
+            if (growthStage != null) {
+                return growthStage.getDropLimit(stageBlockId);
+            }
+        }
+        return 0;
+    }
+
     public ArrayList<Drop> getDrops() {
         if (!plant.hasGrowthStages()) {
             return drops;
@@ -151,6 +161,16 @@ public class PlantBlock {
             }
         }
         return new ArrayList<>();
+    }
+
+    public boolean getBreakChildren() {
+        if (plant.hasGrowthStages() && plant.isValidStage(stageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(stageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getBreakChildren();
+            }
+        }
+        return false;
     }
 
     //region Task Control
@@ -196,7 +216,7 @@ public class PlantBlock {
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
-        duration = plant.generateGrowthTime(stageIndex);
+        duration = TimeHelper.secondsToTicks(plant.generateGrowthTime(stageIndex));
         startTask(main);
     }
 
@@ -213,6 +233,7 @@ public class PlantBlock {
         }
         // check that space is available for blocks that are required to be placed
         if (!checkSpaceRequirements(main)) {
+            main.getLogger().info("No space to grow for " + toString());
             canGrow = false;
         }
         // if requirements are met, perform growth actions
@@ -222,25 +243,32 @@ public class PlantBlock {
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
                 // if keep block vanilla, just change blockData
                 Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
-                // if not air, continue
-                if (!block.isEmpty()) {
+                // if not air or not plant block, continue
+                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
                     continue;
                 }
                 // update block data at location
                 block.setBlockData(growthStageBlock.getBlockData());
-                // create plant blocks at location
-                PlantBlock newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false);
-                // set stage index and stage block id
-                newPlantBlock.setStageIndex(stageIndex);
-                newPlantBlock.setStageBlockId(growthStageBlock.getId());
-                // set parent to be this block
-                newPlantBlock.setParentLocation(location);
-                // add block as child
-                addChildLocation(newPlantBlock.getLocation());
-                // add plant block via plantManager
-                main.getPlantManager().addPlantBlock(newPlantBlock);
-                // if has childOf set, add to blocksAdded
-                blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
+                // if at current location, update values of this PlantBlock; don't create a new one
+                if (growthStageBlock.getLocation().equals(new RelativeLocation(0, 0, 0))) {
+                    // set growth stage block
+                    setStageBlockId(growthStageBlock.getId());
+                } else {
+                    // create plant blocks at location
+                    PlantBlock newPlantBlock;
+                    newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false);
+                    // set stage index and stage block id
+                    newPlantBlock.setStageIndex(stageIndex);
+                    newPlantBlock.setStageBlockId(growthStageBlock.getId());
+                    // set parent to be this block
+                    newPlantBlock.setParentLocation(location);
+                    // add block as child
+                    addChildLocation(newPlantBlock.getLocation());
+                    // add plant block via plantManager
+                    main.getPlantManager().addPlantBlock(newPlantBlock);
+                    // if has childOf set, add to blocksAdded
+                    blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
+                }
             }
             // add children/guardians to any blocks that require them
             for (Map.Entry<GrowthStageBlock,PlantBlock> entry : blocksWithGuardiansAdded.entrySet()) {
@@ -255,17 +283,27 @@ public class PlantBlock {
                 // add child to guardian block
                 guardianBlock.addChildLocation(newPlantBlock.getLocation());
             }
-            // increment growth stage
-            stageIndex++;
+            // increment growth stage; if would not be valid, stop growing
+            if (plant.isValidStage(stageIndex+1)) {
+                stageIndex++;
+            } else {
+                grows = false;
+                duration = 0;
+            }
         }
-        // queue new task only if new stage exists; otherwise done growing
-        if (plant.isValidStage(stageIndex)) {
+        // queue new task only if block is still growing
+        if (grows) {
             // set new growth start time
             taskStartTime = System.currentTimeMillis();
             // set new growth duration
-            duration = plant.generateGrowthTime(stageIndex);
+            duration = TimeHelper.secondsToTicks(plant.generateGrowthTime(stageIndex));
             // queue up new task
             growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
+            main.getLogger().info("Growth Task queued up for "+ toString()
+                    + " in " + duration + " ticks; at stage " + stageIndex);
+        } else {
+            main.getLogger().info("Plant can't grow any further for block type '"
+                    + plant.getName() + "' at stage: " + stageIndex);
         }
     }
 
@@ -307,7 +345,8 @@ public class PlantBlock {
         HashMap<String,GrowthStageBlock> blocks = plant.getGrowthStage(stageIndex).getBlocks();
         for (GrowthStageBlock growthStageBlock : blocks.values()) {
             if (!growthStageBlock.isIgnoreSpace()) {
-                if (!BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation()).isEmpty()) {
+                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
+                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
                     return false;
                 }
             }

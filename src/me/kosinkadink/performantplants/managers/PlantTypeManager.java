@@ -2,8 +2,11 @@ package me.kosinkadink.performantplants.managers;
 
 import com.sun.istack.internal.NotNull;
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.stages.GrowthStage;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -27,6 +30,19 @@ public class PlantTypeManager {
                 .lore(Collections.singletonList("Plant seed for testing purposes"))
                 .build();
         Plant testPlant = new Plant(testPlantName, testPlantId, testItemStack, testSeedItemStack);
+        testPlant.setMinGrowthTime(5);
+        testPlant.setMaxGrowthTime(5);
+        // first stage
+        GrowthStage stage = new GrowthStage(0);
+        stage.addGrowthStageBlock(new GrowthStageBlock("1",0,0,0, Material.OAK_FENCE));
+        stage.addDrop(new Drop(testPlant.getSeedItem(), 1, 1, 100.0));
+        testPlant.addGrowthStage(stage);
+        // second stage
+        stage = new GrowthStage(1);
+        stage.addGrowthStageBlock(new GrowthStageBlock("1",0,0,0, Material.OAK_LOG));
+        stage.addDrop(new Drop(testPlant.getItem(),1,3, 100.0));
+        stage.addDrop(new Drop(testPlant.getSeedItem(), 1, 2, 100.0));
+        testPlant.addGrowthStage(stage);
         addPlantType(testPlant);
     }
 

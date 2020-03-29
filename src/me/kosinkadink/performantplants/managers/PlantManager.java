@@ -30,6 +30,12 @@ public class PlantManager {
         }
     }
 
+    public void unloadAll() {
+        for (PlantChunkStorage plantChunkStorage : plantChunkStorageMap.values()) {
+            plantChunkStorage.unloadAll();
+        }
+    }
+
     public HashMap<String, PlantChunkStorage> getPlantChunkStorageMap() {
         return plantChunkStorageMap;
     }
@@ -51,18 +57,18 @@ public class PlantManager {
             addPlantChunkStorage(plantChunkStorage);
         }
         plantChunkStorage.addPlantBlock(block);
-        // TODO: start growth task
+        // start growth task
         startGrowthTask(block);
     }
 
     public void removePlantBlock(PlantBlock block) {
+        // pause growth task
+        pauseGrowthTask(block);
         // get plant chunk
         PlantChunkStorage plantChunkStorage = getPlantChunkStorage(block.getLocation().getWorldName());
         if (plantChunkStorage != null) {
             plantChunkStorage.removePlantBlock(block);
         }
-        // TODO: pause growth task
-        pauseGrowthTask(block);
         // if plant block has a parent, remove from parent's children list
         if (block.hasParent()) {
             PlantBlock parent = getPlantBlock(block.getParentLocation());

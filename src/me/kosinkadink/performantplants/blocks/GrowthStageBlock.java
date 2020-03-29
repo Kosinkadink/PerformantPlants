@@ -30,6 +30,10 @@ public class GrowthStageBlock {
         blockData = BlockHelper.createBlockData(material, blockDataStrings);
     }
 
+    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material) {
+        this(id, xRel, yRel, zRel, material, new ArrayList<String>());
+    }
+
     public String getId() {
         return id;
     }
@@ -52,6 +56,10 @@ public class GrowthStageBlock {
 
     public ArrayList<Drop> getDrops() {
         return drops;
+    }
+
+    public void addDrop(Drop drop) {
+        drops.add(drop);
     }
 
     public void setChildOf(RelativeLocation parentLocation) {

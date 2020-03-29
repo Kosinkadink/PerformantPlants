@@ -28,7 +28,8 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        databaseManager.saveDatabases();
+        plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
+        databaseManager.saveDatabases(); // save all plant blocks
     }
 
     private void registerManagers() {

@@ -19,8 +19,8 @@ public class Plant {
     private ItemStack plantSeedItem;
     private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
-    private boolean waterRequired;
-    private boolean lavaRequired;
+    private boolean waterRequired = false;
+    private boolean lavaRequired = false;
     private ArrayList<RequiredBlock> requiredBlocksToGrow = new ArrayList<>();
     // growth time - overridden by specific stage growth times
     private int minGrowthTime = -1;
