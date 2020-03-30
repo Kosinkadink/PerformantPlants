@@ -37,16 +37,21 @@ public class PlantBlockEventListener implements Listener {
                 if (itemStack.getType() == Material.AIR) {
                     return;
                 }
+                BlockLocation blockLocation = new BlockLocation(block);
+                PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
+                        event.getPlayer().getUniqueId(), event.getGrows());
+                if (plantBlock.getGrows()) {
+                    if (!plantBlock.checkGrowthRequirements(main)) {
+                        return;
+                    }
+                }
+                main.getPlantManager().addPlantBlock(plantBlock);
                 if (itemStack.getAmount() > 1) {
                     itemStack.setAmount(itemStack.getAmount() - 1);
                 }
                 else {
                     event.getPlayer().getInventory().setItemInMainHand(new ItemStack(Material.AIR));
                 }
-                BlockLocation blockLocation = new BlockLocation(block);
-                PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
-                        event.getPlayer().getUniqueId(), event.getGrows());
-                main.getPlantManager().addPlantBlock(plantBlock);
             }
         }
     }

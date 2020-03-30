@@ -74,6 +74,10 @@ public class PlantManager {
             PlantBlock parent = getPlantBlock(block.getParentLocation());
             if (parent != null) {
                 parent.removeChildLocation(block.getLocation());
+                // if parent's stage should be updated, do it
+                if (block.isUpdateStageOnBreak()) {
+                    setGrowthTaskStage(parent, block.getStageIndex());
+                }
             }
         }
         // if plant block has a guardian, remove from guardian's children list
@@ -148,14 +152,14 @@ public class PlantManager {
         }
     }
 
-    public void setGrowthTaskToStage(PlantBlock plantBlock, int stage) {
+    public void setGrowthTaskStage(PlantBlock plantBlock, int stage) {
         plantBlock.setTaskStage(main, stage);
     }
 
-    public void setGrowthTaskToStage(BlockLocation blockLocation, int stage) {
+    public void setGrowthTaskStage(BlockLocation blockLocation, int stage) {
         PlantBlock plantBlock = getPlantBlock(blockLocation);
         if (plantBlock != null) {
-            setGrowthTaskToStage(plantBlock, stage);
+            setGrowthTaskStage(plantBlock, stage);
         }
     }
 

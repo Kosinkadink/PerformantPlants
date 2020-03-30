@@ -20,10 +20,18 @@ public class RequiredBlock {
         blockData = BlockHelper.createBlockData(material, blockDataStrings);
     }
 
+    public RequiredBlock(int xRel, int yRel, int zRel, Material material) {
+        this(xRel, yRel, zRel, material, new ArrayList<>());
+    }
+
     public RequiredBlock(int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings,
                          boolean required) {
         this(xRel, yRel, zRel, material, blockDataStrings);
         this.required = required;
+    }
+
+    public RequiredBlock(int xRel, int yRel, int zRel, Material material, boolean required) {
+        this(xRel, yRel, zRel, material, new ArrayList<>(), required);
     }
 
     public RelativeLocation getLocation() {
@@ -35,7 +43,8 @@ public class RequiredBlock {
     }
 
     public boolean checkIfMatches(Block block) {
-        return block.getBlockData() == blockData;
+        return block.getBlockData().getMaterial() == blockData.getMaterial();
+        //return block.getBlockData() == blockData;
     }
 
     public boolean isRequired() {

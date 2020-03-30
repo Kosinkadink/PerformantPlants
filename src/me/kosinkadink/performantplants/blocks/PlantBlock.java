@@ -23,22 +23,37 @@ public class PlantBlock {
     private HashSet<BlockLocation> childLocations = new HashSet<>();
     private Plant plant;
     private int stageIndex;
+    private int dropStageIndex;
     private String stageBlockId;
     private boolean grows;
     private long taskStartTime;
     private long duration;
     private BukkitTask growthTask;
     private UUID playerUUID;
+    private UUID plantUUID;
     private ArrayList<Drop> drops = new ArrayList<>();
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
         location = blockLocation;
         this.plant = plant;
         this.grows = grows;
+        this.plantUUID = UUID.randomUUID();
+    }
+
+    public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows, UUID plantUUID) {
+        location = blockLocation;
+        this.plant = plant;
+        this.grows = grows;
+        this.plantUUID = plantUUID;
     }
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID, boolean grows) {
         this(blockLocation, plant, grows);
+        this.playerUUID = playerUUID;
+    }
+
+    public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID, boolean grows, UUID plantUUID) {
+        this(blockLocation, plant, grows, plantUUID);
         this.playerUUID = playerUUID;
     }
 
@@ -109,6 +124,16 @@ public class PlantBlock {
         }
     }
 
+    public int getDropStageIndex() {
+        return dropStageIndex;
+    }
+
+    public void setDropStageIndex(int index) {
+        if (index > 0) {
+            dropStageIndex = index;
+        }
+    }
+
     public String getStageBlockId() {
         return stageBlockId;
     }
@@ -135,9 +160,13 @@ public class PlantBlock {
         return playerUUID;
     }
 
+    public UUID getPlantUUID() {
+        return plantUUID;
+    }
+
     public int getDropLimit() {
         if (plant.hasGrowthStages()) {
-            GrowthStage growthStage = plant.getGrowthStage(stageIndex);
+            GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
             if (growthStage != null) {
                 return growthStage.getDropLimit(stageBlockId);
             }
@@ -149,7 +178,7 @@ public class PlantBlock {
         if (!plant.hasGrowthStages()) {
             return drops;
         } else {
-            GrowthStage growthStage = plant.getGrowthStage(stageIndex);
+            GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
             if (growthStage != null) {
                 GrowthStageBlock stageBlock = growthStage.getGrowthStageBlock(stageBlockId);
                 // get stageBlock's drops if exist
@@ -164,10 +193,20 @@ public class PlantBlock {
     }
 
     public boolean getBreakChildren() {
-        if (plant.hasGrowthStages() && plant.isValidStage(stageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(stageIndex).getGrowthStageBlock(stageBlockId);
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.getBreakChildren();
+            }
+        }
+        return false;
+    }
+
+    public boolean isUpdateStageOnBreak() {
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.isUpdateStageOnBreak();
             }
         }
         return false;
@@ -210,13 +249,27 @@ public class PlantBlock {
     public void setTaskStage(Main main, int growthStageIndex) {
         // check if proposed growth stage is valid; if not, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
+            main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
+                    + stageIndex);
             return;
         }
+        // if trying to go forward a stage, do nothing
+        if (growthStageIndex > stageIndex) {
+            return;
+        }
+        // if same stage and already growing, do nothing (would needlessly reset duration)
+        else if (growthStageIndex == stageIndex && grows) {
+            return;
+        }
+        // if trying to go forward a stage,
+        main.getLogger().info("Changing stage to " + stageIndex + " for block " + toString());
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
         duration = TimeHelper.secondsToTicks(plant.generateGrowthTime(stageIndex));
+        // set grows to true
+        grows = true;
         startTask(main);
     }
 
@@ -243,22 +296,26 @@ public class PlantBlock {
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
                 // if keep block vanilla, just change blockData
                 Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
-                // if not air or not plant block, continue
-                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
+                // if not air or not relevant plant block, continue
+                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     continue;
                 }
                 // update block data at location
                 block.setBlockData(growthStageBlock.getBlockData());
                 // if at current location, update values of this PlantBlock; don't create a new one
                 if (growthStageBlock.getLocation().equals(new RelativeLocation(0, 0, 0))) {
+                    // set drop stage index
+                    setDropStageIndex(stageIndex);
                     // set growth stage block
                     setStageBlockId(growthStageBlock.getId());
                 } else {
                     // create plant blocks at location
                     PlantBlock newPlantBlock;
-                    newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false);
+                    newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false,
+                            plantUUID);
                     // set stage index and stage block id
                     newPlantBlock.setStageIndex(stageIndex);
+                    newPlantBlock.setDropStageIndex(stageIndex);
                     newPlantBlock.setStageBlockId(growthStageBlock.getId());
                     // set parent to be this block
                     newPlantBlock.setParentLocation(location);
@@ -267,7 +324,9 @@ public class PlantBlock {
                     // add plant block via plantManager
                     main.getPlantManager().addPlantBlock(newPlantBlock);
                     // if has childOf set, add to blocksAdded
-                    blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
+                    if (growthStageBlock.hasChildOf()) {
+                        blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
+                    }
                 }
             }
             // add children/guardians to any blocks that require them
@@ -275,7 +334,7 @@ public class PlantBlock {
                 GrowthStageBlock growthStageBlock = entry.getKey();
                 PlantBlock newPlantBlock = entry.getValue();
                 // get guardian location
-                BlockLocation guardianLocation = location.getLocationFromRelative(growthStageBlock.getLocation());
+                BlockLocation guardianLocation = location.getLocationFromRelative(growthStageBlock.getChildOf());
                 // add guardian to plant block
                 newPlantBlock.setGuardianLocation(guardianLocation);
                 // get guardian block
@@ -311,7 +370,7 @@ public class PlantBlock {
 
     //region Requirements Check
 
-    boolean checkGrowthRequirements(Main main) {
+    public boolean checkGrowthRequirements(Main main) {
         if (plant.isWaterRequired()) {
             if (!checkWaterPresent(main)) {
                 return false;
@@ -346,7 +405,7 @@ public class PlantBlock {
         for (GrowthStageBlock growthStageBlock : blocks.values()) {
             if (!growthStageBlock.isIgnoreSpace()) {
                 Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
-                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
+                if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     return false;
                 }
             }

@@ -6,11 +6,12 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantChunk {
 
     private final ChunkLocation location;
-    private HashMap<BlockLocation, PlantBlock> plantBlocks = new HashMap<>();
+    private ConcurrentHashMap<BlockLocation, PlantBlock> plantBlocks = new ConcurrentHashMap<>();
     private boolean loaded = false;
 
     public PlantChunk(ChunkLocation chunkLocation) {
@@ -21,7 +22,7 @@ public class PlantChunk {
         return location;
     }
 
-    public HashMap<BlockLocation, PlantBlock> getPlantBlocks() {
+    public ConcurrentHashMap<BlockLocation, PlantBlock> getPlantBlocks() {
         return plantBlocks;
     }
 

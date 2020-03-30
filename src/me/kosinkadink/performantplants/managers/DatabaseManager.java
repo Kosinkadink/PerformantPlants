@@ -37,6 +37,7 @@ public class DatabaseManager {
     //region Load Data
 
     void loadDatabases() {
+        main.getLogger().info("Loading plant databases...");
         for (World world : Bukkit.getWorlds()) {
             // check if db for world exists
             String worldName = world.getName();
@@ -51,6 +52,7 @@ public class DatabaseManager {
                 databaseFiles.put(worldName, file);
             }
         }
+        main.getLogger().info("Loaded plant databases");
     }
 
     boolean loadDatabase(File file, String worldName) {
@@ -87,9 +89,11 @@ public class DatabaseManager {
     //region Save Data
 
     public void saveDatabases() {
+        main.getLogger().info("Saving plants into databases...");
         for (Map.Entry<String, File> entry : databaseFiles.entrySet()) {
             saveDatabase(entry.getValue(), entry.getKey());
         }
+        main.getLogger().info("Saved plants into databases");
     }
 
     boolean saveDatabase(File file, String worldName) {
@@ -112,8 +116,9 @@ public class DatabaseManager {
         // get plantChunkStorage for current world
         PlantChunkStorage plantChunkStorage = main.getPlantManager().getPlantChunkStorage(worldName);
         // remove any blocks set for removal
+        main.getLogger().info("Removing blocks from db for world: " + worldName + "...");
         ArrayList<BlockLocation> blocksToRemoveCache = new ArrayList<>();
-        for (BlockLocation blockLocation : plantChunkStorage.getBlockLocationsToDelete()) {
+        for (BlockLocation blockLocation : new ArrayList<>(plantChunkStorage.getBlockLocationsToDelete())) {
             boolean success = removeBlockLocationFromTablePlantBlocks(conn, blockLocation);
             removeBlockLocationFromTableParents(conn, blockLocation);
             removeBlockLocationFromTableGuardians(conn, blockLocation);
@@ -127,7 +132,15 @@ public class DatabaseManager {
             plantChunkStorage.removeBlockFromRemoval(blockLocation);
         }
         blocksToRemoveCache.clear();
+        main.getLogger().info("Done removing blocks from db for world: " + worldName);
         // add/update all blocks for each chunk
+        main.getLogger().info("Updating blocks in db for world: " + worldName + "...");
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
         for (PlantChunk plantChunk : plantChunkStorage.getPlantChunks().values()) {
             // for each block in chunk, insert into db
             for (Map.Entry<BlockLocation, PlantBlock> entry : plantChunk.getPlantBlocks().entrySet()) {
@@ -142,6 +155,13 @@ public class DatabaseManager {
                 }
             }
         }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        main.getLogger().info("Done updating blocks in db for world: " + worldName);
 
         return true;
     }
@@ -161,9 +181,11 @@ public class DatabaseManager {
                 + "    plant TEXT NOT NULL,\n"
                 + "    grows BOOLEAN,\n"
                 + "    stage INTEGER,\n"
+                + "    drop_stage INTEGER,\n"
                 + "    block_id TEXT,\n"
                 + "    duration INTEGER,\n"
                 + "    playerUUID TEXT,\n"
+                + "    plantUUID TEXT NOT NULL,\n"
                 + "    PRIMARY KEY (x,y,z)"
                 + ");";
         try {
@@ -179,8 +201,8 @@ public class DatabaseManager {
     }
 
     boolean insertPlantBlockIntoTablePlantBlocks(Connection conn, PlantBlock block, PlantChunk chunk) {
-        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, block_id, duration, playerUUID)\n"
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, drop_stage, block_id, duration, playerUUID, plantUUID)\n"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             // set values; index starts at 1
             pstmt.setInt(    1,block.getLocation().getX());
@@ -191,16 +213,18 @@ public class DatabaseManager {
             pstmt.setString( 6,block.getPlant().getId());
             pstmt.setBoolean(7,block.getGrows());
             pstmt.setInt(    8,block.getStageIndex());
-            pstmt.setString( 9,block.getStageBlockId());
-            pstmt.setLong(  10,block.getDuration());
-            pstmt.setString(11,block.getPlayerUUID().toString());
+            pstmt.setInt(    9,block.getDropStageIndex());
+            pstmt.setString(10,block.getStageBlockId());
+            pstmt.setLong(  11,block.getDuration());
+            pstmt.setString(12,block.getPlayerUUID().toString());
+            pstmt.setString(13,block.getPlantUUID().toString());
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
             main.getLogger().warning("Could not insert PlantBlock into plantblocks: " + block.toString() + "; " + e.toString());
             return false;
         }
-        main.getLogger().info("Stored PlantBlock in plantblocks in db: " + block.toString());
+        //main.getLogger().info("Stored PlantBlock in plantblocks in db: " + block.toString());
         return true;
     }
 
@@ -222,7 +246,7 @@ public class DatabaseManager {
             );
             return false;
         }
-        main.getLogger().info("Removed BlockLocation from plantblocks: " + blockLocation.toString());
+        //main.getLogger().info("Removed BlockLocation from plantblocks: " + blockLocation.toString());
         return true;
     }
 
@@ -270,7 +294,7 @@ public class DatabaseManager {
             main.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
             return false;
         }
-        main.getLogger().info("Stored PlantBlock in parents in db: " + block.toString());
+        //main.getLogger().info("Stored PlantBlock in parents in db: " + block.toString());
         return true;
     }
 
@@ -292,7 +316,7 @@ public class DatabaseManager {
             );
             return false;
         }
-        main.getLogger().info("Removed BlockLocation from parents: " + blockLocation.toString());
+        //main.getLogger().info("Removed BlockLocation from parents: " + blockLocation.toString());
         return true;
     }
 
@@ -340,7 +364,7 @@ public class DatabaseManager {
             main.getLogger().warning("Could not insert PlantBlock into guardians: " + block.toString() + "; " + e.toString());
             return false;
         }
-        main.getLogger().info("Stored PlantBlock in guardians in db: " + block.toString());
+        //main.getLogger().info("Stored PlantBlock in guardians in db: " + block.toString());
         return true;
     }
 
@@ -362,7 +386,7 @@ public class DatabaseManager {
             );
             return false;
         }
-        main.getLogger().info("Removed BlockLocation from guardians: " + blockLocation.toString());
+        //main.getLogger().info("Removed BlockLocation from guardians: " + blockLocation.toString());
         return true;
     }
 
@@ -374,25 +398,27 @@ public class DatabaseManager {
         // Create table if doesn't already exist
         createTablePlantBlocks(conn);
         // Get and load all plant blocks stored in db
-        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, block_id, duration, playerUUID FROM plantblocks;";
+        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, drop_stage, block_id, duration, playerUUID, plantUUID FROM plantblocks;";
         try (Statement stmt = conn.createStatement();
              ResultSet rs   = stmt.executeQuery(sql)) {
             // loop through result set
             while (rs.next()) {
                 // create PlantBlock from database row
                 addPlantBlockFromResultSet(rs, worldName);
-                main.getLogger().info(String.format("Found plant in db with data: %d,%d,%d,%d,%d,%s,%b,%d,%s,%d,%s",
-                        rs.getInt("x"),
-                        rs.getInt("y"),
-                        rs.getInt("z"),
-                        rs.getInt("cx"),
-                        rs.getInt("cz"),
-                        rs.getString("plant"),
-                        rs.getBoolean("grows"),
-                        rs.getInt("stage"),
-                        rs.getString("block_id"),
-                        rs.getInt("duration"),
-                        rs.getString("playerUUID")));
+//                main.getLogger().info(String.format("Found plant in db with data: %d,%d,%d,%d,%d,%s,%b,%d,%d,%s,%d,%s,%s",
+//                        rs.getInt("x"),
+//                        rs.getInt("y"),
+//                        rs.getInt("z"),
+//                        rs.getInt("cx"),
+//                        rs.getInt("cz"),
+//                        rs.getString("plant"),
+//                        rs.getBoolean("grows"),
+//                        rs.getInt("stage"),
+//                        rs.getInt("drop_stage"),
+//                        rs.getString("block_id"),
+//                        rs.getInt("duration"),
+//                        rs.getString("playerUUID"),
+//                        rs.getString("plantUUID")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading plants from url: " + url + "; " + e.toString());
@@ -413,15 +439,18 @@ public class DatabaseManager {
             Plant plant = main.getPlantTypeManager().getPlantById(rs.getString("plant"));
             PlantBlock plantBlock;
             String uuidString = rs.getString("playerUUID");
+            String plantUuidString = rs.getString("plantUUID");
             boolean grows = rs.getBoolean("grows");
             if (uuidString != null && uuidString.length() > 0) {
-                plantBlock = new PlantBlock(blockLocation, plant, UUID.fromString(uuidString), grows);
+                plantBlock = new PlantBlock(blockLocation, plant, UUID.fromString(uuidString), grows,
+                        UUID.fromString(plantUuidString));
             }
             else {
-                plantBlock = new PlantBlock(blockLocation, plant, grows);
+                plantBlock = new PlantBlock(blockLocation, plant, grows, UUID.fromString(plantUuidString));
             }
-            // set stageIndex + stageBlockId
+            // set stageIndex + dropStageIndex + stageBlockId
             plantBlock.setStageIndex(rs.getInt("stage"));
+            plantBlock.setDropStageIndex(rs.getInt("drop_stage"));
             plantBlock.setStageBlockId(rs.getString("block_id"));
             // set duration
             plantBlock.setDuration(rs.getLong("duration"));
@@ -447,13 +476,13 @@ public class DatabaseManager {
             while (rs.next()) {
                 // create parent from database row
                 addParentFromResultSet(rs, worldName);
-                main.getLogger().info(String.format("Found block's parent in db with data: %d,%d,%d,%d,%d,%d",
-                        rs.getInt("x"),
-                        rs.getInt("y"),
-                        rs.getInt("z"),
-                        rs.getInt("px"),
-                        rs.getInt("py"),
-                        rs.getInt("pz")));
+//                main.getLogger().info(String.format("Found block's parent in db with data: %d,%d,%d,%d,%d,%d",
+//                        rs.getInt("x"),
+//                        rs.getInt("y"),
+//                        rs.getInt("z"),
+//                        rs.getInt("px"),
+//                        rs.getInt("py"),
+//                        rs.getInt("pz")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
@@ -506,13 +535,13 @@ public class DatabaseManager {
             while (rs.next()) {
                 // create parent from database row
                 addGuardiansFromResultSet(rs, worldName);
-                main.getLogger().info(String.format("Found block's guardian in db with data: %d,%d,%d,%d,%d,%d",
-                        rs.getInt("x"),
-                        rs.getInt("y"),
-                        rs.getInt("z"),
-                        rs.getInt("gx"),
-                        rs.getInt("gy"),
-                        rs.getInt("gz")));
+//                main.getLogger().info(String.format("Found block's guardian in db with data: %d,%d,%d,%d,%d,%d",
+//                        rs.getInt("x"),
+//                        rs.getInt("y"),
+//                        rs.getInt("z"),
+//                        rs.getInt("gx"),
+//                        rs.getInt("gy"),
+//                        rs.getInt("gz")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading guardians from url: " + url + "; " + e.toString());

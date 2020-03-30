@@ -9,14 +9,14 @@ import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantChunkStorage {
 
     private Main main;
     private String world;
-    private HashMap<ChunkLocation, PlantChunk> plantChunks = new HashMap<>();
+    private ConcurrentHashMap<ChunkLocation, PlantChunk> plantChunks = new ConcurrentHashMap<>();
     private HashSet<BlockLocation> blockLocationsToDelete = new HashSet<>();
 
     public PlantChunkStorage(Main mainClass, String world) {
@@ -32,7 +32,7 @@ public class PlantChunkStorage {
         }
     }
 
-    public HashMap<ChunkLocation, PlantChunk> getPlantChunks() {
+    public ConcurrentHashMap<ChunkLocation, PlantChunk> getPlantChunks() {
         return plantChunks;
     }
 
@@ -48,7 +48,7 @@ public class PlantChunkStorage {
         // add plantBlock to plantChunk
         plantChunk.addPlantBlock(block);
         // add metadata to block
-        MetadataHelper.setPlantBlockMetadata(main, block.getBlock());
+        MetadataHelper.setPlantBlockMetadata(main, block);
         // remove block from removal set
         removeBlockFromRemoval(block);
         main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "

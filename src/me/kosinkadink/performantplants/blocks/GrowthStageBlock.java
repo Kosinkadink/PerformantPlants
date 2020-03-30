@@ -31,7 +31,7 @@ public class GrowthStageBlock {
     }
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material) {
-        this(id, xRel, yRel, zRel, material, new ArrayList<String>());
+        this(id, xRel, yRel, zRel, material, new ArrayList<>());
     }
 
     public String getId() {
@@ -48,6 +48,10 @@ public class GrowthStageBlock {
 
     public RelativeLocation getChildOf() {
         return childOf;
+    }
+
+    public boolean hasChildOf() {
+        return childOf != null;
     }
 
     public boolean getBreakChildren() {
