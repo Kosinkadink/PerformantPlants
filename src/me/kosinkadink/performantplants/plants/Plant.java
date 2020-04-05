@@ -14,9 +14,9 @@ public class Plant {
     private String name;
     private String displayName;
     private String id;
-    private boolean placeable = false;
     private ItemStack plantItem;
     private ItemStack plantSeedItem;
+    private String seedDisplayName = null;
     private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
     private boolean waterRequired = false;
@@ -52,7 +52,11 @@ public class Plant {
     void updateSeedItemDisplayName() {
         ItemMeta itemMeta = plantSeedItem.getItemMeta();
         if (itemMeta != null) {
-            itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + name + " Seed" + ChatColor.RESET);
+            if (seedDisplayName == null) {
+                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + name + " Seed" + ChatColor.RESET);
+            } else {
+                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + seedDisplayName + ChatColor.RESET);
+            }
             plantSeedItem.setItemMeta(itemMeta);
         }
     }
@@ -75,6 +79,11 @@ public class Plant {
         return null;
     }
 
+    public void setSeedDisplayName(String seedDisplayName) {
+        this.seedDisplayName = seedDisplayName;
+        updateSeedItemDisplayName();
+    }
+
     public String getId() {
         return id;
     }
@@ -85,6 +94,10 @@ public class Plant {
 
     public ItemStack getSeedItem() {
         return plantSeedItem;
+    }
+
+    public void setSeedItem(ItemStack seedItem) {
+        plantSeedItem = seedItem;
     }
 
     public ItemStack getClonedItem() {
@@ -121,14 +134,6 @@ public class Plant {
 
     public boolean hasSeed() {
         return plantSeedItem != null;
-    }
-
-    public boolean isPlaceable() {
-        return placeable;
-    }
-
-    public void setPlaceable(boolean placeable) {
-        this.placeable = placeable;
     }
 
     public boolean isWaterRequired() {

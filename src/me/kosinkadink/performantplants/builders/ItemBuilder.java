@@ -31,7 +31,7 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder type(Material material) {
+    public ItemBuilder material(Material material) {
         item.setType(material);
         return this;
     }

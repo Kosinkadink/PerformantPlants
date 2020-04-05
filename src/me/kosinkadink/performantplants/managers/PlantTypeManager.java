@@ -39,12 +39,12 @@ public class PlantTypeManager {
         testPlant.setMaxGrowthTime(30);
         testPlant.setWaterRequired(true);
         // first stage
-        GrowthStage stage = new GrowthStage(0);
+        GrowthStage stage = new GrowthStage();
         stage.addGrowthStageBlock(new GrowthStageBlock("1",0,0,0, Material.OAK_FENCE));
         stage.addDrop(new Drop(testPlant.getSeedItem(), 1, 1, 100.0));
         testPlant.addGrowthStage(stage);
         // second stage
-        stage = new GrowthStage(1);
+        stage = new GrowthStage();
         stage.addGrowthStageBlock(new GrowthStageBlock("1",0,0,0, Material.OAK_LOG));
         stage.addDrop(new Drop(testPlant.getItem(),1,1, 100.0));
         stage.addDrop(new Drop(testPlant.getSeedItem(), 1, 2, 100.0));
@@ -56,7 +56,7 @@ public class PlantTypeManager {
         stage.addGrowthStageBlock(growthStageBlock);
         testPlant.addGrowthStage(stage);
         // third stage
-        stage = new GrowthStage(2);
+        stage = new GrowthStage();
         growthStageBlock = new GrowthStageBlock("leaf",0,2,0, Material.JUNGLE_LEAVES);
         growthStageBlock.setDropLimit(1);
         growthStageBlock.addDrop(new Drop(new ItemBuilder(Material.ENCHANTED_GOLDEN_APPLE).build(),1,1,50.0));

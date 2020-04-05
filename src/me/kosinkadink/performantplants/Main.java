@@ -37,8 +37,8 @@ public class Main extends JavaPlugin {
         commandManager = new CommandManager(this);
         plantManager = new PlantManager(this);
         plantTypeManager = new PlantTypeManager(this);
-        databaseManager = new DatabaseManager(this);
         configManager = new ConfigurationManager(this);
+        databaseManager = new DatabaseManager(this);
     }
 
     private void registerListeners() {

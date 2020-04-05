@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class PlantPlaceEvent extends Event implements Cancellable {
 
@@ -15,12 +16,14 @@ public class PlantPlaceEvent extends Event implements Cancellable {
     private Player player;
     private Plant plant;
     private Block block;
+    private EquipmentSlot hand;
     private boolean grows;
 
-    public PlantPlaceEvent(Player player, Plant plant, Block block, boolean grows) {
+    public PlantPlaceEvent(Player player, Plant plant, Block block, EquipmentSlot hand, boolean grows) {
         this.player = player;
         this.plant = plant;
         this.block = block;
+        this.hand = hand;
         this.grows = grows;
     }
 
@@ -34,6 +37,10 @@ public class PlantPlaceEvent extends Event implements Cancellable {
 
     public Block getBlock() {
         return block;
+    }
+
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     public boolean getGrows() {

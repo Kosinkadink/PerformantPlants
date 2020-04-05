@@ -9,19 +9,22 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GrowthStage {
 
-    private int id;
     private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private int minGrowthTime = -1;
     private int maxGrowthTime = -1;
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
 
-    public GrowthStage(int id) {
-        this.id = id;
+    public GrowthStage() { }
+
+    public GrowthStage(int minTime, int maxTime) {
+        setMinGrowthTime(minTime);
+        setMaxGrowthTime(maxTime);
     }
 
-    public int getId() {
-        return id;
+    public GrowthStage(int minTime, int maxTime, int limit) {
+        this(minTime, maxTime);
+        setDropLimit(limit);
     }
 
     public ArrayList<Drop> getDrops() {

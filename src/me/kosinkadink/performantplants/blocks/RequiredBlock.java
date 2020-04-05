@@ -43,8 +43,10 @@ public class RequiredBlock {
     }
 
     public boolean checkIfMatches(Block block) {
-        return block.getBlockData().getMaterial() == blockData.getMaterial();
-        //return block.getBlockData() == blockData;
+        // order matters here; only checks that block data components of required block match the block's
+        // but not the other way around
+        // TODO: match skull texture as well
+        return blockData.matches(block.getBlockData());
     }
 
     public boolean isRequired() {

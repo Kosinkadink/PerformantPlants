@@ -14,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.world.StructureGrowEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -32,8 +33,14 @@ public class PlantBlockEventListener implements Listener {
             main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
             if (block.getType() == Material.AIR) {
-                // get item in main hand
-                ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+                // get item in appropriate hand hand
+                ItemStack itemStack;
+                if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                    itemStack = event.getPlayer().getInventory().getItemInOffHand();
+                } else {
+                    itemStack = event.getPlayer().getInventory().getItemInMainHand();
+                }
+                // do nothing if slot is empty
                 if (itemStack.getType() == Material.AIR) {
                     return;
                 }
@@ -50,7 +57,12 @@ public class PlantBlockEventListener implements Listener {
                     itemStack.setAmount(itemStack.getAmount() - 1);
                 }
                 else {
-                    event.getPlayer().getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+                    // remove item from appropriate hand
+                    if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                        event.getPlayer().getInventory().setItemInOffHand(new ItemStack(Material.AIR));
+                    } else {
+                        event.getPlayer().getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+                    }
                 }
             }
         }
@@ -206,7 +218,7 @@ public class PlantBlockEventListener implements Listener {
     void destroyPlantBlock(Block block, PlantBlock plantBlock, boolean drops) {
         block.setType(Material.AIR);
         main.getPlantManager().removePlantBlock(plantBlock);
-        // TODO: handle drops
+        // handle drops
         if (drops) {
             ArrayList<Drop> dropsList = plantBlock.getDrops();
             int dropLimit = plantBlock.getDropLimit();
@@ -224,7 +236,6 @@ public class PlantBlockEventListener implements Listener {
                 }
             }
         }
-        // TODO: handle children
         // if block's children should be removed, remove them
         if (plantBlock.getBreakChildren()) {
             ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());

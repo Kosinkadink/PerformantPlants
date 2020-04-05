@@ -51,9 +51,10 @@ public class PlantChunkStorage {
         MetadataHelper.setPlantBlockMetadata(main, block);
         // remove block from removal set
         removeBlockFromRemoval(block);
-        main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "
-                + getWorldName()
-        );
+        // TODO: remove this commented out line
+//        main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "
+//                + getWorldName()
+//        );
     }
 
     public void removePlantBlock(PlantBlock block) {
@@ -101,7 +102,7 @@ public class PlantChunkStorage {
             chunk.load(main);
         }
         plantChunks.put(chunk.getLocation(), chunk);
-        main.getLogger().info("Added PlantChunk: " + chunk.toString());
+        //main.getLogger().info("Added PlantChunk: " + chunk.toString());
     }
 
     public void removePlantChunk(PlantChunk chunk) {

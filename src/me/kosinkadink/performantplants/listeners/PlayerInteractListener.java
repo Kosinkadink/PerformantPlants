@@ -6,7 +6,6 @@ import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -25,15 +24,15 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        //boolean cancelled = event.isCancelled();
         Player player = event.getPlayer();
         ItemStack itemStack;
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            // TODO: handle interacting with offhand
+            // interacting with offhand
             itemStack = player.getInventory().getItemInOffHand();
             main.getLogger().info("Reviewing PlayerInteractEvent for Off Hand");
         }
         else {
+            // interacting with main hand
             itemStack = player.getInventory().getItemInMainHand();
             main.getLogger().info("Reviewing PlayerInteractEvent for Main Hand");
         }
@@ -60,21 +59,16 @@ public class PlayerInteractListener implements Listener {
             if (plant != null) {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
-                    // if plant's item not placeable, cancel event
-                    if (!plant.isPlaceable() && plant.getItem().isSimilar(itemStack)) {
+                    // if plant's item not seed (placeable), cancel event
+                    if (!plant.hasSeed() || !plant.getSeedItem().isSimilar(itemStack)) {
                         event.setCancelled(true);
                         main.getLogger().info("Prevented unplaceable plant block from being placed");
                         return;
                     }
-                    // if item is plant's seed, set grows to true
-                    boolean grows = false;
-                    if (plant.hasSeed() && plant.getSeedItem().isSimilar(itemStack)) {
-                        grows = true;
-                    }
                     // cancel event and send out PlantBlockEvent
                     event.setCancelled(true);
                     main.getServer().getPluginManager().callEvent(
-                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), grows)
+                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
                     );
                 }
                 else {
