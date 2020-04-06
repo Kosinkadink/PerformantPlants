@@ -61,13 +61,18 @@ public class PlantManager {
         startGrowthTask(block);
     }
 
-    public void removePlantBlock(PlantBlock block) {
+    public boolean removePlantBlock(PlantBlock block) {
         // pause growth task
         pauseGrowthTask(block);
         // get plant chunk
         PlantChunkStorage plantChunkStorage = getPlantChunkStorage(block.getLocation().getWorldName());
         if (plantChunkStorage != null) {
-            plantChunkStorage.removePlantBlock(block);
+            boolean removed = plantChunkStorage.removePlantBlock(block);
+            if (!removed) {
+                return false;
+            }
+        } else {
+            return false;
         }
         // if plant block has a parent, remove from parent's children list
         if (block.hasParent()) {
@@ -94,6 +99,7 @@ public class PlantManager {
                 child.removeParentOrGuardian(block.getLocation());
             }
         }
+        return true;
     }
 
     public void removePlantBlock(Block block) {

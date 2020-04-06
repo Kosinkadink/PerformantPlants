@@ -18,6 +18,7 @@ public class GrowthStageBlock {
     private String skullTexture;
     private RelativeLocation childOf;
     private boolean breakChildren = true;
+    private boolean breakParent = false;
     private boolean updateStageOnBreak = false;
     private boolean ignoreSpace = false;
     private boolean keepVanilla = false;
@@ -54,8 +55,20 @@ public class GrowthStageBlock {
         return childOf != null;
     }
 
-    public boolean getBreakChildren() {
+    public boolean isBreakChildren() {
         return breakChildren;
+    }
+
+    public void setBreakChildren(boolean bool) {
+        breakChildren = bool;
+    }
+
+    public boolean isBreakParent() {
+        return breakParent;
+    }
+
+    public void setBreakParent(boolean breakParent) {
+        this.breakParent = breakParent;
     }
 
     public ArrayList<Drop> getDrops() {
@@ -68,10 +81,6 @@ public class GrowthStageBlock {
 
     public void setChildOf(RelativeLocation parentLocation) {
         childOf = parentLocation;
-    }
-
-    public void setBreakChildren(boolean bool) {
-        breakChildren = bool;
     }
 
     public int getDropLimit() {
@@ -106,5 +115,13 @@ public class GrowthStageBlock {
 
     public void setUpdateStageOnBreak(boolean updateStageOnBreak) {
         this.updateStageOnBreak = updateStageOnBreak;
+    }
+
+    public String getSkullTexture() {
+        return skullTexture;
+    }
+
+    public void setSkullTexture(String skullTexture) {
+        this.skullTexture = skullTexture;
     }
 }

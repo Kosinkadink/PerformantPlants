@@ -236,7 +236,8 @@ public class ConfigurationManager {
                                             blockSettings.getXRel(),
                                             blockSettings.getYRel(),
                                             blockSettings.getZRel(),
-                                            blockSettings.getMaterial()
+                                            blockSettings.getMaterial(),
+                                            blockSettings.getBlockDataStrings()
                                     );
                                     // set drop limit, if present
                                     if (blockConfig.isInt("drop-limit")) {
@@ -246,6 +247,14 @@ public class ConfigurationManager {
                                     // set ignore space
                                     growthStageBlock.setIgnoreSpace(blockConfig.isBoolean("ignore-space")
                                             && blockConfig.getBoolean("ignore-space"));
+                                    // set break children, if present
+                                    if (blockConfig.isSet("break-children") && blockConfig.isBoolean("break-children")) {
+                                        growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
+                                    }
+                                    // set break parent, if present
+                                    if (blockConfig.isSet("break-parent") && blockConfig.isBoolean("break-parent")) {
+                                        growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
+                                    }
                                     // set update stage on break
                                     growthStageBlock.setUpdateStageOnBreak(blockConfig.isBoolean("regrow")
                                             && blockConfig.getBoolean("regrow"));
@@ -393,7 +402,7 @@ public class ConfigurationManager {
             }
             boolean required = section.isBoolean("required") && section.getBoolean("required");
             String skullTexture = section.getString("skull-texture");
-            ArrayList<String> blockDataStrings = new ArrayList<>(section.getStringList("block-data"));
+            ArrayList<String> blockDataStrings = new ArrayList<>(section.getStringList("data"));
             // get offset
             if (!section.isSet("offset")) {
                 main.getLogger().warning("Offset not defined for block section: " + section.getCurrentPath());

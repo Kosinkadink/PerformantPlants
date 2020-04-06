@@ -31,9 +31,10 @@ public class PlantChunk {
         plantBlocks.put(plantBlock.getLocation(), plantBlock);
     }
 
-    public void removePlantBlock(PlantBlock plantBlock) {
+    public boolean removePlantBlock(PlantBlock plantBlock) {
         // remove plantBlock from hash map
-        plantBlocks.remove(plantBlock.getLocation());
+        PlantBlock removed = plantBlocks.remove(plantBlock.getLocation());
+        return removed != null;
     }
 
     public PlantBlock getPlantBlock(BlockLocation blockLocation) {
@@ -66,7 +67,7 @@ public class PlantChunk {
 
     @Override
     public String toString() {
-        return "PlantBlock @ " + location.toString();
+        return "PlantChunk @ " + location.toString();
     }
 
 }

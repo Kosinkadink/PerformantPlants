@@ -57,12 +57,14 @@ public class PlantChunkStorage {
 //        );
     }
 
-    public void removePlantBlock(PlantBlock block) {
+    public boolean removePlantBlock(PlantBlock block) {
         // get plant chunk
         PlantChunk plantChunk = plantChunks.get(new ChunkLocation(block));
         // if exists, remove plantBlock from plantChunk
         if (plantChunk != null) {
-            plantChunk.removePlantBlock(block);
+            if (!plantChunk.removePlantBlock(block)) {
+                return false;
+            }
             // add block to removal set
             addBlockForRemoval(block);
             // remove metadata from block
@@ -74,7 +76,9 @@ public class PlantChunkStorage {
             if (plantChunk.isEmpty()) {
                 removePlantChunk(plantChunk);
             }
+            return true;
         }
+        return false;
     }
 
     public PlantChunk getPlantChunk(ChunkLocation chunkLocation) {

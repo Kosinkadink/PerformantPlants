@@ -192,11 +192,21 @@ public class PlantBlock {
         return new ArrayList<>();
     }
 
-    public boolean getBreakChildren() {
+    public boolean isBreakChildren() {
         if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getBreakChildren();
+                return growthStageBlock.isBreakChildren();
+            }
+        }
+        return false;
+    }
+
+    public boolean isBreakParent() {
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.isBreakParent();
             }
         }
         return false;

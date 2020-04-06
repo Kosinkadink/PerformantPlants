@@ -32,7 +32,7 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
-            if (block.getType() == Material.AIR) {
+            if (block.getType() == Material.AIR && !MetadataHelper.hasPlantBlockMetadata(block)) {
                 // get item in appropriate hand hand
                 ItemStack itemStack;
                 if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -176,6 +176,25 @@ public class PlantBlockEventListener implements Listener {
     }
 
     @EventHandler
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        Block block = event.getBlock();
+        if (MetadataHelper.hasPlantBlockMetadata(block)) {
+            Block source = event.getSourceBlock();
+            // only destroy block if source is now air, block is not solid, and source is below block
+            if (source.getType().isAir() &&
+                    !block.getType().isSolid() &&
+                    block.getLocation().getBlockY()-source.getLocation().getBlockY() > 0) {
+                destroyPlantBlock(block, true);
+                // only destroy source block if it is a plant block
+                if (MetadataHelper.hasPlantBlockMetadata(source)) {
+                    destroyPlantBlock(source, true);
+                }
+            }
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onBlockPistonExtend(BlockPistonExtendEvent event) {
         // if piston to be extended is Plant, cancel it (plant shouldn't extend)
         if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
@@ -217,7 +236,11 @@ public class PlantBlockEventListener implements Listener {
 
     void destroyPlantBlock(Block block, PlantBlock plantBlock, boolean drops) {
         block.setType(Material.AIR);
-        main.getPlantManager().removePlantBlock(plantBlock);
+        boolean removed = main.getPlantManager().removePlantBlock(plantBlock);
+        // if block was not removed, don't do anything else
+        if (!removed) {
+            return;
+        }
         // handle drops
         if (drops) {
             ArrayList<Drop> dropsList = plantBlock.getDrops();
@@ -237,10 +260,17 @@ public class PlantBlockEventListener implements Listener {
             }
         }
         // if block's children should be removed, remove them
-        if (plantBlock.getBreakChildren()) {
+        if (plantBlock.isBreakChildren()) {
             ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());
             for (BlockLocation childLocation : childLocations) {
                 destroyPlantBlock(childLocation, drops);
+            }
+        }
+        // if block's parent should be removed, remove it
+        if (plantBlock.isBreakParent()) {
+            BlockLocation parentLocation = plantBlock.getParentLocation();
+            if (parentLocation != null) {
+                destroyPlantBlock(parentLocation, drops);
             }
         }
     }
