@@ -311,7 +311,7 @@ public class PlantBlock {
                     continue;
                 }
                 // update block data at location
-                block.setBlockData(growthStageBlock.getBlockData());
+                BlockHelper.setBlockData(block, growthStageBlock);
                 // if at current location, update values of this PlantBlock; don't create a new one
                 if (growthStageBlock.getLocation().equals(new RelativeLocation(0, 0, 0))) {
                     // set drop stage index
@@ -436,14 +436,7 @@ public class PlantBlock {
         // check 1 block to the south
         blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
         for (Block block : blocksToCheck) {
-            if (!(block.getType() == Material.WATER)) {
-                // if not a water block, check if block is waterlogged
-                if (block.getBlockData() instanceof Waterlogged) {
-                    if (((Waterlogged) block.getBlockData()).isWaterlogged()) {
-                        return true;
-                    }
-                }
-            } else {
+            if (BlockHelper.hasWater(block)) {
                 return true;
             }
         }

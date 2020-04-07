@@ -1,11 +1,13 @@
 package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Waterlogged;
 
 import java.util.ArrayList;
 
@@ -40,6 +42,26 @@ public class BlockHelper {
                 anchor.getY() + relative.getY(),
                 anchor.getZ() + relative.getZ()
         );
+    }
+
+    public static void setBlockData(Block block, GrowthStageBlock stageBlock) {
+        block.setBlockData(stageBlock.getBlockData());
+        ReflectionHelper.setSkullTexture(block, stageBlock.getSkullTexture());
+    }
+
+    public static boolean hasWater(Block block) {
+        if (block.getType() != Material.WATER) {
+            if (block.getBlockData() instanceof Waterlogged) {
+                if (((Waterlogged) block.getBlockData()).isWaterlogged()) {
+                    return true;
+                }
+            }
+            return block.getType() == Material.SEAGRASS ||
+                    block.getType() == Material.TALL_SEAGRASS ||
+                    block.getType() == Material.KELP_PLANT;
+        } else {
+            return true;
+        }
     }
 
 }

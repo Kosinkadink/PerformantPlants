@@ -1,10 +1,15 @@
 package me.kosinkadink.performantplants.builders;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import me.kosinkadink.performantplants.util.ReflectionHelper;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.UUID;
 
 public class ItemBuilder {
 
@@ -70,6 +75,30 @@ public class ItemBuilder {
             }
             else {
                 itemMeta.setLore(lore);
+            }
+            item.setItemMeta(itemMeta);
+        }
+        return this;
+    }
+
+    public ItemBuilder skullTexture(String encodedUrl) {
+        if (encodedUrl == null || encodedUrl.isEmpty()) {
+            return this;
+        }
+        // if not a player head, do nothing
+        if (!(item.getType() == Material.PLAYER_HEAD)) {
+            return this;
+        }
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta != null) {
+            GameProfile profile = ReflectionHelper.createProfile(encodedUrl);
+            try {
+                Field profileField = itemMeta.getClass().getDeclaredField("profile");
+                profileField.setAccessible(true);
+                profileField.set(itemMeta, profile);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+                return this;
             }
             item.setItemMeta(itemMeta);
         }

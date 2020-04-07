@@ -22,7 +22,7 @@ public class GrowthStageBlock {
     private boolean updateStageOnBreak = false;
     private boolean ignoreSpace = false;
     private boolean keepVanilla = false;
-    private int dropLimit = 0;
+    private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings) {

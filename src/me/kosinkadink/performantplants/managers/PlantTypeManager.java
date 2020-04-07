@@ -28,8 +28,9 @@ public class PlantTypeManager {
         ItemStack testItemStack = new ItemBuilder(Material.OAK_LOG)
                 .lore(Collections.singletonList("Plant for testing purposes"))
                 .build();
-        ItemStack testSeedItemStack = new ItemBuilder(Material.STICK)
+        ItemStack testSeedItemStack = new ItemBuilder(Material.PLAYER_HEAD)
                 .lore(Collections.singletonList("Plant seed for testing purposes"))
+                .skullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTliMGU5NjljZjNmY2NlZDM2YjcxMjM1MGZmYjQ2ZDhlZDc2MWZlNWVmYjEwZTNiNmE5Nzk1ZTY2NTZkYTk3In19fQ==")
                 .build();
         Plant testPlant = new Plant(testPlantName, testPlantId, testItemStack, testSeedItemStack);
         testPlant.addRequiredBlockToGrow(new RequiredBlock(0,-1,0,Material.DIRT));
@@ -40,7 +41,9 @@ public class PlantTypeManager {
         testPlant.setWaterRequired(true);
         // first stage
         GrowthStage stage = new GrowthStage();
-        stage.addGrowthStageBlock(new GrowthStageBlock("1",0,0,0, Material.OAK_FENCE));
+        GrowthStageBlock plantBaseGrowthBlock = new GrowthStageBlock("1",0,0,0, Material.PLAYER_HEAD);
+        plantBaseGrowthBlock.setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTliMGU5NjljZjNmY2NlZDM2YjcxMjM1MGZmYjQ2ZDhlZDc2MWZlNWVmYjEwZTNiNmE5Nzk1ZTY2NTZkYTk3In19fQ==");
+        stage.addGrowthStageBlock(plantBaseGrowthBlock);
         stage.addDrop(new Drop(testPlant.getSeedItem(), 1, 1, 100.0));
         testPlant.addGrowthStage(stage);
         // second stage

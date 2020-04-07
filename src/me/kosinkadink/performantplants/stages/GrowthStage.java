@@ -76,7 +76,10 @@ public class GrowthStage {
     public int getDropLimit(String growthBlockId) {
         GrowthStageBlock growthStageBlock = getGrowthStageBlock(growthBlockId);
         if (growthStageBlock != null) {
-            return growthStageBlock.getDropLimit();
+            int blockDropLimit = growthStageBlock.getDropLimit();
+            if (blockDropLimit >= 0) {
+                return blockDropLimit;
+            }
         }
         return getDropLimit();
     }

@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.listeners;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -60,7 +61,7 @@ public class PlayerInteractListener implements Listener {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
                     // if plant's item not seed (placeable), cancel event
-                    if (!plant.hasSeed() || !plant.getSeedItem().isSimilar(itemStack)) {
+                    if (!plant.hasSeed() || !ItemHelper.isSimilar(plant.getSeedItem(),itemStack)) {
                         event.setCancelled(true);
                         main.getLogger().info("Prevented unplaceable plant block from being placed");
                         return;
