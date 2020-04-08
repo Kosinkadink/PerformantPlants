@@ -64,6 +64,7 @@ public class ReflectionHelper {
     }
 
     public static GameProfile createProfile(String encodedUrl) {
+        // create UUID from bytes so that GameProfile will have common UUID for common encodedUrls (items are stackable)
         GameProfile profile = new GameProfile(UUID.nameUUIDFromBytes(encodedUrl.getBytes()), null);
         profile.getProperties().put("textures", new Property("textures", encodedUrl));
         return profile;

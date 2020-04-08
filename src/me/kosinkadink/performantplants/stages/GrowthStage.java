@@ -1,13 +1,14 @@
 package me.kosinkadink.performantplants.stages;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
+import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.plants.Drop;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class GrowthStage {
+public class GrowthStage implements Droppable {
 
     private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private int minGrowthTime = -1;

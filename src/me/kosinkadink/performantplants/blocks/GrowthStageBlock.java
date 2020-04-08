@@ -1,16 +1,15 @@
 package me.kosinkadink.performantplants.blocks;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 
 import java.util.ArrayList;
 
-public class GrowthStageBlock {
+public class GrowthStageBlock implements Droppable {
 
     private String id;
     private RelativeLocation location;
@@ -22,6 +21,7 @@ public class GrowthStageBlock {
     private boolean updateStageOnBreak = false;
     private boolean ignoreSpace = false;
     private boolean keepVanilla = false;
+    private boolean randomOrientation = false;
     private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
 
@@ -123,5 +123,13 @@ public class GrowthStageBlock {
 
     public void setSkullTexture(String skullTexture) {
         this.skullTexture = skullTexture;
+    }
+
+    public boolean isRandomOrientation() {
+        return randomOrientation;
+    }
+
+    public void setRandomOrientation(boolean randomOrientation) {
+        this.randomOrientation = randomOrientation;
     }
 }

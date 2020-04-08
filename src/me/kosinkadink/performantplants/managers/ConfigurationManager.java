@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
@@ -209,7 +210,14 @@ public class ConfigurationManager {
                                     int stageDropLimit = stageConfig.getInt("drop-limit");
                                     growthStage.setDropLimit(stageDropLimit);
                                 }
-                                // TODO: set stage's general drops
+                                // set drops, if present
+                                if (stageConfig.isSet("drops")) {
+                                    // add drops
+                                    boolean valid = addDropsToDroppable(stageConfig, growthStage, plant);
+                                    if (!valid) {
+                                        return;
+                                    }
+                                }
                                 // set blocks for growth
                                 if (!stageConfig.isConfigurationSection("blocks")) {
                                     main.getLogger().warning("No blocks provided for growth stage in plant: " + plantId);
@@ -222,10 +230,6 @@ public class ConfigurationManager {
                                         main.getLogger().warning("Could not load stage's blockConfig for plant: " + plantId);
                                         return;
                                     }
-                                    /*if (blockConfig.isConfigurationSection("block-data")) {
-                                        main.getLogger().warning("Could not find block-data section in stage's blockConfig for plant: " + plantId);
-                                        return;
-                                    }*/
                                     BlockSettings blockSettings = loadBlockConfig(blockConfig.getConfigurationSection("block-data"));
                                     if (blockSettings == null) {
                                         main.getLogger().warning("blockSettings for growth block returned null for plant: " + plantId);
@@ -241,23 +245,28 @@ public class ConfigurationManager {
                                     );
                                     // set drop limit, if present
                                     if (blockConfig.isInt("drop-limit")) {
-                                        int stageDropLimit = blockConfig.getInt("drop-limit");
-                                        growthStageBlock.setDropLimit(stageDropLimit);
+                                        growthStageBlock.setDropLimit(blockConfig.getInt("drop-limit"));
                                     }
-                                    // set ignore space
-                                    growthStageBlock.setIgnoreSpace(blockConfig.isBoolean("ignore-space")
-                                            && blockConfig.getBoolean("ignore-space"));
+                                    // set ignore space, if present
+                                    if (blockConfig.isBoolean("ignore-space")) {
+                                        growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
+                                    }
                                     // set break children, if present
-                                    if (blockConfig.isSet("break-children") && blockConfig.isBoolean("break-children")) {
+                                    if (blockConfig.isBoolean("break-children")) {
                                         growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
                                     }
                                     // set break parent, if present
-                                    if (blockConfig.isSet("break-parent") && blockConfig.isBoolean("break-parent")) {
+                                    if (blockConfig.isBoolean("break-parent")) {
                                         growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
                                     }
-                                    // set update stage on break
-                                    growthStageBlock.setUpdateStageOnBreak(blockConfig.isBoolean("regrow")
-                                            && blockConfig.getBoolean("regrow"));
+                                    // set update stage on break, if present
+                                    if (blockConfig.isBoolean("regrow")) {
+                                        growthStageBlock.setUpdateStageOnBreak(blockConfig.getBoolean("regrow"));
+                                    }
+                                    // set random rotation, if present
+                                     if (blockConfig.isBoolean("random-rotation")) {
+                                         growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
+                                     }
                                     // set childOf, if present
                                     if (blockConfig.isSet("child-of")) {
                                         if (!blockConfig.isConfigurationSection("child-of")
@@ -275,43 +284,10 @@ public class ConfigurationManager {
                                     }
                                     // set drops, if present
                                     if (blockConfig.isSet("drops")) {
-                                        // iterate through drops
-                                        if (!blockConfig.isConfigurationSection("drops")) {
-                                            main.getLogger().warning("No drops provided for growth block for plant: " + plantId);
+                                        // add drops
+                                        boolean valid = addDropsToDroppable(blockConfig, growthStageBlock, plant);
+                                        if (!valid) {
                                             return;
-                                        }
-                                        ConfigurationSection dropsConfig = blockConfig.getConfigurationSection("drops");
-                                        for (String dropName : dropsConfig.getKeys(false)) {
-                                            ConfigurationSection dropConfig = dropsConfig.getConfigurationSection(dropName);
-                                            if (dropConfig == null) {
-                                                main.getLogger().warning("dropConfig was null for growth block for plant: " + plantId);
-                                                return;
-                                            }
-                                            // get drop settings
-                                            DropSettings dropSettings = loadDropConfig(dropConfig, plant);
-                                            if (dropSettings == null) {
-                                                main.getLogger().warning("dropSettings were null for growth block for plant: " + plantId);
-                                                return;
-                                            }
-                                            ItemSettings dropItemSettings = dropSettings.getItemSettings();
-                                            ItemStack dropItemStack;
-                                            // if no item stack, then generate one from settings
-                                            if (dropItemSettings.getItemStack() == null) {
-                                                dropItemStack = new ItemBuilder(dropItemSettings.getMaterial())
-                                                        .lore(dropItemSettings.getLore())
-                                                        .displayName(dropItemSettings.getDisplayName())
-                                                        .build();
-                                            } else {
-                                                // otherwise use provided item stack
-                                                dropItemStack = dropItemSettings.getItemStack();
-                                            }
-                                            Drop drop = new Drop(
-                                                    dropItemStack,
-                                                    dropSettings.getMinAmount(),
-                                                    dropSettings.getMaxAmount(),
-                                                    dropSettings.getChance()
-                                            );
-                                            growthStageBlock.addDrop(drop);
                                         }
                                     }
                                     growthStage.addGrowthStageBlock(growthStageBlock);
@@ -482,6 +458,48 @@ public class ConfigurationManager {
             return dropSettings;
         }
         return null;
+    }
+
+    boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable, Plant plant) {
+        // iterate through drops
+        if (!section.isConfigurationSection("drops")) {
+            main.getLogger().warning("No drops provided for growth for plant: " + section.getCurrentPath());
+            return false;
+        }
+        ConfigurationSection dropsConfig = section.getConfigurationSection("drops");
+        for (String dropName : dropsConfig.getKeys(false)) {
+            ConfigurationSection dropConfig = dropsConfig.getConfigurationSection(dropName);
+            if (dropConfig == null) {
+                main.getLogger().warning("dropConfig was null for growth for plant: " + section.getCurrentPath());
+                return false;
+            }
+            // get drop settings
+            DropSettings dropSettings = loadDropConfig(dropConfig, plant);
+            if (dropSettings == null) {
+                main.getLogger().warning("dropSettings were null for growth for plant: " + section.getCurrentPath());
+                return false;
+            }
+            ItemSettings dropItemSettings = dropSettings.getItemSettings();
+            ItemStack dropItemStack;
+            // if no item stack, then generate one from settings
+            if (dropItemSettings.getItemStack() == null) {
+                dropItemStack = new ItemBuilder(dropItemSettings.getMaterial())
+                        .lore(dropItemSettings.getLore())
+                        .displayName(dropItemSettings.getDisplayName())
+                        .build();
+            } else {
+                // otherwise use provided item stack
+                dropItemStack = dropItemSettings.getItemStack();
+            }
+            Drop drop = new Drop(
+                    dropItemStack,
+                    dropSettings.getMinAmount(),
+                    dropSettings.getMaxAmount(),
+                    dropSettings.getChance()
+            );
+            droppable.addDrop(drop);
+        }
+        return true;
     }
 
     String getFileNameWithoutExtension(File file) {
