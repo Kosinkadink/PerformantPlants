@@ -1,12 +1,12 @@
 package me.kosinkadink.performantplants.util;
 
-import com.google.common.collect.Lists;
+import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
+import me.kosinkadink.performantplants.settings.ItemSettings;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import java.util.Arrays;
 
 public class ItemHelper {
 
@@ -22,26 +22,43 @@ public class ItemHelper {
                     return false;
                 }
                 return stack1meta.getDisplayName().equals(stack2meta.getDisplayName());
-                /*
-                if (!stack1meta.getDisplayName().equals(stack2meta.getDisplayName())) {
-                    Bukkit.getLogger().info("head's display names don't match");
-                }
-                if (!stack1meta.getLore().toArray().equals(stack2meta.getLore().toArray())) {
-                    Bukkit.getLogger().info("head's lore don't match; " + stack1meta.getLore().toString() + "\n" + stack2meta.getLore().toString());
-                }
-                if (!stack1meta.getItemFlags().toArray().equals(stack2meta.getItemFlags().toArray())) {
-                    Bukkit.getLogger().info("head's item flags don't match");
-                }
-                return stack1meta.getDisplayName().equals(stack2meta.getDisplayName()) &&
-                        stack1meta.getLore().toArray().equals(stack2meta.getLore().toArray()) &&
-                        stack1meta.getItemFlags().toArray().equals(stack2meta.getItemFlags().toArray());
-
-                 */
             }
             // otherwise use normal isSimilar
             return stack1.isSimilar(stack2);
         }
         return false;
+    }
+
+    public static String getDisplayName(ItemStack stack) {
+        ItemMeta itemMeta = stack.getItemMeta();
+        if (itemMeta != null) {
+            return itemMeta.getDisplayName();
+        }
+        return null;
+    }
+
+    public static void setDisplayName(ItemStack stack, String displayName) {
+        ItemMeta itemMeta = stack.getItemMeta();
+        if (itemMeta != null) {
+            itemMeta.setDisplayName(displayName);
+        }
+    }
+
+    public static ItemStack fromItemSettings(ItemSettings settings, String displayName, boolean isSeed) {
+        if (settings.getDisplayName() != null) {
+            displayName = settings.getDisplayName();
+        } else if (isSeed) {
+            displayName += " Seed";
+        }
+        return new PlantItemBuilder(settings.getMaterial())
+                .displayName(displayName)
+                .lore(settings.getLore())
+                .skullTexture(settings.getSkullTexture())
+                .build();
+    }
+
+    public static ItemStack fromItemSettings(ItemSettings settings, String displayName) {
+        return fromItemSettings(settings, displayName, false);
     }
 
 }

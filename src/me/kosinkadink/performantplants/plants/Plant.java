@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -11,12 +12,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
-    private String name;
-    private String displayName;
     private String id;
     private ItemStack plantItem;
     private ItemStack plantSeedItem;
-    private String seedDisplayName = null;
     private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
     private boolean waterRequired = false;
@@ -27,62 +25,62 @@ public class Plant {
     private int maxGrowthTime = -1;
 
 
-    public Plant(String name, String id, ItemStack itemStack) {
-        this.name = name;
-        displayName = ChatColor.LIGHT_PURPLE + name + ChatColor.RESET;
+    public Plant(String id, ItemStack itemStack) {
         this.id = id;
         plantItem = itemStack;
-        updateItemDisplayName();
     }
 
-    public Plant(String name, String id, ItemStack itemstack, ItemStack seedItemStack) {
-        this(name, id, itemstack);
+    public Plant(String id, ItemStack itemstack, ItemStack seedItemStack) {
+        this(id, itemstack);
         plantSeedItem = seedItemStack;
-        updateSeedItemDisplayName();
     }
 
-    void updateItemDisplayName() {
-        ItemMeta itemMeta = plantItem.getItemMeta();
-        if (itemMeta != null) {
-            itemMeta.setDisplayName(displayName);
-            plantItem.setItemMeta(itemMeta);
-        }
+//    void updateItemDisplayName() {
+//        ItemMeta itemMeta = plantItem.getItemMeta();
+//        if (itemMeta != null) {
+//            itemMeta.setDisplayName(displayName);
+//            plantItem.setItemMeta(itemMeta);
+//        }
+//    }
+//
+//    void updateSeedItemDisplayName() {
+//        ItemMeta itemMeta = plantSeedItem.getItemMeta();
+//        if (itemMeta != null) {
+//            if (seedDisplayName == null) {
+//                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + name + " Seed" + ChatColor.RESET);
+//            } else {
+//                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + seedDisplayName + ChatColor.RESET);
+//            }
+//            plantSeedItem.setItemMeta(itemMeta);
+//        }
+//    }
+
+    void decorateDisplayName() {
+
     }
 
-    void updateSeedItemDisplayName() {
-        ItemMeta itemMeta = plantSeedItem.getItemMeta();
-        if (itemMeta != null) {
-            if (seedDisplayName == null) {
-                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + name + " Seed" + ChatColor.RESET);
-            } else {
-                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + seedDisplayName + ChatColor.RESET);
-            }
-            plantSeedItem.setItemMeta(itemMeta);
-        }
-    }
-
-    public String getName() {
-        return name;
-    }
+//    public String getDisplayName() {
+//        return displayName;
+//    }
 
     public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getSeedDisplayName() {
-        if (plantSeedItem != null) {
-            ItemMeta itemMeta = plantSeedItem.getItemMeta();
-            if (itemMeta != null) {
-                return itemMeta.getDisplayName();
-            }
+        if (plantItem != null) {
+            return ItemHelper.getDisplayName(plantItem);
         }
         return null;
     }
 
-    public void setSeedDisplayName(String seedDisplayName) {
-        this.seedDisplayName = seedDisplayName;
-        updateSeedItemDisplayName();
+    public String getSeedDisplayName() {
+        if (plantSeedItem != null) {
+            return ItemHelper.getDisplayName(plantSeedItem);
+        }
+        return null;
     }
+
+//    public void setSeedDisplayName(String seedDisplayName) {
+//        this.seedDisplayName = seedDisplayName;
+//        updateSeedItemDisplayName();
+//    }
 
     public String getId() {
         return id;

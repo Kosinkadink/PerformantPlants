@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
@@ -25,14 +26,16 @@ public class PlantTypeManager {
         // TODO: remove once done testing
         String testPlantName = "Test Plant";
         String testPlantId = "test";
-        ItemStack testItemStack = new ItemBuilder(Material.OAK_LOG)
+        ItemStack testItemStack = new PlantItemBuilder(Material.OAK_LOG)
+                .displayName(testPlantName)
                 .lore(Collections.singletonList("Plant for testing purposes"))
                 .build();
-        ItemStack testSeedItemStack = new ItemBuilder(Material.PLAYER_HEAD)
+        ItemStack testSeedItemStack = new PlantItemBuilder(Material.PLAYER_HEAD)
+                .displayName(testPlantName + " Seed")
                 .lore(Collections.singletonList("Plant seed for testing purposes"))
                 .skullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTliMGU5NjljZjNmY2NlZDM2YjcxMjM1MGZmYjQ2ZDhlZDc2MWZlNWVmYjEwZTNiNmE5Nzk1ZTY2NTZkYTk3In19fQ==")
                 .build();
-        Plant testPlant = new Plant(testPlantName, testPlantId, testItemStack, testSeedItemStack);
+        Plant testPlant = new Plant(testPlantId, testItemStack, testSeedItemStack);
         testPlant.addRequiredBlockToGrow(new RequiredBlock(0,-1,0,Material.DIRT));
         testPlant.addRequiredBlockToGrow(new RequiredBlock(0,-1,0,Material.GRASS_BLOCK));
         testPlant.addRequiredBlockToGrow(new RequiredBlock(0,-1,0,Material.SAND));

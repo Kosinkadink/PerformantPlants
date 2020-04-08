@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
@@ -13,6 +14,7 @@ import me.kosinkadink.performantplants.settings.ConfigSettings;
 import me.kosinkadink.performantplants.settings.DropSettings;
 import me.kosinkadink.performantplants.settings.ItemSettings;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -115,17 +117,14 @@ public class ConfigurationManager {
                 return;
             }
             // create plant ItemStack and add it to plant type manager
-            // TODO: do something with the skull-texture
-            plantItemStack = new ItemBuilder(itemSettings.getMaterial())
-                    .lore(itemSettings.getLore())
-                    .build();
-            String plantDisplayName = plantId;
-            if (itemSettings.getDisplayName() != null) {
-                plantDisplayName = itemSettings.getDisplayName();
-            }
-            Plant plant = new Plant(plantDisplayName, plantId, plantItemStack);
+            plantItemStack = ItemHelper.fromItemSettings(itemSettings, plantId);
+            // Plant to be saved
+            Plant plant = null;
             // if growing section is present, get seed item + stages
             ConfigurationSection growingConfig = plantConfig.getConfigurationSection("growing");
+            if (growingConfig == null) {
+                plant = new Plant(plantId, plantItemStack);
+            }
             if (growingConfig != null) {
                 ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
                 if (seedConfig != null) {
@@ -133,22 +132,15 @@ public class ConfigurationManager {
                     boolean usePlantAsSeed = seedConfig.isSet("use-plant-as-seed")
                             && seedConfig.getBoolean("use-plant-as-seed");
                     if (usePlantAsSeed) {
-                        plant.setSeedItem(plantItemStack);
-                        plant.setSeedDisplayName(plantDisplayName);
+                        plant = new Plant(plantId, plantItemStack, plantItemStack);
                     } else {
                         ItemSettings seedItemSettings = loadItemConfig(seedConfig, null,false);
                         if (seedItemSettings != null) {
-                            ItemStack seedItemStack = new ItemBuilder(seedItemSettings.getMaterial())
-                                    .lore(seedItemSettings.getLore())
-                                    .build();
-                            String seedDisplayName = plantDisplayName + " Seed";
-                            if (seedItemSettings.getDisplayName() != null) {
-                                seedDisplayName = seedItemSettings.getDisplayName();
-                            }
-                            plant.setSeedItem(seedItemStack);
-                            plant.setSeedDisplayName(seedDisplayName);
+                            ItemStack seedItemStack = ItemHelper.fromItemSettings(seedItemSettings, plantId, true);
+                            plant = new Plant(plantId, plantItemStack, seedItemStack);
                         } else {
                             main.getLogger().info("seedItemSettings were null for plant: " + plantId);
+                            return;
                         }
                     }
                     // if seed item has been set, get growth requirements + stages
@@ -183,7 +175,6 @@ public class ConfigurationManager {
                                 plant.addRequiredBlockToGrow(requiredBlock);
                             }
                         }
-                        // TODO: configure stages
                         // get growth stages; since seed is present, growth stages are REQUIRED
                         if (!growingConfig.isSet("stages") && growingConfig.isConfigurationSection("stages")) {
                             main.getLogger().warning("No stages are configured for plant while seed is present: " + plantId);
@@ -304,6 +295,10 @@ public class ConfigurationManager {
                 main.getLogger().info("growingConfig was null for plant: " + plantId);
             }
             // add plant to plant type manager
+            if (plant == null) {
+                main.getLogger().info("Plant was null");
+                return;
+            }
             main.getPlantTypeManager().addPlantType(plant);
         }
     }
@@ -323,25 +318,54 @@ public class ConfigurationManager {
                     String[] plantInfo = link.split(":", 2);
                     String plantId = plantInfo[0];
                     String itemString = plantInfo[1];
-                    // TODO: allow other plants
+                    // check if plant is not current plant
                     if (!plantId.equalsIgnoreCase(plant.getId())) {
-                        main.getLogger().warning("PlantId '" + plantId + "' does not match current plant in item section: " + section.getCurrentPath());
-                        return null;
-                    }
-                    /*if (!plantConfigMap.containsKey(plantId)) {
-                        main.getLogger().warning("Could not load link to plant " + plantId + " in item section: " + section.getCurrentPath());
-                        return null;
-                    }*/
-                    ItemStack linkedItem;
-                    if (itemString.equalsIgnoreCase("item")) {
-                        linkedItem = plant.getItem();
-                    } else if (itemString.equalsIgnoreCase("seed")) {
-                        linkedItem = plant.getSeedItem();
+                        // if not current plant, load plant item from config file
+                        YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
+                        if (linkedPlantConfig == null) {
+                            main.getLogger().warning("PlantId '" + plantId + "' does not match any plant config in item section: " + section.getCurrentPath());
+                            return null;
+                        }
+                        // if item, get item
+                        ItemSettings linkedItemSettings = null;
+                        if (itemString.equalsIgnoreCase("item")) {
+                            if (!linkedPlantConfig.isConfigurationSection("item")) {
+                                main.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                                        plantId));
+                                return null;
+                            }
+                            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("item");
+                            linkedItemSettings = loadItemConfig(itemSection, null, false);
+                        } else if (itemString.equalsIgnoreCase("seed")) {
+                            // if seed, get growing.seed-item
+                            if (!linkedPlantConfig.isConfigurationSection("growing.seed-item")) {
+                                main.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                                        plantId));
+                                return null;
+                            }
+                            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
+                            linkedItemSettings = loadItemConfig(itemSection, null, false);
+                        } else {
+                            main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
+                            return null;
+                        }
+                        // if linkedItem settings not null, make sure it will be a plant ItemStack (add pre/postfix)
+                        if (linkedItemSettings != null) {
+                            return new ItemSettings(new PlantItemBuilder(ItemHelper.fromItemSettings(linkedItemSettings, plantId)).build());
+                        }
                     } else {
-                        main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
-                        return null;
+                        ItemStack linkedItem;
+                        if (itemString.equalsIgnoreCase("item")) {
+                            linkedItem = plant.getItem();
+                        } else if (itemString.equalsIgnoreCase("seed")) {
+                            linkedItem = plant.getSeedItem();
+                        } else {
+                            main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
+                            return null;
+                        }
+                        return new ItemSettings(linkedItem);
                     }
-                    return new ItemSettings(linkedItem);
+                    return null;
                 }
             }
             // get item-related details from section

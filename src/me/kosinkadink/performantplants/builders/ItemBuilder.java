@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class ItemBuilder {
 
-    private ItemStack item;
+    protected ItemStack item;
 
     /**
      * @param material

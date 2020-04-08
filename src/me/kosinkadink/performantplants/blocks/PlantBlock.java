@@ -260,7 +260,7 @@ public class PlantBlock {
         // check if proposed growth stage is valid; if not, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
             main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
-                    + stageIndex);
+                    + growthStageIndex);
             return;
         }
         // if trying to go forward a stage, do nothing
@@ -272,7 +272,7 @@ public class PlantBlock {
             return;
         }
         // if trying to go forward a stage,
-        main.getLogger().info("Changing stage to " + stageIndex + " for block " + toString());
+        main.getLogger().info("Changing stage to " + growthStageIndex + " for block " + toString());
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
         stageIndex = growthStageIndex;
@@ -372,7 +372,7 @@ public class PlantBlock {
                     + " in " + duration + " ticks; at stage " + stageIndex);
         } else {
             main.getLogger().info("Plant can't grow any further for block type '"
-                    + plant.getName() + "' at stage: " + stageIndex);
+                    + plant.getId() + "' at stage: " + stageIndex);
         }
     }
 
