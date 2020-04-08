@@ -15,6 +15,7 @@ import me.kosinkadink.performantplants.settings.DropSettings;
 import me.kosinkadink.performantplants.settings.ItemSettings;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.ItemHelper;
+import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -232,7 +233,8 @@ public class ConfigurationManager {
                                             blockSettings.getYRel(),
                                             blockSettings.getZRel(),
                                             blockSettings.getMaterial(),
-                                            blockSettings.getBlockDataStrings()
+                                            blockSettings.getBlockDataStrings(),
+                                            blockSettings.getSkullTexture()
                                     );
                                     // set drop limit, if present
                                     if (blockConfig.isInt("drop-limit")) {
@@ -380,8 +382,8 @@ public class ConfigurationManager {
                 return null;
             }
             String skullTexture = section.getString("skull-texture");
-            String displayName = section.getString("display-name");
-            List<String> lore = section.getStringList("lore");
+            String displayName = TextHelper.translateAlternateColorCodes(section.getString("display-name"));
+            List<String> lore = TextHelper.translateAlternateColorCodes(section.getStringList("lore"));
             return new ItemSettings(material, displayName, lore, skullTexture);
         }
         return null;
@@ -400,7 +402,9 @@ public class ConfigurationManager {
                 main.getLogger().warning("Material '" + materialName + "' not recognized in block section: " + section.getCurrentPath());
                 return null;
             }
+            // get if required
             boolean required = section.isBoolean("required") && section.getBoolean("required");
+            // get skull texture
             String skullTexture = section.getString("skull-texture");
             ArrayList<String> blockDataStrings = new ArrayList<>(section.getStringList("data"));
             // get offset

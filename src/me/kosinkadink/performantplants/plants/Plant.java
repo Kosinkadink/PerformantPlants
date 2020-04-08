@@ -35,34 +35,6 @@ public class Plant {
         plantSeedItem = seedItemStack;
     }
 
-//    void updateItemDisplayName() {
-//        ItemMeta itemMeta = plantItem.getItemMeta();
-//        if (itemMeta != null) {
-//            itemMeta.setDisplayName(displayName);
-//            plantItem.setItemMeta(itemMeta);
-//        }
-//    }
-//
-//    void updateSeedItemDisplayName() {
-//        ItemMeta itemMeta = plantSeedItem.getItemMeta();
-//        if (itemMeta != null) {
-//            if (seedDisplayName == null) {
-//                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + name + " Seed" + ChatColor.RESET);
-//            } else {
-//                itemMeta.setDisplayName(ChatColor.LIGHT_PURPLE + seedDisplayName + ChatColor.RESET);
-//            }
-//            plantSeedItem.setItemMeta(itemMeta);
-//        }
-//    }
-
-    void decorateDisplayName() {
-
-    }
-
-//    public String getDisplayName() {
-//        return displayName;
-//    }
-
     public String getDisplayName() {
         if (plantItem != null) {
             return ItemHelper.getDisplayName(plantItem);
@@ -76,11 +48,6 @@ public class Plant {
         }
         return null;
     }
-
-//    public void setSeedDisplayName(String seedDisplayName) {
-//        this.seedDisplayName = seedDisplayName;
-//        updateSeedItemDisplayName();
-//    }
 
     public String getId() {
         return id;
@@ -125,10 +92,6 @@ public class Plant {
     }
 
     //endregion
-
-    public boolean isSimilar(ItemStack itemStack) {
-        return plantItem.isSimilar(itemStack);
-    }
 
     public boolean hasSeed() {
         return plantSeedItem != null;

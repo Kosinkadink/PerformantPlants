@@ -31,6 +31,7 @@ public class PlantGiveCommand extends PPCommand {
         if (player != null) {
             // get plant type
             String plantId = argList.get(1);
+            String fullPlantId = plantId;
             // if plant id ends with '.seed', need to get seed item
             boolean isSeed = false;
             if (plantId.endsWith(".seed")) {
@@ -68,7 +69,7 @@ public class PlantGiveCommand extends PPCommand {
                 if (player.getInventory().firstEmpty() != -1) {
                     // give item stack to player
                     player.getInventory().addItem(requestedItem);
-                    commandSender.sendMessage("Gave " + playerName + " " + amount + " of " + plantId);
+                    commandSender.sendMessage("Gave " + playerName + " " + amount + " of " + fullPlantId);
                 }
                 else {
                     commandSender.sendMessage("Player's inventory is full, cannot give plant");

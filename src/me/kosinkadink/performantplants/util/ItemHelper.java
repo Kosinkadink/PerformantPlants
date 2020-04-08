@@ -1,9 +1,7 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.settings.ItemSettings;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -18,7 +16,6 @@ public class ItemHelper {
                 ItemMeta stack1meta = stack1.getItemMeta();
                 ItemMeta stack2meta = stack2.getItemMeta();
                 if (stack1meta == null || stack2meta == null) {
-                    Bukkit.getLogger().info("one of heads' meta was null");
                     return false;
                 }
                 return stack1meta.getDisplayName().equals(stack2meta.getDisplayName());

@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.blocks;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
@@ -24,15 +25,21 @@ public class GrowthStageBlock implements Droppable {
     private boolean randomOrientation = false;
     private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
+    // TODO: store map of ItemStack(maybe?) -> DropStorage to keep track of interact behavior
 
-    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings) {
+    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings, String skullTexture) {
         this.id = id;
         location = new RelativeLocation(xRel, yRel, zRel);
         blockData = BlockHelper.createBlockData(material, blockDataStrings);
+        this.skullTexture = skullTexture;
+    }
+
+    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings) {
+        this(id, xRel, yRel, zRel, material, blockDataStrings, null);
     }
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material) {
-        this(id, xRel, yRel, zRel, material, new ArrayList<>());
+        this(id, xRel, yRel, zRel, material, new ArrayList<>(), null);
     }
 
     public String getId() {
@@ -132,4 +139,5 @@ public class GrowthStageBlock implements Droppable {
     public void setRandomOrientation(boolean randomOrientation) {
         this.randomOrientation = randomOrientation;
     }
+
 }
