@@ -405,20 +405,6 @@ public class DatabaseManager {
             while (rs.next()) {
                 // create PlantBlock from database row
                 addPlantBlockFromResultSet(rs, worldName);
-//                main.getLogger().info(String.format("Found plant in db with data: %d,%d,%d,%d,%d,%s,%b,%d,%d,%s,%d,%s,%s",
-//                        rs.getInt("x"),
-//                        rs.getInt("y"),
-//                        rs.getInt("z"),
-//                        rs.getInt("cx"),
-//                        rs.getInt("cz"),
-//                        rs.getString("plant"),
-//                        rs.getBoolean("grows"),
-//                        rs.getInt("stage"),
-//                        rs.getInt("drop_stage"),
-//                        rs.getString("block_id"),
-//                        rs.getInt("duration"),
-//                        rs.getString("playerUUID"),
-//                        rs.getString("plantUUID")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading plants from url: " + url + "; " + e.toString());
@@ -476,13 +462,6 @@ public class DatabaseManager {
             while (rs.next()) {
                 // create parent from database row
                 addParentFromResultSet(rs, worldName);
-//                main.getLogger().info(String.format("Found block's parent in db with data: %d,%d,%d,%d,%d,%d",
-//                        rs.getInt("x"),
-//                        rs.getInt("y"),
-//                        rs.getInt("z"),
-//                        rs.getInt("px"),
-//                        rs.getInt("py"),
-//                        rs.getInt("pz")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
@@ -535,13 +514,6 @@ public class DatabaseManager {
             while (rs.next()) {
                 // create parent from database row
                 addGuardiansFromResultSet(rs, worldName);
-//                main.getLogger().info(String.format("Found block's guardian in db with data: %d,%d,%d,%d,%d,%d",
-//                        rs.getInt("x"),
-//                        rs.getInt("y"),
-//                        rs.getInt("z"),
-//                        rs.getInt("gx"),
-//                        rs.getInt("gy"),
-//                        rs.getInt("gz")));
             }
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred loading guardians from url: " + url + "; " + e.toString());

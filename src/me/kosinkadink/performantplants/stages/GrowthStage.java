@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.stages;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.util.TimeHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,8 +12,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GrowthStage implements Droppable {
 
     private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
-    private int minGrowthTime = -1;
-    private int maxGrowthTime = -1;
+    private long minGrowthTime = -1;
+    private long maxGrowthTime = -1;
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
 
@@ -49,23 +50,23 @@ public class GrowthStage implements Droppable {
     }
 
     public void setMinGrowthTime(int time) {
-        minGrowthTime = time;
+        minGrowthTime = TimeHelper.secondsToTicks(time);
     }
 
     public void setMaxGrowthTime(int time) {
-        maxGrowthTime = time;
+        maxGrowthTime = TimeHelper.secondsToTicks(time);
     }
 
     public boolean hasValidGrowthTimeSet() {
         return minGrowthTime >= 0 && maxGrowthTime >= 0;
     }
 
-    public int generateGrowthTime() {
+    public long generateGrowthTime() {
         if (minGrowthTime >= 0 && maxGrowthTime >= 0) {
             if (minGrowthTime == maxGrowthTime) {
                 return minGrowthTime;
             }
-            return ThreadLocalRandom.current().nextInt(minGrowthTime, maxGrowthTime + 1);
+            return ThreadLocalRandom.current().nextLong(minGrowthTime, maxGrowthTime + 1);
         }
         return 0;
     }

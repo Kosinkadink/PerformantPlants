@@ -3,9 +3,8 @@ package me.kosinkadink.performantplants.plants;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.ItemHelper;
-import org.bukkit.ChatColor;
+import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
@@ -21,8 +20,8 @@ public class Plant {
     private boolean lavaRequired = false;
     private ArrayList<RequiredBlock> requiredBlocksToGrow = new ArrayList<>();
     // growth time - overridden by specific stage growth times
-    private int minGrowthTime = -1;
-    private int maxGrowthTime = -1;
+    private long minGrowthTime = -1;
+    private long maxGrowthTime = -1;
 
 
     public Plant(String id, ItemStack itemStack) {
@@ -126,14 +125,14 @@ public class Plant {
     }
 
     public void setMinGrowthTime(int time) {
-        minGrowthTime = time;
+        minGrowthTime = TimeHelper.secondsToTicks(time);
     }
 
     public void setMaxGrowthTime(int time) {
-        maxGrowthTime = time;
+        maxGrowthTime = TimeHelper.secondsToTicks(time);
     }
 
-    public int generateGrowthTime(int stageIndex) {
+    public long generateGrowthTime(int stageIndex) {
         if (isValidStage(stageIndex)) {
             // first check if stage has it's own growth time
             GrowthStage growthStage = getGrowthStage(stageIndex);
@@ -145,7 +144,7 @@ public class Plant {
                 if (minGrowthTime == maxGrowthTime) {
                     return minGrowthTime;
                 }
-                return ThreadLocalRandom.current().nextInt(minGrowthTime, maxGrowthTime + 1);
+                return ThreadLocalRandom.current().nextLong(minGrowthTime, maxGrowthTime + 1);
             }
         }
         return 0;

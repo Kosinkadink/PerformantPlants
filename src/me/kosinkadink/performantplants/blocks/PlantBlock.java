@@ -6,13 +6,11 @@ import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Waterlogged;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -278,7 +276,7 @@ public class PlantBlock {
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
-        duration = TimeHelper.secondsToTicks(plant.generateGrowthTime(stageIndex));
+        duration = plant.generateGrowthTime(stageIndex);
         // set grows to true
         grows = true;
         startTask(main);
@@ -366,7 +364,7 @@ public class PlantBlock {
             // set new growth start time
             taskStartTime = System.currentTimeMillis();
             // set new growth duration
-            duration = TimeHelper.secondsToTicks(plant.generateGrowthTime(stageIndex));
+            duration = plant.generateGrowthTime(stageIndex);
             // queue up new task
             growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
             main.getLogger().info("Growth Task queued up for "+ toString()
