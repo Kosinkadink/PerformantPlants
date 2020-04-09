@@ -9,9 +9,9 @@ group 'me.kosinkadink'
 version '0.1.0'
 
 repositories {
-    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots' }
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots' }
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
-    maven { url 'https://jitpack.io' }
+    maven { url = 'https://jitpack.io' }
     mavenCentral()
     mavenLocal()
 }
