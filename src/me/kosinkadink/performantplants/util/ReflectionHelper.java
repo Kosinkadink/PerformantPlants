@@ -6,6 +6,8 @@ import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -22,20 +24,43 @@ public class ReflectionHelper {
     static {
         String version = getVersion();
         try {
+            // classes
+            classMap.put("CraftMetaSkull", Class.forName(String.format("org.bukkit.craftbukkit.%s.inventory.CraftMetaSkull", version)));
             classMap.put("CraftWorld", Class.forName(String.format("org.bukkit.craftbukkit.%s.CraftWorld", version)));
             classMap.put("WorldServer", Class.forName(String.format("net.minecraft.server.%s.WorldServer", version)));
             classMap.put("BlockPosition", Class.forName(String.format("net.minecraft.server.%s.BlockPosition", version)));
-            // TileEntitySkull for setting skull block properties
             classMap.put("GameProfile", Class.forName("com.mojang.authlib.GameProfile"));
             classMap.put("TileEntitySkull", Class.forName(String.format("net.minecraft.server.%s.TileEntitySkull", version)));
+            // methods
             methodMap.put("CraftWorld.getHandle", classMap.get("CraftWorld").getMethod("getHandle"));
             methodMap.put("TileEntitySkull.setGameProfile", classMap.get("TileEntitySkull").getMethod("setGameProfile", classMap.get("GameProfile")));
+            methodMap.put("CraftMetaSkull.setProfile", classMap.get("CraftMetaSkull").getDeclaredMethod("setProfile", classMap.get("GameProfile")));
             methodMap.put("WorldServer.getTileEntity", classMap.get("WorldServer").getMethod("getTileEntity", classMap.get("BlockPosition")));
-
+            // constructors
             constructorMap.put("BlockPosition", classMap.get("BlockPosition").getConstructor(int.class, int.class, int.class));
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void setSkullTexture(ItemStack itemStack, String encodedUrl) {
+        if (encodedUrl == null || encodedUrl.isEmpty()) {
+            return;
+        }
+        // if not type player head, do nothing
+        if (itemStack.getType() != Material.PLAYER_HEAD) {
+            return;
+        }
+        SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
+        try {
+            Method setProfile = methodMap.get("CraftMetaSkull.setProfile");
+            setProfile.setAccessible(true);
+            setProfile.invoke(skullMeta, createProfile(encodedUrl));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // set item meta of item stack
+        itemStack.setItemMeta(skullMeta);
     }
 
     public static void setSkullTexture(Block block, String encodedUrl) {

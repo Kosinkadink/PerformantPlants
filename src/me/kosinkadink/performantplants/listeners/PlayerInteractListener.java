@@ -61,7 +61,7 @@ public class PlayerInteractListener implements Listener {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
                     // if plant's item not seed (placeable), cancel event
-                    if (!plant.hasSeed() || !ItemHelper.isSimilar(plant.getSeedItem(),itemStack)) {
+                    if (!plant.hasSeed() || !plant.getSeedItem().isSimilar(itemStack)) {
                         event.setCancelled(true);
                         main.getLogger().info("Prevented unplaceable plant block from being placed");
                         return;

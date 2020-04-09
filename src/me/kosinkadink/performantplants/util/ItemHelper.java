@@ -8,24 +8,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class ItemHelper {
 
-    public static boolean isSimilar(ItemStack stack1, ItemStack stack2) {
-        // if same type, keep comparing
-        if (stack1.getType() == stack2.getType()) {
-            // if player heads, compare in a way that won't throw NullPointerException
-            if (stack1.getType() == Material.PLAYER_HEAD) {
-                ItemMeta stack1meta = stack1.getItemMeta();
-                ItemMeta stack2meta = stack2.getItemMeta();
-                if (stack1meta == null || stack2meta == null) {
-                    return false;
-                }
-                return stack1meta.getDisplayName().equals(stack2meta.getDisplayName());
-            }
-            // otherwise use normal isSimilar
-            return stack1.isSimilar(stack2);
-        }
-        return false;
-    }
-
     public static String getDisplayName(ItemStack stack) {
         ItemMeta itemMeta = stack.getItemMeta();
         if (itemMeta != null) {
