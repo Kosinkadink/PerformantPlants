@@ -7,10 +7,15 @@ import me.kosinkadink.performantplants.listeners.ChunkEventListener;
 import me.kosinkadink.performantplants.listeners.PlantBlockEventListener;
 import me.kosinkadink.performantplants.listeners.PlayerInteractListener;
 import me.kosinkadink.performantplants.managers.*;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.ChatColor;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
+
+    private Economy economy;
 
     private PluginManager pluginManager;
     private CommandManager commandManager;
@@ -24,12 +29,30 @@ public class Main extends JavaPlugin {
         registerManagers();
         registerListeners();
         registerCommands();
+        if (setupEconomy()) {
+            registerVaultCommands();
+        } else {
+            getServer().getConsoleSender().sendMessage(String.format("%s[PerformantPlants] Vault not found; buy/sell commands will be disabled",
+                    ChatColor.YELLOW));
+        }
     }
 
     @Override
     public void onDisable() {
         plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
         databaseManager.saveDatabases(); // save all plant blocks
+    }
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        economy = rsp.getProvider();
+        return economy != null;
     }
 
     private void registerManagers() {
@@ -51,6 +74,14 @@ public class Main extends JavaPlugin {
     private void registerCommands() {
         commandManager.registerCommand(new PlantChunksCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
+    }
+
+    private void registerVaultCommands() {
+
+    }
+
+    public Economy getEconomy() {
+        return economy;
     }
 
     public CommandManager getCommandManager() {
