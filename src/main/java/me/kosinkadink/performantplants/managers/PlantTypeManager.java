@@ -1,6 +1,5 @@
 package me.kosinkadink.performantplants.managers;
 
-import com.sun.istack.internal.NotNull;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
@@ -38,7 +37,7 @@ public class PlantTypeManager {
         return null;
     }
 
-    public Plant getPlantPlacedWith(@NotNull ItemStack itemStack) {
+    public Plant getPlantPlacedWith(ItemStack itemStack) {
         ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta == null) {
             return null;

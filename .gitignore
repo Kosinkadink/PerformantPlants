@@ -1,2 +1,14 @@
-.idea/*
-out/*
+# idea
+/.idea/
+/*.ipr
+/*.iws
+/*.iml
+
+# gradle
+/build/
+/.gradle/
+
+# custom
+/serverfiles/
+/testserver/
+
