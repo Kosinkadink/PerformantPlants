@@ -1,9 +1,9 @@
 name: PerformantPlants
 version: 0.1.0
-api-version: 1.15
+api-version: '1.15'
 author: Kosinkadink
 main: me.kosinkadink.performantplants.Main
-softdepend: [Vault]
+softdepend: [Vault,PlaceholderAPI]
 commands:
   plants:
     usage: /<command>

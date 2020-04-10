@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants;
 
 import me.kosinkadink.performantplants.commands.PlantGiveCommand;
 import me.kosinkadink.performantplants.commands.PlantChunksCommand;
+import me.kosinkadink.performantplants.expansions.PerformantPlantExpansion;
 import me.kosinkadink.performantplants.listeners.BlockBreakListener;
 import me.kosinkadink.performantplants.listeners.ChunkEventListener;
 import me.kosinkadink.performantplants.listeners.PlantBlockEventListener;
@@ -34,6 +35,9 @@ public class Main extends JavaPlugin {
         } else {
             getServer().getConsoleSender().sendMessage(String.format("%s[PerformantPlants] Vault not found; buy/sell commands will be disabled",
                     ChatColor.YELLOW));
+        }
+        if (pluginManager.getPlugin("PlaceholderAPI") != null) {
+            new PerformantPlantExpansion(this).register();
         }
     }
 
