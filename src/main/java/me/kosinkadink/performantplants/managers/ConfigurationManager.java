@@ -119,7 +119,6 @@ public class ConfigurationManager {
             }
             // create plant ItemStack and add it to plant type manager
             PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
-            // ItemStack plantItemStack = ItemHelper.fromItemSettings(itemSettings, plantId);
             // set buy/sell prices
             addPricesToPlantItem(plantConfig, plantItem);
             // Plant to be saved
@@ -137,7 +136,6 @@ public class ConfigurationManager {
                     } else {
                         ItemSettings seedItemSettings = loadItemConfig(seedConfig, null,false);
                         if (seedItemSettings != null) {
-                            //ItemStack seedItemStack = ItemHelper.fromItemSettings(seedItemSettings, plantId, true);
                             // set seed buy/sell price
                             PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
                             addPricesToPlantItem(growingConfig, seedItem);

@@ -72,6 +72,7 @@ public class PlantSellCommand extends PPCommand {
         // take proper amount of money
         double totalWorth = requestedItem.getSellPrice()*takenAmount;
         main.getEconomy().depositPlayer(player, totalWorth);
+        // TODO: show message to seller
         if (amount != 0 && takenAmount == 0) {
             commandSender.sendMessage(playerName + " sold 0 of " + plantId + " due to none found in inventory");
         } else {

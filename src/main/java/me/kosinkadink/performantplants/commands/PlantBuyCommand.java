@@ -80,6 +80,7 @@ public class PlantBuyCommand extends PPCommand {
         // take proper amount of money
         totalWorth = requestedItem.getBuyPrice()*givenAmount;
         main.getEconomy().withdrawPlayer(player, totalWorth);
+        // TODO: show message to buyer
         if (amount != 0 && givenAmount == 0) {
             commandSender.sendMessage(playerName + " bought 0 of " + plantId + " due to full inventory");
         } else {

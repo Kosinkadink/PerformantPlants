@@ -1,13 +1,22 @@
 package me.kosinkadink.performantplants.expansions;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.plants.PlantItem;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PerformantPlantExpansion extends PlaceholderExpansion {
 
     private Main main;
+
+    private final Pattern BUYPRICE_PATTERN = Pattern.compile("^buyprice_<(?<plantItemId>[a-zA-Z0-9_.\\-]+)>$");
+    private final Pattern SELLPRICE_PATTERN = Pattern.compile("^sellprice_<(?<plantItemId>[a-zA-Z0-9_.\\-]+)>$");
+    private final Pattern SOLD_PATTERN = Pattern.compile("^sold_<(?<player>[a-zA-Z0-9_]+)>_<(?<plantItemId>[a-zA-Z0-9_.\\-]+)>$");
 
     public PerformantPlantExpansion(Main main) {
         this.main = main;
@@ -52,13 +61,34 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             return "";
         }
 
-        // %performantplants_buyprice_<plantitemid>% -> int
-        // %performantplants_sellprice_<plantitemid>% -> int
-        // %performantplants_hasseed_<plantitemid>% -> boolean
+        // replace any nested placeholders surrounded by brackets -> { }
+        identifier = PlaceholderAPI.setBracketPlaceholders(player, identifier);
 
-        // %performantplants_sold_<player>_<plantitemid>% -> int
+        // %performantplants_buyprice_<plantItemId>% -> double
+        Matcher matcher = BUYPRICE_PATTERN.matcher(identifier);
+        if (matcher.find()) {
+            String plantId = matcher.group("plantItemId");
+            PlantItem plantItem = main.getPlantTypeManager().getPlantItemById(plantId);
+            if (plantItem != null) {
+                return String.format("%f", plantItem.getBuyPrice());
+            }
+            return null;
+        }
+        // %performantplants_sellprice_<plantItemId>% -> double
+        matcher = SELLPRICE_PATTERN.matcher(identifier);
+        if (matcher.find()) {
+            String plantId = matcher.group("plantItemId");
+            PlantItem plantItem = main.getPlantTypeManager().getPlantItemById(plantId);
+            if (plantItem != null) {
+                return String.format("%f", plantItem.getSellPrice());
+            }
+            return null;
+        }
+        // %performantplants_hasseed_<plantItemId>% -> boolean
 
-        // %performantplants_planted_<player>_<plantid>% -> int
+        // %performantplants_sold_<player>_<plantItemId>% -> int
+
+        // %performantplants_planted_<player>_<plantItemId>% -> int
 
 
         // return null if invalid placeholder provided
