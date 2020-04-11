@@ -52,9 +52,13 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             return "";
         }
 
-        // %performantplants_sold_<player>_<plantitemid>%
+        // %performantplants_buyprice_<plantitemid>% -> int
+        // %performantplants_sellprice_<plantitemid>% -> int
+        // %performantplants_hasseed_<plantitemid>% -> boolean
 
-        // %performantplants_planted_<player>_<plantid>%
+        // %performantplants_sold_<player>_<plantitemid>% -> int
+
+        // %performantplants_planted_<player>_<plantid>% -> int
 
 
         // return null if invalid placeholder provided

@@ -12,8 +12,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Plant {
 
     private String id;
-    private ItemStack plantItem;
-    private ItemStack plantSeedItem;
+    private PlantItem plantItem;
+    private PlantItem plantSeedItem;
     private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
     private boolean waterRequired = false;
@@ -24,48 +24,36 @@ public class Plant {
     private long maxGrowthTime = -1;
 
 
-    public Plant(String id, ItemStack itemStack) {
+    public Plant(String id, PlantItem plantItem) {
         this.id = id;
-        plantItem = itemStack;
-    }
-
-    public Plant(String id, ItemStack itemstack, ItemStack seedItemStack) {
-        this(id, itemstack);
-        plantSeedItem = seedItemStack;
-    }
-
-    public String getDisplayName() {
-        if (plantItem != null) {
-            return ItemHelper.getDisplayName(plantItem);
-        }
-        return null;
-    }
-
-    public String getSeedDisplayName() {
-        if (plantSeedItem != null) {
-            return ItemHelper.getDisplayName(plantSeedItem);
-        }
-        return null;
+        this.plantItem = plantItem;
     }
 
     public String getId() {
         return id;
     }
 
-    public ItemStack getItem() {
+    public PlantItem getItem() {
         return plantItem;
     }
 
-    public ItemStack getSeedItem() {
+    public ItemStack getItemStack() {
+        return plantItem.getItemStack();
+    }
+
+    public PlantItem getSeedItem() {
         return plantSeedItem;
     }
 
-    public void setSeedItem(ItemStack seedItem) {
-        plantSeedItem = seedItem;
+    public ItemStack getSeedItemStack() {
+        if (plantSeedItem != null) {
+            return plantSeedItem.getItemStack();
+        }
+        return null;
     }
 
-    public ItemStack getClonedItem() {
-        return plantItem.clone();
+    public void setSeedItem(PlantItem seedItem) {
+        plantSeedItem = seedItem;
     }
 
     //region Growth Stage Actions

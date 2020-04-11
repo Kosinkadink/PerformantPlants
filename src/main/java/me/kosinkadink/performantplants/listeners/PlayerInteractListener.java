@@ -43,7 +43,7 @@ public class PlayerInteractListener implements Listener {
                 block != null &&
                 MetadataHelper.hasPlantBlockMetadata(block)) {
             // TODO: handle interacting with plants
-            Plant plant = main.getPlantTypeManager().getPlantPlacedWith(itemStack);
+            Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
             if (plant != null) {
                 event.setCancelled(true);
                 main.getLogger().info("Prevented plant block from being placed when right clicking plant block");
@@ -56,12 +56,12 @@ public class PlayerInteractListener implements Listener {
         // check if trying to place down plant
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                 itemStack.getType() != Material.AIR) {
-            Plant plant = main.getPlantTypeManager().getPlantPlacedWith(itemStack);
+            Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
             if (plant != null) {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
                     // if plant's item not seed (placeable), cancel event
-                    if (!plant.hasSeed() || !plant.getSeedItem().isSimilar(itemStack)) {
+                    if (!plant.hasSeed() || !plant.getSeedItemStack().isSimilar(itemStack)) {
                         event.setCancelled(true);
                         main.getLogger().info("Prevented unplaceable plant block from being placed");
                         return;

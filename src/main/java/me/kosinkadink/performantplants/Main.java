@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants;
 
-import me.kosinkadink.performantplants.commands.PlantGiveCommand;
-import me.kosinkadink.performantplants.commands.PlantChunksCommand;
+import me.kosinkadink.performantplants.commands.*;
 import me.kosinkadink.performantplants.expansions.PerformantPlantExpansion;
 import me.kosinkadink.performantplants.listeners.BlockBreakListener;
 import me.kosinkadink.performantplants.listeners.ChunkEventListener;
@@ -78,10 +77,12 @@ public class Main extends JavaPlugin {
     private void registerCommands() {
         commandManager.registerCommand(new PlantChunksCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
+        commandManager.registerCommand(new PlantInfoCommand(this));
     }
 
     private void registerVaultCommands() {
-
+        commandManager.registerCommand(new PlantBuyCommand(this));
+        commandManager.registerCommand(new PlantSellCommand(this));
     }
 
     public Economy getEconomy() {

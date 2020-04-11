@@ -8,70 +8,79 @@ import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantTypeManager {
 
     private Main main;
-    private ArrayList<Plant> plantTypes = new ArrayList<>();
+    private ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
 
     public PlantTypeManager(Main mainClass) {
         main = mainClass;
     }
 
     void addPlantType(Plant plantType) {
-        plantTypes.add(plantType);
+        plantTypeMap.put(plantType.getId(), plantType);
     }
 
-    public Plant getPlantByDisplayName(String displayName) {
-        for (Plant plantType : plantTypes) {
-            if (plantType.getDisplayName().equalsIgnoreCase(displayName)) {
-                return plantType;
+    public Plant getPlantByItemStack(ItemStack itemStack) {
+        for (Plant plant : plantTypeMap.values()) {
+            if (plant.getItemStack().isSimilar(itemStack)) {
+                return plant;
+            }
+            if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
+                return plant;
             }
         }
         return null;
-    }
-
-    public Plant getPlantPlacedWith(ItemStack itemStack) {
-        ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta == null) {
-            return null;
-        }
-        String displayName = itemMeta.getDisplayName();
-        for (Plant plantType : plantTypes) {
-            //if (plantType.isPlaceable()) {
-            if (plantType.getDisplayName().equalsIgnoreCase(displayName)) {
-                return plantType;
-            }
-            //}
-            if (plantType.hasSeed()) {
-                if (plantType.getSeedDisplayName().equalsIgnoreCase(displayName)) {
-                    return plantType;
-                }
-            }
-        }
-        return null;
-    }
-
-    public Plant getPlant(ItemStack itemStack) {
-        return getPlantByDisplayName(Objects.requireNonNull(itemStack.getItemMeta()).getDisplayName());
     }
 
     public Plant getPlantById(String id) {
-        for (Plant plantType : plantTypes) {
-            if (plantType.getId().equalsIgnoreCase(id)) {
-                return plantType;
-            }
+        return plantTypeMap.get(id);
+    }
+
+    public PlantItem getPlantItemById(String itemId) {
+        // see if id contains special type
+        String[] plantInfo = itemId.split("\\.", 2);
+        String plantId = plantInfo[0];
+        String subtype = "";
+        if (plantInfo.length > 1) {
+            subtype = plantInfo[1];
+        }
+        // if subtype empty
+        boolean isSeed = false;
+        if (subtype.equals("seed")) {
+            isSeed = true;
+        } else if (!subtype.isEmpty()) {
+            return null;
+        }
+        // get plant by id, if exists
+        Plant plant = getPlantById(plantId);
+        if (plant == null) {
+            return null;
+        }
+        // if is seed, return seed item
+        if (isSeed) {
+            return plant.getSeedItem();
+        }
+        // else return main plant item
+        return plant.getItem();
+    }
+
+    public ItemStack getPlantItemStackById(String itemId) {
+        PlantItem plantItem = getPlantItemById(itemId);
+        if (plantItem != null) {
+            return plantItem.getItemStack();
         }
         return null;
     }
 
-    public ArrayList<Plant> getPlantTypes() {
-        return plantTypes;
-    }
+
 }

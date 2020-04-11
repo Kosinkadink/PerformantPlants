@@ -9,6 +9,7 @@ import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.settings.BlockSettings;
 import me.kosinkadink.performantplants.settings.ConfigSettings;
 import me.kosinkadink.performantplants.settings.DropSettings;
@@ -105,7 +106,6 @@ public class ConfigurationManager {
             YamlConfiguration plantConfig = entry.getValue();
             // get item info; if section not present, log error and return
             ItemSettings itemSettings;
-            ItemStack plantItemStack;
             ConfigurationSection itemConfig = plantConfig.getConfigurationSection("item");
             if (itemConfig != null) {
                 itemSettings = loadItemConfig(itemConfig, null,false);
@@ -118,14 +118,14 @@ public class ConfigurationManager {
                 return;
             }
             // create plant ItemStack and add it to plant type manager
-            plantItemStack = ItemHelper.fromItemSettings(itemSettings, plantId);
+            PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
+            // ItemStack plantItemStack = ItemHelper.fromItemSettings(itemSettings, plantId);
+            // set buy/sell prices
+            addPricesToPlantItem(plantConfig, plantItem);
             // Plant to be saved
-            Plant plant = null;
+            Plant plant = new Plant(plantId, plantItem);
             // if growing section is present, get seed item + stages
             ConfigurationSection growingConfig = plantConfig.getConfigurationSection("growing");
-            if (growingConfig == null) {
-                plant = new Plant(plantId, plantItemStack);
-            }
             if (growingConfig != null) {
                 ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
                 if (seedConfig != null) {
@@ -133,12 +133,15 @@ public class ConfigurationManager {
                     boolean usePlantAsSeed = seedConfig.isSet("use-plant-as-seed")
                             && seedConfig.getBoolean("use-plant-as-seed");
                     if (usePlantAsSeed) {
-                        plant = new Plant(plantId, plantItemStack, plantItemStack);
+                        plant.setSeedItem(plantItem);
                     } else {
                         ItemSettings seedItemSettings = loadItemConfig(seedConfig, null,false);
                         if (seedItemSettings != null) {
-                            ItemStack seedItemStack = ItemHelper.fromItemSettings(seedItemSettings, plantId, true);
-                            plant = new Plant(plantId, plantItemStack, seedItemStack);
+                            //ItemStack seedItemStack = ItemHelper.fromItemSettings(seedItemSettings, plantId, true);
+                            // set seed buy/sell price
+                            PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
+                            addPricesToPlantItem(growingConfig, seedItem);
+                            plant.setSeedItem(seedItem);
                         } else {
                             main.getLogger().info("seedItemSettings were null for plant: " + plantId);
                             return;
@@ -293,14 +296,8 @@ public class ConfigurationManager {
                 else {
                     main.getLogger().info("seedConfig was null for plant: " + plantId);
                 }
-            } else {
-                main.getLogger().info("growingConfig was null for plant: " + plantId);
             }
             // add plant to plant type manager
-            if (plant == null) {
-                main.getLogger().info("Plant was null");
-                return;
-            }
             main.getPlantTypeManager().addPlantType(plant);
         }
     }
@@ -358,9 +355,9 @@ public class ConfigurationManager {
                     } else {
                         ItemStack linkedItem;
                         if (itemString.equalsIgnoreCase("item")) {
-                            linkedItem = plant.getItem();
+                            linkedItem = plant.getItemStack();
                         } else if (itemString.equalsIgnoreCase("seed")) {
-                            linkedItem = plant.getSeedItem();
+                            linkedItem = plant.getSeedItemStack();
                         } else {
                             main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
                             return null;
@@ -528,6 +525,26 @@ public class ConfigurationManager {
             droppable.addDrop(drop);
         }
         return true;
+    }
+
+    void addPricesToPlantItem(ConfigurationSection section, PlantItem plantItem) {
+        if (section == null) {
+            return;
+        }
+        // get buy price, if present
+        if (section.isDouble("buy-price") || section.isInt("buy-price")) {
+            double price = section.getDouble("buy-price");
+            if (price >= 0.0) {
+                plantItem.setBuyPrice(price);
+            }
+        }
+        // get sell price, if present
+        if (section.isDouble("sell-price") || section.isInt("sell-price")) {
+            double price = section.getDouble("sell-price");
+            if (price >= 0.0) {
+                plantItem.setSellPrice(price);
+            }
+        }
     }
 
     String getFileNameWithoutExtension(File file) {
