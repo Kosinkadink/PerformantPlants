@@ -161,7 +161,6 @@ public class ConfigurationManager {
                         if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
                             ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
                             for (String blockName : requiredBlocks.getKeys(false)) {
-                                main.getLogger().info(blockName);
                                 BlockSettings blockSettings = loadBlockConfig(requiredBlocks.getConfigurationSection(blockName));
                                 if (blockSettings == null) {
                                     main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
@@ -184,7 +183,6 @@ public class ConfigurationManager {
                         } else {
                             ConfigurationSection stagesConfig = growingConfig.getConfigurationSection("stages");
                             for (String stageName : stagesConfig.getKeys(false)) {
-                                main.getLogger().info(stageName);
                                 ConfigurationSection stageConfig = stagesConfig.getConfigurationSection(stageName);
                                 if (stageConfig == null) {
                                     main.getLogger().warning("Could not load stageConfig for plant: " + plantId);

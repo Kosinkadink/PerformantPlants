@@ -2,24 +2,24 @@ package me.kosinkadink.performantplants.statistics;
 
 import java.util.UUID;
 
-public class PlantItemsSold {
+public class StatisticsAmount {
 
     private UUID playerUUID;
-    private String plantItemId;
+    private String id;
     private int amount;
 
-    public PlantItemsSold(UUID playerUUID, String plantItemId, int amount) {
+    public StatisticsAmount(UUID playerUUID, String id, int amount) {
         this.playerUUID = playerUUID;
-        this.plantItemId = plantItemId;
+        this.id = id;
         setAmount(amount);
     }
 
-    public PlantItemsSold(UUID playerUUID, String plantItemId) {
-        this(playerUUID, plantItemId, 0);
+    public StatisticsAmount(UUID playerUUID, String id) {
+        this(playerUUID, id, 0);
     }
 
-    public String getPlantItemId() {
-        return plantItemId;
+    public String getId() {
+        return id;
     }
 
     public UUID getPlayerUUID() {

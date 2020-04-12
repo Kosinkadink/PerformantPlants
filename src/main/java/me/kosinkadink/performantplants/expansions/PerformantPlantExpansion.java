@@ -5,9 +5,8 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
-import me.kosinkadink.performantplants.statistics.PlantItemsSold;
+import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -115,7 +114,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
         if (matcher.find()) {
             String playerUUID = matcher.group("playerUUID");
             String plantId = matcher.group("plantItemId");
-            PlantItemsSold plantItemsSold = main.getStatisticsManager()
+            StatisticsAmount plantItemsSold = main.getStatisticsManager()
                     .getPlantItemsSold(UUID.fromString(playerUUID), plantId);
             int amount = 0;
             if (plantItemsSold != null) {
@@ -124,25 +123,8 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             return String.format("%d", amount);
         }
 
-
-        // %performantplants_planted_<player>_<plantItemId>% -> int
-
-
         // return null if invalid placeholder provided
         return null;
     }
-
-//    @Override
-//    public String onPlaceholderRequest(Player player, String identifier) {
-//        if (player == null) {
-//            return "";
-//        }
-//
-//        // %performantplants_sold_<plantitemid>%
-//
-//
-//        // return null if invalid placeholder provided
-//        return null;
-//    }
 
 }
