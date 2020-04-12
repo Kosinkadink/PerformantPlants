@@ -23,6 +23,7 @@ public class Main extends JavaPlugin {
     private PlantTypeManager plantTypeManager;
     private DatabaseManager databaseManager;
     private ConfigurationManager configManager;
+    private StatisticsManager statisticsManager;
 
     @Override
     public void onEnable() {
@@ -64,6 +65,7 @@ public class Main extends JavaPlugin {
         plantManager = new PlantManager(this);
         plantTypeManager = new PlantTypeManager(this);
         configManager = new ConfigurationManager(this);
+        statisticsManager = new StatisticsManager(this);
         databaseManager = new DatabaseManager(this);
     }
 
@@ -107,6 +109,10 @@ public class Main extends JavaPlugin {
 
     public ConfigurationManager getConfigManager() {
         return configManager;
+    }
+
+    public StatisticsManager getStatisticsManager() {
+        return statisticsManager;
     }
 
 }

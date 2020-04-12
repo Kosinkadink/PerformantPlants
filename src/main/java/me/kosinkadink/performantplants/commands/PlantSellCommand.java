@@ -78,6 +78,8 @@ public class PlantSellCommand extends PPCommand {
         } else {
             commandSender.sendMessage(String.format("%s sold %d of %s for price of %.2f",
                     playerName, takenAmount, plantId, totalWorth));
+            // add sale to StatisticsManager
+            main.getStatisticsManager().addPlantItemsSold(player.getUniqueId(), plantId, takenAmount);
         }
     }
 }

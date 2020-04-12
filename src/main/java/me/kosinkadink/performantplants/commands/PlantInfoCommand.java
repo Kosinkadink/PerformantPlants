@@ -40,11 +40,6 @@ public class PlantInfoCommand extends PPCommand {
             plantInfo += String.format("\n  Buy Price: %.2f", plant.getSeedItem().getBuyPrice());
             plantInfo += String.format("\n  Sell Price: %.2f", plant.getSeedItem().getSellPrice());
         }
-        // TODO: delete this once done testing placeholder behavior
-        String withoutPlaceholdersSet = "%" + String.format("performantplants_buyprice_<%s>", plantId) + "%";
-        String withPlaceholdersSet = PlaceholderAPI.setPlaceholders((Player)commandSender, withoutPlaceholdersSet);
-        commandSender.sendMessage(withPlaceholdersSet);
-        commandSender.sendMessage(PlaceholderAPI.setPlaceholders((Player)commandSender, "%" + String.format("performantplants_sellprice_<%s>", plantId) + "%"));
         // send plant info
         commandSender.sendMessage(plantInfo);
     }
