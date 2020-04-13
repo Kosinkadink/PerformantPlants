@@ -80,6 +80,10 @@ public class Main extends JavaPlugin {
         commandManager.registerCommand(new PlantChunksCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
         commandManager.registerCommand(new PlantInfoCommand(this));
+        // Plant Stat Commands
+        commandManager.registerCommand(new PlantStatsResetCommand(this));
+        commandManager.registerCommand(new PlantStatsResetPlayerCommand(this));
+        commandManager.registerCommand(new PlantStatsResetAllPlayersCommand(this));
     }
 
     private void registerVaultCommands() {

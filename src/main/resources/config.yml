@@ -1,1 +1,2 @@
-debug: True
+debug: False
+save-delay-minutes: 10

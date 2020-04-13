@@ -5,7 +5,9 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.storage.PlantChunkStorage;
+import me.kosinkadink.performantplants.storage.StatisticsAmountStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -23,15 +25,14 @@ public class DatabaseManager {
     private Main main;
     private String storageDir = "storage/";
     private HashMap<String, File> databaseFiles = new HashMap<>();
+    private File statisticsDatabaseFile;
     private BukkitTask saveTask;
 
     public DatabaseManager(Main mainClass) {
         main = mainClass;
         loadDatabases();
         // start up async background task to autosave blocks in db without the need to stop server
-        saveTask = main.getServer().getScheduler().runTaskTimerAsynchronously(main, this::saveDatabases,
-                TimeHelper.secondsToTicks(60),
-                TimeHelper.secondsToTicks(60));
+        startTask();
     }
 
     //region Load Data
@@ -53,6 +54,12 @@ public class DatabaseManager {
             }
         }
         main.getLogger().info("Loaded plant databases");
+        // load statistics db; also created db file if doesn't already exist
+        File file = new File(main.getDataFolder(), storageDir + "statistics");
+        boolean loaded = loadStatisticsDatabase(file);
+        if (loaded) {
+            statisticsDatabaseFile = file;
+        }
     }
 
     boolean loadDatabase(File file, String worldName) {
@@ -84,6 +91,24 @@ public class DatabaseManager {
         return true;
     }
 
+    boolean loadStatisticsDatabase(File file) {
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        String url = getUrlFromFile(file);
+        // Load plantsSold statistics from plantsSold
+        boolean success = addPlantsSoldFromDatabase(conn, url);
+        if (!success) {
+            return false;
+        }
+        // all done now
+        main.getLogger().info("Successfully loaded statistics db at url: " + url);
+        return true;
+    }
+
     //endregion
 
     //region Save Data
@@ -94,6 +119,10 @@ public class DatabaseManager {
             saveDatabase(entry.getValue(), entry.getKey());
         }
         main.getLogger().info("Saved plants into databases");
+        // save statistics db
+        if (statisticsDatabaseFile != null) {
+            saveStatisticsDatabase(statisticsDatabaseFile);
+        }
     }
 
     boolean saveDatabase(File file, String worldName) {
@@ -108,7 +137,6 @@ public class DatabaseManager {
             // could not connect to db
             return false;
         }
-        String url = getUrlFromFile(file);
         // Create tables if don't already exist
         createTablePlantBlocks(conn);
         createTableParents(conn);
@@ -159,10 +187,61 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         main.getLogger().info("Done updating blocks in db for world: " + worldName);
+        return true;
+    }
 
+    boolean saveStatisticsDatabase(File file) {
+        // Create dirs if file does not exist
+        if (!file.exists()) {
+            // if doesn't exist, make sure directories are created
+            file.getParentFile().mkdirs();
+        }
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        // Create tables if don't already exist
+        createTablePlantsSold(conn);
+        // remove any plantsSold set for removal
+        main.getLogger().info("Removing plantsSold from db for world...");
+        ArrayList<StatisticsAmount> plantsSoldToRemoveCache = new ArrayList<>();
+        for (StatisticsAmount plantsSold : new ArrayList<>(main.getStatisticsManager().getStatisticsAmountsToDelete())) {
+            boolean success = removeStatisticsAmountFromTablePlantsSold(conn, plantsSold);
+            // if deleted from db, remove from StatisticsManager
+            if (success) {
+                plantsSoldToRemoveCache.add(plantsSold);
+            }
+        }
+        // remove cached removal blocks from being removed next time
+        for (StatisticsAmount plantsSold : plantsSoldToRemoveCache) {
+            main.getStatisticsManager().removeStatisticsAmountFromRemoval(plantsSold);
+        }
+        main.getLogger().info("Done removing plantsSold from db");
+        // add/update all plantsSold entries
+        main.getLogger().info("Updating plantsSold in db...");
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (StatisticsAmountStorage storage : main.getStatisticsManager().getPlantItemsSoldStorageMap().values()) {
+            for (StatisticsAmount statisticsAmount : storage.getStatisticsAmountMap().values()) {
+                insertStatisticsAmountIntoTablePlantsSold(conn, statisticsAmount);
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        main.getLogger().info("Done updating plantsSold in db");
         return true;
     }
 
@@ -392,6 +471,68 @@ public class DatabaseManager {
 
     //endregion
 
+    //region PlantsSold Table
+
+    boolean createTablePlantsSold(Connection conn) {
+        // Create table if doesn't already exist
+        String sql = "CREATE TABLE IF NOT EXISTS plantsSold (\n"
+                + "    playerUUID TEXT,\n"
+                + "    plantItemId TEXT,\n"
+                + "    amount INTEGER,\n"
+                + "    PRIMARY KEY (playerUUID, plantItemId)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            main.getLogger().severe(
+                    "Exception occurred creating table 'plantsSold'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertStatisticsAmountIntoTablePlantsSold(Connection conn, StatisticsAmount sold) {
+        String sql = "REPLACE INTO plantsSold(playerUUID, plantItemId, amount)\n"
+                + "VALUES(?,?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(   1,sold.getPlayerUUID().toString());
+            pstmt.setString(   2,sold.getId());
+            pstmt.setInt(   3,sold.getAmount());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + sold.toString() + "; " + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    boolean removeStatisticsAmountFromTablePlantsSold(Connection conn, StatisticsAmount sold) {
+        String sql = "DELETE FROM plantsSold\n"
+                + "    WHERE playerUUID = ?"
+                + "    AND plantItemId = ?;";
+        main.getLogger().info(String.format("Removing from plantsSold where playerUUID = %s and plantItemId = %s", sold.getPlayerUUID().toString(), sold.getId()));
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1,sold.getPlayerUUID().toString());
+            pstmt.setString(2,sold.getId());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning(
+                    "Could not remove StatisticsAmount from plantsSold: " + sold.getPlayerUUID().toString() + ","
+                            + sold.getId() + "; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    //endregion
+
     //region Add Plant Blocks
 
     boolean addPlantBlocksFromDatabase(Connection conn, String worldName, String url) {
@@ -553,6 +694,44 @@ public class DatabaseManager {
 
     //endregion
 
+    //region Add PlantsSold
+
+    boolean addPlantsSoldFromDatabase(Connection conn, String url) {
+        // Create table if doesn't already exist
+        createTablePlantsSold(conn);
+        // Get and load all StatisticsAmounts stored in db
+        String sql = "SELECT playerUUID, plantItemId, amount FROM plantsSold;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                // create parent from database row
+                addPlantsSoldFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred loading plantsSold from url: " + url + "; " + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    void addPlantsSoldFromResultSet(ResultSet rs) {
+        try {
+            // create StatisticsAmount from dbEntry
+            StatisticsAmount statisticsAmount = new StatisticsAmount(
+                    UUID.fromString(rs.getString("playerUUID")),
+                    rs.getString("plantItemId"),
+                    rs.getInt("amount")
+            );
+            // add to StatisticsManager
+            main.getStatisticsManager().addPlantItemsSold(statisticsAmount);
+        } catch (SQLException e) {
+            main.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
+        }
+    }
+
+    //endregion
+
     Connection connect(File file) {
         String url = getUrlFromFile(file);
         Connection conn = null;
@@ -566,6 +745,12 @@ public class DatabaseManager {
 
     String getUrlFromFile(File file) {
         return "jdbc:sqlite:" + file.getAbsolutePath();
+    }
+
+    public void startTask() {
+        saveTask = main.getServer().getScheduler().runTaskTimerAsynchronously(main, this::saveDatabases,
+                TimeHelper.minutesToTicks(main.getConfigManager().getConfigSettings().getSaveDelayMinutes()),
+                TimeHelper.minutesToTicks(main.getConfigManager().getConfigSettings().getSaveDelayMinutes()));
     }
 
     public void cancelTask() {

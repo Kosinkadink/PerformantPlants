@@ -41,6 +41,10 @@ public class ConfigurationManager {
         loadPlantConfigs();
     }
 
+    public ConfigSettings getConfigSettings() {
+        return configSettings;
+    }
+
     void loadMainConfig() {
         // create file if doesn't exist
         if (!configFile.exists()) {
@@ -53,8 +57,16 @@ public class ConfigurationManager {
             e.printStackTrace();
         }
         // get parameters from config.yml
-        if (config.isSet("debug")) {
+        // get if debug
+        if (config.isBoolean("debug")) {
             configSettings.setDebug(config.getBoolean("debug"));
+        }
+        // get database save delay time
+        if (config.isInt("save-delay-minutes")) {
+            int saveDelayMinutes = config.getInt("save-delay-minutes");
+            if (saveDelayMinutes > 0) {
+                configSettings.setSaveDelayMinutes(saveDelayMinutes);
+            }
         }
     }
 
