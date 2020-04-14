@@ -21,9 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.*;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -313,7 +311,7 @@ public class ConfigurationManager {
                 ConfigurationSection craftingSection = plantConfig.getConfigurationSection("crafting-recipes");
                 for (String recipeName : craftingSection.getKeys(false)) {
                     ConfigurationSection recipeSection = craftingSection.getConfigurationSection(recipeName);
-                    addCraftingRecipe(recipeSection, recipeName);
+                    addCraftingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
                 }
             }
             // load furnace recipes; failure here shouldn't abort plant loading
@@ -321,7 +319,7 @@ public class ConfigurationManager {
                 ConfigurationSection furnaceSection = plantConfig.getConfigurationSection("furnace-recipes");
                 for (String recipeName : furnaceSection.getKeys(false)) {
                     ConfigurationSection recipeSection = furnaceSection.getConfigurationSection(recipeName);
-                    addFurnaceRecipe(recipeSection, recipeName);
+                    addFurnaceRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
                 }
             }
             // add plant to plant type manager
@@ -585,9 +583,66 @@ public class ConfigurationManager {
             main.getLogger().warning("Type not set for crafting recipe at: " + section.getCurrentPath());
             return;
         }
-        // TODO: get shaped recipe
+        // get shaped recipe
         if (type.equalsIgnoreCase("shaped")) {
+            // get result
+            if (!section.isConfigurationSection("result")) {
+                main.getLogger().warning("No result section for shapeless crafting recipe at " + section.getCurrentPath());
+                return;
+            }
+            ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+            // if no item settings, return (something went wrong or linked item did not exist)
+            if (resultSettings == null) {
+                return;
+            }
+            try {
+                // initialize recipe - get result
+                ItemStack resultStack = resultSettings.generateItemStack();
+                ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(main, "shaped_" + recipeName), resultStack);
+                // get shape
+                if (!section.isList("shape")) {
+                    main.getLogger().warning("No shape section (must be list) for shaped crafting recipe at " + section.getCurrentPath());
+                    return;
+                }
 
+                String[] shape = section.getStringList("shape").toArray(new String[0]);
+                for (String shapeRow : shape) {
+                    main.getLogger().info(String.format("%d - %s", shapeRow.length(), shapeRow));
+                }
+                recipe.shape(shape);
+                // get ingredients to understand shape
+                if (!section.isConfigurationSection("ingredients")) {
+                    main.getLogger().warning("No ingredients section for shaped crafting recipe at " + section.getCurrentPath());
+                    return;
+                }
+                ConfigurationSection ingredientsSection = section.getConfigurationSection("ingredients");
+                for (String ingredientString : ingredientsSection.getKeys(false)) {
+                    // check that ingredientString was only a single char
+                    if (ingredientString.length() != 1) {
+                        main.getLogger().warning(String.format("Ingredient designation must be a single character; was %s instead at %s", ingredientString, section.getCurrentPath()));
+                        return;
+                    }
+                    // get char
+                    char ingredientChar = ingredientString.charAt(0);
+                    // get ingredient item
+                    ConfigurationSection ingredientSection = ingredientsSection.getConfigurationSection(ingredientString);
+                    ItemSettings itemSettings = loadItemConfig(ingredientSection, true);
+                    if (itemSettings == null) {
+                        return;
+                    }
+                    // add ingredient to recipe
+                    ItemStack ingredientStack = itemSettings.generateItemStack();
+                    recipe.setIngredient(ingredientChar, new RecipeChoice.ExactChoice(ingredientStack));
+                }
+                // otherwise add recipe to server
+                main.getServer().addRecipe(recipe);
+                // add recipe to recipe manager
+                main.getRecipeManager().addRecipe(recipe);
+                main.getLogger().info("Registered shaped crafting recipe: " + recipeName);
+            } catch (Exception e) {
+                main.getLogger().warning(String.format("Failed to add shaped crafting recipe at %s due to exception: %s",
+                        section.getCurrentPath(), e.getMessage()));
+            }
         }
         // get shapeless recipe
         else if (type.equalsIgnoreCase("shapeless")) {
@@ -602,7 +657,7 @@ public class ConfigurationManager {
                 return;
             }
             try {
-                // initialize recipe
+                // initialize recipe - get result
                 ItemStack resultStack = resultSettings.generateItemStack();
                 ShapelessRecipe recipe = new ShapelessRecipe(new NamespacedKey(main, "shapeless_" + recipeName), resultStack);
                 // get ingredients
@@ -630,12 +685,11 @@ public class ConfigurationManager {
                 main.getServer().addRecipe(recipe);
                 // add recipe to recipe manager
                 main.getRecipeManager().addRecipe(recipe);
+                main.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
             } catch (Exception e) {
                 main.getLogger().warning(String.format("Failed to add shapeless crafting recipe at %s due to exception: %s",
                         section.getCurrentPath(), e.getMessage()));
-                return;
             }
-            main.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
         } else {
             main.getLogger().warning(String.format("Type '%s' not a recognized crafting recipe at %s",
                     type, section.getCurrentPath()));
@@ -643,7 +697,55 @@ public class ConfigurationManager {
     }
 
     void addFurnaceRecipe(ConfigurationSection section, String recipeName) {
-        // TODO: get furnace recipe
+        // get result
+        if (!section.isConfigurationSection("result")) {
+            main.getLogger().warning("No result section for furnace recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (resultSettings == null) {
+            return;
+        }
+        // get input
+        if (!section.isConfigurationSection("result")) {
+            main.getLogger().warning("No result section for furnace recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings inputSettings = loadItemConfig(section.getConfigurationSection("input"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (inputSettings == null) {
+            return;
+        }
+        // get experience
+        float experience = 0;
+        if (section.isDouble("experience") || section.isInt("experience")) {
+            experience = (float) section.getDouble("experience");
+        }
+        int cookingTime = 200;
+        // get cooking time
+        if (section.isInt("cooking-time")) {
+            cookingTime = section.getInt("cooking-time");
+        }
+        // create item stacks
+        ItemStack resultStack = resultSettings.generateItemStack();
+        ItemStack inputStack = inputSettings.generateItemStack();
+        try {
+            // create furnace recipe
+            FurnaceRecipe recipe = new FurnaceRecipe(new NamespacedKey(main, "furnace_" + recipeName),
+                    resultStack,
+                    new RecipeChoice.ExactChoice(inputStack),
+                    experience,
+                    cookingTime);
+            // add recipe to server
+            main.getServer().addRecipe(recipe);
+            // add recipe to recipe manager
+            main.getRecipeManager().addRecipe(recipe);
+            main.getLogger().info("Registered furnace recipe: " + recipeName);
+        } catch (Exception e) {
+            main.getLogger().warning(String.format("Failed to add furnace recipe at %s due to exception: %s",
+                    section.getCurrentPath(), e.getMessage()));
+        }
     }
 
     String getFileNameWithoutExtension(File file) {

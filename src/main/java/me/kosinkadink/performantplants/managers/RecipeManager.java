@@ -16,10 +16,6 @@ public class RecipeManager {
 
     public RecipeManager(Main main) {
         this.main = main;
-        // TODO: remove when done testing
-//        addShapedRecipe();
-//        addShapelessRecipe();
-//        addFurnaceRecipe();
     }
 
     public boolean isRecipe(Recipe recipe) {
@@ -61,42 +57,5 @@ public class RecipeManager {
             furnaceRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
         }
     }
-
-//     TODO: remove this after testing
-//    public void addShapedRecipe() {
-//        ItemStack result = main.getPlantTypeManager().getPlantItemStackById("weed");
-//        result.setAmount(3);
-//        ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(main,"test_recipe1"), result);
-//        recipe.shape("XX", "XX");
-//        ItemStack ingredient1 = main.getPlantTypeManager().getPlantItemStackById("test");
-//        recipe.setIngredient('X', new RecipeChoice.ExactChoice(ingredient1));
-//        main.getServer().addRecipe(recipe);
-//        addRecipe(recipe);
-//        main.getLogger().info("Added shaped recipe");
-//    }
-//
-//    public void addShapelessRecipe() {
-//        ItemStack result = main.getPlantTypeManager().getPlantItemStackById("cocaine");
-//        result.setAmount(4);
-//        ShapelessRecipe recipe = new ShapelessRecipe(new NamespacedKey(main, "test_shapeless1"), result);
-//        ItemStack ingredient1 = main.getPlantTypeManager().getPlantItemStackById("cocaine.seed");
-//        recipe.addIngredient(new RecipeChoice.ExactChoice(ingredient1));
-//        recipe.addIngredient(new RecipeChoice.ExactChoice(ingredient1));
-//        main.getServer().addRecipe(recipe);
-//        addRecipe(recipe);
-//        main.getLogger().info("Added shapeless recipe");
-//    }
-//
-//    public void addFurnaceRecipe() {
-//        ItemStack input = main.getPlantTypeManager().getPlantItemStackById("test.seed");
-//        ItemStack result = main.getPlantTypeManager().getPlantItemStackById("test");
-//        FurnaceRecipe recipe = new FurnaceRecipe(new NamespacedKey(main, "furnace_test1"),
-//                result, new RecipeChoice.ExactChoice(input),
-//                1,
-//                20);
-//        main.getServer().addRecipe(recipe);
-//        addRecipe(recipe);
-//        main.getLogger().info("Added furnace recipe");
-//    }
 
 }
