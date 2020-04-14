@@ -2,10 +2,7 @@ package me.kosinkadink.performantplants;
 
 import me.kosinkadink.performantplants.commands.*;
 import me.kosinkadink.performantplants.expansions.PerformantPlantExpansion;
-import me.kosinkadink.performantplants.listeners.BlockBreakListener;
-import me.kosinkadink.performantplants.listeners.ChunkEventListener;
-import me.kosinkadink.performantplants.listeners.PlantBlockEventListener;
-import me.kosinkadink.performantplants.listeners.PlayerInteractListener;
+import me.kosinkadink.performantplants.listeners.*;
 import me.kosinkadink.performantplants.managers.*;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
@@ -24,6 +21,7 @@ public class Main extends JavaPlugin {
     private DatabaseManager databaseManager;
     private ConfigurationManager configManager;
     private StatisticsManager statisticsManager;
+    private RecipeManager recipeManager;
 
     @Override
     public void onEnable() {
@@ -64,6 +62,7 @@ public class Main extends JavaPlugin {
         commandManager = new CommandManager(this);
         plantManager = new PlantManager(this);
         plantTypeManager = new PlantTypeManager(this);
+        recipeManager = new RecipeManager(this);
         configManager = new ConfigurationManager(this);
         statisticsManager = new StatisticsManager(this);
         databaseManager = new DatabaseManager(this);
@@ -74,6 +73,7 @@ public class Main extends JavaPlugin {
         pluginManager.registerEvents(new PlayerInteractListener(this), this);
         pluginManager.registerEvents(new BlockBreakListener(this), this);
         pluginManager.registerEvents(new PlantBlockEventListener(this), this);
+        pluginManager.registerEvents(new RecipeEventListener(this), this);
     }
 
     private void registerCommands() {
@@ -117,6 +117,10 @@ public class Main extends JavaPlugin {
 
     public StatisticsManager getStatisticsManager() {
         return statisticsManager;
+    }
+
+    public RecipeManager getRecipeManager() {
+        return recipeManager;
     }
 
 }

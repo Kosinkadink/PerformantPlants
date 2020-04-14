@@ -32,6 +32,7 @@ public class ItemHelper {
                 .displayName(displayName)
                 .lore(settings.getLore())
                 .skullTexture(settings.getSkullTexture())
+                .amount(settings.getAmount())
                 .build();
     }
 

@@ -13,6 +13,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 public class PlayerInteractListener implements Listener {
@@ -60,6 +62,14 @@ public class PlayerInteractListener implements Listener {
             if (plant != null) {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
+                    // if block is inventory holder and player is sneaking, open block's inventory
+                    if (block.getState() instanceof InventoryHolder && !player.isSneaking()) {
+                        event.setCancelled(true);
+                        player.openInventory(((InventoryHolder) block.getState()).getInventory());
+                        main.getLogger().info("Prevented block from being placed on InventoryHolder block");
+                        return;
+                    }
+                    // TODO: open inventory of anvil, enchanting table, and workbench when clicked while not sneaking
                     // if plant's item not seed (placeable), cancel event
                     if (!plant.hasSeed() || !plant.getSeedItemStack().isSimilar(itemStack)) {
                         event.setCancelled(true);

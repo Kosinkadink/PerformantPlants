@@ -18,9 +18,12 @@ import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -120,7 +123,7 @@ public class ConfigurationManager {
             ItemSettings itemSettings;
             ConfigurationSection itemConfig = plantConfig.getConfigurationSection("item");
             if (itemConfig != null) {
-                itemSettings = loadItemConfig(itemConfig, null,false);
+                itemSettings = loadItemConfig(itemConfig,false);
                 if (itemSettings == null) {
                     main.getLogger().warning("Item could not be queried for plant: " + plantId);
                     return;
@@ -146,7 +149,7 @@ public class ConfigurationManager {
                     if (usePlantAsSeed) {
                         plant.setSeedItem(plantItem);
                     } else {
-                        ItemSettings seedItemSettings = loadItemConfig(seedConfig, null,false);
+                        ItemSettings seedItemSettings = loadItemConfig(seedConfig,false);
                         if (seedItemSettings != null) {
                             // set seed buy/sell price
                             PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
@@ -305,16 +308,35 @@ public class ConfigurationManager {
                     main.getLogger().info("seedConfig was null for plant: " + plantId);
                 }
             }
+            // load crafting recipes; failure here shouldn't abort plant loading
+            if (plantConfig.isConfigurationSection("crafting-recipes")) {
+                ConfigurationSection craftingSection = plantConfig.getConfigurationSection("crafting-recipes");
+                for (String recipeName : craftingSection.getKeys(false)) {
+                    ConfigurationSection recipeSection = craftingSection.getConfigurationSection(recipeName);
+                    addCraftingRecipe(recipeSection, recipeName);
+                }
+            }
+            // load furnace recipes; failure here shouldn't abort plant loading
+            if (plantConfig.isConfigurationSection("furnace-recipes")) {
+                ConfigurationSection furnaceSection = plantConfig.getConfigurationSection("furnace-recipes");
+                for (String recipeName : furnaceSection.getKeys(false)) {
+                    ConfigurationSection recipeSection = furnaceSection.getConfigurationSection(recipeName);
+                    addFurnaceRecipe(recipeSection, recipeName);
+                }
+            }
             // add plant to plant type manager
             main.getPlantTypeManager().addPlantType(plant);
+            main.getLogger().info("Successfully loaded plant: " + plantId);
         }
     }
 
-    ItemSettings loadItemConfig(ConfigurationSection section, Plant plant, boolean allowLink) {
+    ItemSettings loadItemConfig(ConfigurationSection section, boolean allowLink) {
         // check if section exists
         if (section != null) {
+            ItemSettings linkedItemSettings = null;
+            String plantId = null;
             // if link to another item is allowed, check for it
-            if (allowLink && plant != null) {
+            if (allowLink) {
                 if (section.isSet("link")) {
                     String link = section.getString("link");
                     if (link == null) {
@@ -323,73 +345,75 @@ public class ConfigurationManager {
                     }
                     // if set, need to load from appropriate config section
                     String[] plantInfo = link.split(":", 2);
-                    String plantId = plantInfo[0];
-                    String itemString = plantInfo[1];
-                    // check if plant is not current plant
-                    if (!plantId.equalsIgnoreCase(plant.getId())) {
-                        // if not current plant, load plant item from config file
-                        YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
-                        if (linkedPlantConfig == null) {
-                            main.getLogger().warning("PlantId '" + plantId + "' does not match any plant config in item section: " + section.getCurrentPath());
-                            return null;
-                        }
-                        // if item, get item
-                        ItemSettings linkedItemSettings = null;
-                        if (itemString.equalsIgnoreCase("item")) {
-                            if (!linkedPlantConfig.isConfigurationSection("item")) {
-                                main.getLogger().warning(String.format("Linked plant %s does not contain item section",
-                                        plantId));
-                                return null;
-                            }
-                            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("item");
-                            linkedItemSettings = loadItemConfig(itemSection, null, false);
-                        } else if (itemString.equalsIgnoreCase("seed")) {
-                            // if seed, get growing.seed-item
-                            if (!linkedPlantConfig.isConfigurationSection("growing.seed-item")) {
-                                main.getLogger().warning(String.format("Linked plant %s does not contain item section",
-                                        plantId));
-                                return null;
-                            }
-                            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
-                            linkedItemSettings = loadItemConfig(itemSection, null, false);
-                        } else {
-                            main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
-                            return null;
-                        }
-                        // if linkedItem settings not null, make sure it will be a plant ItemStack (add pre/postfix)
-                        if (linkedItemSettings != null) {
-                            return new ItemSettings(new PlantItemBuilder(ItemHelper.fromItemSettings(linkedItemSettings, plantId)).build());
-                        }
-                    } else {
-                        ItemStack linkedItem;
-                        if (itemString.equalsIgnoreCase("item")) {
-                            linkedItem = plant.getItemStack();
-                        } else if (itemString.equalsIgnoreCase("seed")) {
-                            linkedItem = plant.getSeedItemStack();
-                        } else {
-                            main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
-                            return null;
-                        }
-                        return new ItemSettings(linkedItem);
+                    plantId = plantInfo[0];
+                    if (plantInfo.length < 2) {
+                        main.getLogger().warning(String.format("Link %s is not formatted as plantId:item|seed in item section: %s", link, section.getCurrentPath()));
+                        return null;
                     }
-                    return null;
+                    String itemString = plantInfo[1];
+                    // load plant item from config file
+                    YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
+                    if (linkedPlantConfig == null) {
+                        main.getLogger().warning("PlantId '" + plantId + "' does not match any plant config in item section: " + section.getCurrentPath());
+                        return null;
+                    }
+                    // if item, get item
+                    if (itemString.equalsIgnoreCase("item")) {
+                        if (!linkedPlantConfig.isConfigurationSection("item")) {
+                            main.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                                    plantId));
+                            return null;
+                        }
+                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("item");
+                        linkedItemSettings = loadItemConfig(itemSection, false);
+                    } else if (itemString.equalsIgnoreCase("seed")) {
+                        // if seed, get growing.seed-item
+                        if (!linkedPlantConfig.isConfigurationSection("growing.seed-item")) {
+                            main.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                                    plantId));
+                            return null;
+                        }
+                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
+                        linkedItemSettings = loadItemConfig(itemSection, false);
+                    } else {
+                        main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
+                        return null;
+                    }
+                    // if linkedItem settings null, return null
+                    if (linkedItemSettings == null) {
+                        main.getLogger().warning("Linked item could not be loaded from item section: " + section.getCurrentPath());
+                        return null;
+                    }
                 }
             }
             // get item-related details from section
             String materialName = section.getString("material");
-            if (materialName == null) {
+            if (materialName == null && linkedItemSettings == null) {
                 main.getLogger().warning("Material not provided in item section: " + section.getCurrentPath());
                 return null;
             }
             Material material = Material.getMaterial(materialName);
-            if (material == null) {
+            if (material == null && linkedItemSettings == null) {
                 main.getLogger().warning("Material '" + materialName + "' not recognized in item section: " + section.getCurrentPath());
                 return null;
+            }
+            int amount = -1;
+            if (section.isInt("amount")) {
+                int readAmount = section.getInt("amount");
+                if (readAmount > 0) {
+                    amount = readAmount;
+                }
             }
             String skullTexture = section.getString("skull-texture");
             String displayName = TextHelper.translateAlternateColorCodes(section.getString("display-name"));
             List<String> lore = TextHelper.translateAlternateColorCodes(section.getStringList("lore"));
-            return new ItemSettings(material, displayName, lore, skullTexture);
+
+            if (linkedItemSettings == null) {
+                return new ItemSettings(material, displayName, lore, skullTexture, amount);
+            } else {
+                linkedItemSettings.setAmount(amount);
+                return new ItemSettings(ItemHelper.fromItemSettings(linkedItemSettings, plantId));
+            }
         }
         return null;
     }
@@ -483,7 +507,7 @@ public class ConfigurationManager {
                 main.getLogger().warning("item not set for drop section: " + section.getCurrentPath());
                 return null;
             }
-            ItemSettings itemSettings = loadItemConfig(section.getConfigurationSection("item"), plant,true);
+            ItemSettings itemSettings = loadItemConfig(section.getConfigurationSection("item"),true);
             if (itemSettings == null) {
                 main.getLogger().warning("itemSettings could not be created for drop section: " + section.getCurrentPath());
             }
@@ -553,6 +577,73 @@ public class ConfigurationManager {
                 plantItem.setSellPrice(price);
             }
         }
+    }
+
+    void addCraftingRecipe(ConfigurationSection section, String recipeName) {
+        String type = section.getString("type");
+        if (type == null) {
+            main.getLogger().warning("Type not set for crafting recipe at: " + section.getCurrentPath());
+            return;
+        }
+        // TODO: get shaped recipe
+        if (type.equalsIgnoreCase("shaped")) {
+
+        }
+        // get shapeless recipe
+        else if (type.equalsIgnoreCase("shapeless")) {
+            // get result
+            if (!section.isConfigurationSection("result")) {
+                main.getLogger().warning("No result section for shapeless crafting recipe at " + section.getCurrentPath());
+                return;
+            }
+            ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+            // if no item settings, return (something went wrong or linked item did not exist)
+            if (resultSettings == null) {
+                return;
+            }
+            try {
+                // initialize recipe
+                ItemStack resultStack = resultSettings.generateItemStack();
+                ShapelessRecipe recipe = new ShapelessRecipe(new NamespacedKey(main, "shapeless_" + recipeName), resultStack);
+                // get ingredients
+                if (!section.isConfigurationSection("ingredients")) {
+                    main.getLogger().warning("No ingredients section for shapeless crafting recipe at " + section.getCurrentPath());
+                    return;
+                }
+                ConfigurationSection ingredientsSection = section.getConfigurationSection("ingredients");
+                for (String placeholder : ingredientsSection.getKeys(false)) {
+                    ConfigurationSection ingredientSection = ingredientsSection.getConfigurationSection(placeholder);
+                    ItemSettings itemSettings = loadItemConfig(ingredientSection, true);
+                    if (itemSettings == null) {
+                        return;
+                    }
+                    // add ingredient to recipe
+                    ItemStack ingredientStack = itemSettings.generateItemStack();
+                    recipe.addIngredient(new RecipeChoice.ExactChoice(ingredientStack));
+                }
+                // if no ingredients added, return without adding recipe
+                if (recipe.getIngredientList().isEmpty()) {
+                    main.getLogger().warning("No ingredients were found for shapeless crafting recipe at " + section.getCurrentPath());
+                    return;
+                }
+                // otherwise add recipe to server
+                main.getServer().addRecipe(recipe);
+                // add recipe to recipe manager
+                main.getRecipeManager().addRecipe(recipe);
+            } catch (Exception e) {
+                main.getLogger().warning(String.format("Failed to add shapeless crafting recipe at %s due to exception: %s",
+                        section.getCurrentPath(), e.getMessage()));
+                return;
+            }
+            main.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
+        } else {
+            main.getLogger().warning(String.format("Type '%s' not a recognized crafting recipe at %s",
+                    type, section.getCurrentPath()));
+        }
+    }
+
+    void addFurnaceRecipe(ConfigurationSection section, String recipeName) {
+        // TODO: get furnace recipe
     }
 
     String getFileNameWithoutExtension(File file) {
