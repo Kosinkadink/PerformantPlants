@@ -38,8 +38,31 @@ public class RecipeEventListener implements Listener {
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         Plant plant = main.getPlantTypeManager().getPlantByItemStack(event.getSource());
         // check if a smelting recipe was registered for item stack
-        if (plant != null && !main.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
-            event.setCancelled(true);
+        if (plant != null) {
+            switch (event.getBlock().getType()) {
+                case FURNACE:
+                    if (!main.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
+                        event.setCancelled(true);
+                    }
+                    break;
+                case BLAST_FURNACE:
+                    if (!main.getRecipeManager().isInputForBlastingRecipe(event.getSource())) {
+                        event.setCancelled(true);
+                    }
+                    break;
+                case SMOKER:
+                    if (!main.getRecipeManager().isInputForSmokingRecipe(event.getSource())) {
+                        event.setCancelled(true);
+                    }
+                    break;
+                case CAMPFIRE:
+                    if (!main.getRecipeManager().isInputForCampfireRecipe(event.getSource())) {
+                        event.setCancelled(true);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

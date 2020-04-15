@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
@@ -23,6 +24,15 @@ public class PlayerInteractListener implements Listener {
 
     public PlayerInteractListener(Main mainClass) {
         main = mainClass;
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (event.getBlockAgainst().getType() == Material.CAMPFIRE) {
+            if (main.getPlantTypeManager().getPlantByItemStack(event.getItemInHand()) != null) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     @EventHandler
@@ -67,6 +77,10 @@ public class PlayerInteractListener implements Listener {
                         event.setCancelled(true);
                         player.openInventory(((InventoryHolder) block.getState()).getInventory());
                         main.getLogger().info("Prevented block from being placed on InventoryHolder block");
+                        return;
+                    }
+                    if (block.getType() == Material.CAMPFIRE) {
+                        main.getLogger().info("Right clicked on campfire holding a plant item");
                         return;
                     }
                     // TODO: open inventory of anvil, enchanting table, and workbench when clicked while not sneaking

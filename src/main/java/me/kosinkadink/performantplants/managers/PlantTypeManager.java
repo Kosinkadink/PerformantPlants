@@ -38,6 +38,9 @@ public class PlantTypeManager {
             if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
                 return plant;
             }
+            if (plant.isSimilarToAnyGood(itemStack)) {
+                return plant;
+            }
         }
         return null;
     }
@@ -51,14 +54,20 @@ public class PlantTypeManager {
         String[] plantInfo = itemId.split("\\.", 2);
         String plantId = plantInfo[0];
         String subtype = "";
+        String goodId = "";
         if (plantInfo.length > 1) {
             subtype = plantInfo[1];
         }
-        // if subtype empty
-        boolean isSeed = false;
+        String type = "item";
         if (subtype.equals("seed")) {
-            isSeed = true;
-        } else if (!subtype.isEmpty()) {
+            type = "seed";
+        }
+        else if (subtype.startsWith("goods.")) {
+            String[] goodInfo = subtype.split("goods\\.", 2);
+            goodId = goodInfo[1];
+            type = "good";
+        }
+        else if (!subtype.isEmpty()) {
             return null;
         }
         // get plant by id, if exists
@@ -67,8 +76,10 @@ public class PlantTypeManager {
             return null;
         }
         // if is seed, return seed item
-        if (isSeed) {
+        if (type.equals("seed")) {
             return plant.getSeedItem();
+        } else if (type.equals("good")) {
+            return plant.getGoodItem(goodId);
         }
         // else return main plant item
         return plant.getItem();

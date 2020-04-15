@@ -10,10 +10,7 @@ import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
-import me.kosinkadink.performantplants.settings.BlockSettings;
-import me.kosinkadink.performantplants.settings.ConfigSettings;
-import me.kosinkadink.performantplants.settings.DropSettings;
-import me.kosinkadink.performantplants.settings.ItemSettings;
+import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
@@ -117,215 +114,258 @@ public class ConfigurationManager {
             String plantId = entry.getKey();
             main.getLogger().info("Attempting to load plant: " + plantId);
             YamlConfiguration plantConfig = entry.getValue();
-            // get item info; if section not present, log error and return
-            ItemSettings itemSettings;
-            ConfigurationSection itemConfig = plantConfig.getConfigurationSection("item");
-            if (itemConfig != null) {
-                itemSettings = loadItemConfig(itemConfig,false);
-                if (itemSettings == null) {
-                    main.getLogger().warning("Item could not be queried for plant: " + plantId);
-                    return;
-                }
-            } else {
-                main.getLogger().warning("Could not load plant " + plantId + "; item section not found");
+            loadPlantFromConfig(plantId, plantConfig);
+        }
+    }
+
+    void loadPlantFromConfig(String plantId, YamlConfiguration plantConfig) {
+        // get item info; if section not present, log error and return
+        ItemSettings itemSettings;
+        ConfigurationSection itemConfig = plantConfig.getConfigurationSection("item");
+        if (itemConfig != null) {
+            itemSettings = loadItemConfig(itemConfig,false);
+            if (itemSettings == null) {
+                main.getLogger().warning("Item could not be queried for plant: " + plantId);
                 return;
             }
-            // create plant ItemStack and add it to plant type manager
-            PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
-            // set buy/sell prices
-            addPricesToPlantItem(plantConfig, plantItem);
-            // Plant to be saved
-            Plant plant = new Plant(plantId, plantItem);
-            // if growing section is present, get seed item + stages
-            ConfigurationSection growingConfig = plantConfig.getConfigurationSection("growing");
-            if (growingConfig != null) {
-                ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
-                if (seedConfig != null) {
-                    // let main plant item also act as seed
-                    boolean usePlantAsSeed = seedConfig.isSet("use-plant-as-seed")
-                            && seedConfig.getBoolean("use-plant-as-seed");
-                    if (usePlantAsSeed) {
-                        plant.setSeedItem(plantItem);
+        } else {
+            main.getLogger().warning("Could not load plant " + plantId + "; item section not found");
+            return;
+        }
+        // create plant ItemStack and add it to plant type manager
+        PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
+        // set buy/sell prices
+        addPricesToPlantItem(itemConfig, plantItem);
+        // Plant to be saved
+        Plant plant = new Plant(plantId, plantItem);
+        // if growing section is present, get seed item + stages
+        ConfigurationSection growingConfig = plantConfig.getConfigurationSection("growing");
+        if (growingConfig != null) {
+            ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
+            if (seedConfig != null) {
+                // let main plant item also act as seed
+                boolean usePlantAsSeed = seedConfig.isSet("use-plant-as-seed")
+                        && seedConfig.getBoolean("use-plant-as-seed");
+                if (usePlantAsSeed) {
+                    plant.setSeedItem(plantItem);
+                } else {
+                    ItemSettings seedItemSettings = loadItemConfig(seedConfig,false);
+                    if (seedItemSettings != null) {
+                        // set seed buy/sell price
+                        PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
+                        addPricesToPlantItem(seedConfig, seedItem);
+                        plant.setSeedItem(seedItem);
                     } else {
-                        ItemSettings seedItemSettings = loadItemConfig(seedConfig,false);
-                        if (seedItemSettings != null) {
-                            // set seed buy/sell price
-                            PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
-                            addPricesToPlantItem(growingConfig, seedItem);
-                            plant.setSeedItem(seedItem);
-                        } else {
-                            main.getLogger().info("seedItemSettings were null for plant: " + plantId);
-                            return;
+                        main.getLogger().info("seedItemSettings were null for plant: " + plantId);
+                        return;
+                    }
+                }
+                // if seed item has been set, get growth requirements + stages
+                if (plant.getSeedItem() != null) {
+                    // set water/lava requirements
+                    plant.setWaterRequired(growingConfig.isBoolean("water-required") && growingConfig.getBoolean("water-required"));
+                    plant.setLavaRequired(growingConfig.isBoolean("lava-required") && growingConfig.getBoolean("lava-required"));
+                    // set growth bounds for general growth (overridable by stage-specific min/max growth time)
+                    if (!growingConfig.isInt("min-growth-time") || !growingConfig.isInt("max-growth-time")) {
+                        main.getLogger().warning("Growth time bounds not set/integer for growing for plant: " + plantId);
+                        return;
+                    }
+                    plant.setMinGrowthTime(growingConfig.getInt("min-growth-time"));
+                    plant.setMaxGrowthTime(growingConfig.getInt("max-growth-time"));
+                    // get required blocks, if any
+                    if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
+                        ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
+                        for (String blockName : requiredBlocks.getKeys(false)) {
+                            BlockSettings blockSettings = loadBlockConfig(requiredBlocks.getConfigurationSection(blockName));
+                            if (blockSettings == null) {
+                                main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
+                                return;
+                            }
+                            RequiredBlock requiredBlock = new RequiredBlock(
+                                    blockSettings.getXRel(),
+                                    blockSettings.getYRel(),
+                                    blockSettings.getZRel(),
+                                    blockSettings.getMaterial(),
+                                    blockSettings.getBlockDataStrings(),
+                                    blockSettings.isRequired());
+                            plant.addRequiredBlockToGrow(requiredBlock);
                         }
                     }
-                    // if seed item has been set, get growth requirements + stages
-                    if (plant.getSeedItem() != null) {
-                        // set water/lava requirements
-                        plant.setWaterRequired(growingConfig.isBoolean("water-required") && growingConfig.getBoolean("water-required"));
-                        plant.setLavaRequired(growingConfig.isBoolean("lava-required") && growingConfig.getBoolean("lava-required"));
-                        // set growth bounds for general growth (overridable by stage-specific min/max growth time)
-                        if (!growingConfig.isInt("min-growth-time") || !growingConfig.isInt("max-growth-time")) {
-                            main.getLogger().warning("Growth time bounds not set/integer for growing for plant: " + plantId);
-                            return;
-                        }
-                        plant.setMinGrowthTime(growingConfig.getInt("min-growth-time"));
-                        plant.setMaxGrowthTime(growingConfig.getInt("max-growth-time"));
-                        // get required blocks, if any
-                        if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
-                            ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
-                            for (String blockName : requiredBlocks.getKeys(false)) {
-                                BlockSettings blockSettings = loadBlockConfig(requiredBlocks.getConfigurationSection(blockName));
-                                if (blockSettings == null) {
-                                    main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
+                    // get growth stages; since seed is present, growth stages are REQUIRED
+                    if (!growingConfig.isSet("stages") && growingConfig.isConfigurationSection("stages")) {
+                        main.getLogger().warning("No stages are configured for plant while seed is present: " + plantId);
+                        return;
+                    } else {
+                        ConfigurationSection stagesConfig = growingConfig.getConfigurationSection("stages");
+                        for (String stageName : stagesConfig.getKeys(false)) {
+                            ConfigurationSection stageConfig = stagesConfig.getConfigurationSection(stageName);
+                            if (stageConfig == null) {
+                                main.getLogger().warning("Could not load stageConfig for plant: " + plantId);
+                                return;
+                            }
+                            GrowthStage growthStage = new GrowthStage();
+                            // set min and max growth times, if present for stage
+                            if (stageConfig.isInt("min-growth-time") && stageConfig.isInt("max-growth-time")) {
+                                int stageMinGrowthTime = stageConfig.getInt("min-growth-time");
+                                int stageMaxGrowthTime = stageConfig.getInt("max-growth-time");
+                                growthStage.setMinGrowthTime(stageMinGrowthTime);
+                                growthStage.setMaxGrowthTime(stageMaxGrowthTime);
+                            }
+                            // set drop limit, if present
+                            if (stageConfig.isInt("drop-limit")) {
+                                int stageDropLimit = stageConfig.getInt("drop-limit");
+                                growthStage.setDropLimit(stageDropLimit);
+                            }
+                            // set drops, if present
+                            if (stageConfig.isSet("drops")) {
+                                // add drops
+                                boolean valid = addDropsToDroppable(stageConfig, growthStage, plant);
+                                if (!valid) {
                                     return;
                                 }
-                                RequiredBlock requiredBlock = new RequiredBlock(
+                            }
+                            // set blocks for growth
+                            if (!stageConfig.isConfigurationSection("blocks")) {
+                                main.getLogger().warning("No blocks provided for growth stage in plant: " + plantId);
+                                return;
+                            }
+                            ConfigurationSection blocksConfig = stageConfig.getConfigurationSection("blocks");
+                            for (String blockName : blocksConfig.getKeys(false)) {
+                                ConfigurationSection blockConfig = blocksConfig.getConfigurationSection(blockName);
+                                if (blockConfig == null) {
+                                    main.getLogger().warning("Could not load stage's blockConfig for plant: " + plantId);
+                                    return;
+                                }
+                                BlockSettings blockSettings = loadBlockConfig(blockConfig.getConfigurationSection("block-data"));
+                                if (blockSettings == null) {
+                                    main.getLogger().warning("blockSettings for growth block returned null for plant: " + plantId);
+                                    return;
+                                }
+                                GrowthStageBlock growthStageBlock = new GrowthStageBlock(
+                                        blockName,
                                         blockSettings.getXRel(),
                                         blockSettings.getYRel(),
                                         blockSettings.getZRel(),
                                         blockSettings.getMaterial(),
                                         blockSettings.getBlockDataStrings(),
-                                        blockSettings.isRequired());
-                                plant.addRequiredBlockToGrow(requiredBlock);
-                            }
-                        }
-                        // get growth stages; since seed is present, growth stages are REQUIRED
-                        if (!growingConfig.isSet("stages") && growingConfig.isConfigurationSection("stages")) {
-                            main.getLogger().warning("No stages are configured for plant while seed is present: " + plantId);
-                            return;
-                        } else {
-                            ConfigurationSection stagesConfig = growingConfig.getConfigurationSection("stages");
-                            for (String stageName : stagesConfig.getKeys(false)) {
-                                ConfigurationSection stageConfig = stagesConfig.getConfigurationSection(stageName);
-                                if (stageConfig == null) {
-                                    main.getLogger().warning("Could not load stageConfig for plant: " + plantId);
-                                    return;
-                                }
-                                GrowthStage growthStage = new GrowthStage();
-                                // set min and max growth times, if present for stage
-                                if (stageConfig.isInt("min-growth-time") && stageConfig.isInt("max-growth-time")) {
-                                    int stageMinGrowthTime = stageConfig.getInt("min-growth-time");
-                                    int stageMaxGrowthTime = stageConfig.getInt("max-growth-time");
-                                    growthStage.setMinGrowthTime(stageMinGrowthTime);
-                                    growthStage.setMaxGrowthTime(stageMaxGrowthTime);
-                                }
+                                        blockSettings.getSkullTexture()
+                                );
                                 // set drop limit, if present
-                                if (stageConfig.isInt("drop-limit")) {
-                                    int stageDropLimit = stageConfig.getInt("drop-limit");
-                                    growthStage.setDropLimit(stageDropLimit);
+                                if (blockConfig.isInt("drop-limit")) {
+                                    growthStageBlock.setDropLimit(blockConfig.getInt("drop-limit"));
+                                }
+                                // set ignore space, if present
+                                if (blockConfig.isBoolean("ignore-space")) {
+                                    growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
+                                }
+                                // set break children, if present
+                                if (blockConfig.isBoolean("break-children")) {
+                                    growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
+                                }
+                                // set break parent, if present
+                                if (blockConfig.isBoolean("break-parent")) {
+                                    growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
+                                }
+                                // set update stage on break, if present
+                                if (blockConfig.isBoolean("regrow")) {
+                                    growthStageBlock.setUpdateStageOnBreak(blockConfig.getBoolean("regrow"));
+                                }
+                                // set random rotation, if present
+                                if (blockConfig.isBoolean("random-rotation")) {
+                                    growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
+                                }
+                                // set childOf, if present
+                                if (blockConfig.isSet("child-of")) {
+                                    if (!blockConfig.isConfigurationSection("child-of")
+                                            || !blockConfig.isInt("child-of.x")
+                                            || !blockConfig.isInt("child-of.y")
+                                            || !blockConfig.isInt("child-of.z")) {
+                                        main.getLogger().warning("child-of is not configured properly for plant: " + plantId);
+                                        return;
+                                    }
+                                    growthStageBlock.setChildOf(new RelativeLocation(
+                                            blockConfig.getInt("child-of.x"),
+                                            blockConfig.getInt("child-of.y"),
+                                            blockConfig.getInt("child-of.z")
+                                    ));
                                 }
                                 // set drops, if present
-                                if (stageConfig.isSet("drops")) {
+                                if (blockConfig.isSet("drops")) {
                                     // add drops
-                                    boolean valid = addDropsToDroppable(stageConfig, growthStage, plant);
+                                    boolean valid = addDropsToDroppable(blockConfig, growthStageBlock, plant);
                                     if (!valid) {
                                         return;
                                     }
                                 }
-                                // set blocks for growth
-                                if (!stageConfig.isConfigurationSection("blocks")) {
-                                    main.getLogger().warning("No blocks provided for growth stage in plant: " + plantId);
-                                    return;
-                                }
-                                ConfigurationSection blocksConfig = stageConfig.getConfigurationSection("blocks");
-                                for (String blockName : blocksConfig.getKeys(false)) {
-                                    ConfigurationSection blockConfig = blocksConfig.getConfigurationSection(blockName);
-                                    if (blockConfig == null) {
-                                        main.getLogger().warning("Could not load stage's blockConfig for plant: " + plantId);
-                                        return;
-                                    }
-                                    BlockSettings blockSettings = loadBlockConfig(blockConfig.getConfigurationSection("block-data"));
-                                    if (blockSettings == null) {
-                                        main.getLogger().warning("blockSettings for growth block returned null for plant: " + plantId);
-                                        return;
-                                    }
-                                    GrowthStageBlock growthStageBlock = new GrowthStageBlock(
-                                            blockName,
-                                            blockSettings.getXRel(),
-                                            blockSettings.getYRel(),
-                                            blockSettings.getZRel(),
-                                            blockSettings.getMaterial(),
-                                            blockSettings.getBlockDataStrings(),
-                                            blockSettings.getSkullTexture()
-                                    );
-                                    // set drop limit, if present
-                                    if (blockConfig.isInt("drop-limit")) {
-                                        growthStageBlock.setDropLimit(blockConfig.getInt("drop-limit"));
-                                    }
-                                    // set ignore space, if present
-                                    if (blockConfig.isBoolean("ignore-space")) {
-                                        growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
-                                    }
-                                    // set break children, if present
-                                    if (blockConfig.isBoolean("break-children")) {
-                                        growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
-                                    }
-                                    // set break parent, if present
-                                    if (blockConfig.isBoolean("break-parent")) {
-                                        growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
-                                    }
-                                    // set update stage on break, if present
-                                    if (blockConfig.isBoolean("regrow")) {
-                                        growthStageBlock.setUpdateStageOnBreak(blockConfig.getBoolean("regrow"));
-                                    }
-                                    // set random rotation, if present
-                                     if (blockConfig.isBoolean("random-rotation")) {
-                                         growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
-                                     }
-                                    // set childOf, if present
-                                    if (blockConfig.isSet("child-of")) {
-                                        if (!blockConfig.isConfigurationSection("child-of")
-                                                || !blockConfig.isInt("child-of.x")
-                                                || !blockConfig.isInt("child-of.y")
-                                                || !blockConfig.isInt("child-of.z")) {
-                                            main.getLogger().warning("child-of is not configured properly for plant: " + plantId);
-                                            return;
-                                        }
-                                        growthStageBlock.setChildOf(new RelativeLocation(
-                                                blockConfig.getInt("child-of.x"),
-                                                blockConfig.getInt("child-of.y"),
-                                                blockConfig.getInt("child-of.z")
-                                        ));
-                                    }
-                                    // set drops, if present
-                                    if (blockConfig.isSet("drops")) {
-                                        // add drops
-                                        boolean valid = addDropsToDroppable(blockConfig, growthStageBlock, plant);
-                                        if (!valid) {
-                                            return;
-                                        }
-                                    }
-                                    growthStage.addGrowthStageBlock(growthStageBlock);
-                                }
-                                plant.addGrowthStage(growthStage);
+                                growthStage.addGrowthStageBlock(growthStageBlock);
                             }
+                            plant.addGrowthStage(growthStage);
                         }
                     }
                 }
-                else {
-                    main.getLogger().info("seedConfig was null for plant: " + plantId);
-                }
             }
-            // load crafting recipes; failure here shouldn't abort plant loading
-            if (plantConfig.isConfigurationSection("crafting-recipes")) {
-                ConfigurationSection craftingSection = plantConfig.getConfigurationSection("crafting-recipes");
-                for (String recipeName : craftingSection.getKeys(false)) {
-                    ConfigurationSection recipeSection = craftingSection.getConfigurationSection(recipeName);
-                    addCraftingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
-                }
+            else {
+                main.getLogger().info("seedConfig was null for plant: " + plantId);
             }
-            // load furnace recipes; failure here shouldn't abort plant loading
-            if (plantConfig.isConfigurationSection("furnace-recipes")) {
-                ConfigurationSection furnaceSection = plantConfig.getConfigurationSection("furnace-recipes");
-                for (String recipeName : furnaceSection.getKeys(false)) {
-                    ConfigurationSection recipeSection = furnaceSection.getConfigurationSection(recipeName);
-                    addFurnaceRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
-                }
-            }
-            // add plant to plant type manager
-            main.getPlantTypeManager().addPlantType(plant);
-            main.getLogger().info("Successfully loaded plant: " + plantId);
         }
+        // load plant goods; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("goods")) {
+            ConfigurationSection goodsSection = plantConfig.getConfigurationSection("goods");
+            for (String goodId : goodsSection.getKeys(false)) {
+                ConfigurationSection goodSection = goodsSection.getConfigurationSection(goodId);
+                ItemSettings goodSettings = loadItemConfig(goodSection, false);
+                if (goodSettings != null) {
+                    PlantItem goodItem = new PlantItem(ItemHelper.fromItemSettings(goodSettings, goodId, false));
+                    addPricesToPlantItem(goodSection, goodItem);
+                    plant.addGoodItem(goodId, goodItem);
+                    main.getLogger().info(String.format("Added good item '%s' to plant: %s", goodId, plantId));
+                }
+            }
+        }
+        // load crafting recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("crafting-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("crafting-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addCraftingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load furnace recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("furnace-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("furnace-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addFurnaceRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load blast furnace recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("blast-furnace-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("blast-furnace-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addBlastingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load smoker recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("smoker-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("smoker-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addSmokingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load campfire recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("campfire-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("campfire-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addCampfireRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+
+        // add plant to plant type manager
+        main.getPlantTypeManager().addPlantType(plant);
+        main.getLogger().info("Successfully loaded plant: " + plantId);
     }
 
     ItemSettings loadItemConfig(ConfigurationSection section, boolean allowLink) {
@@ -342,13 +382,12 @@ public class ConfigurationManager {
                         return null;
                     }
                     // if set, need to load from appropriate config section
-                    String[] plantInfo = link.split(":", 2);
+                    String[] plantInfo = link.split("\\.", 2);
                     plantId = plantInfo[0];
-                    if (plantInfo.length < 2) {
-                        main.getLogger().warning(String.format("Link %s is not formatted as plantId:item|seed in item section: %s", link, section.getCurrentPath()));
-                        return null;
+                    String itemString = "";
+                    if (plantInfo.length > 1) {
+                        itemString = plantInfo[1];
                     }
-                    String itemString = plantInfo[1];
                     // load plant item from config file
                     YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
                     if (linkedPlantConfig == null) {
@@ -356,7 +395,7 @@ public class ConfigurationManager {
                         return null;
                     }
                     // if item, get item
-                    if (itemString.equalsIgnoreCase("item")) {
+                    if (itemString.equals("")) {
                         if (!linkedPlantConfig.isConfigurationSection("item")) {
                             main.getLogger().warning(String.format("Linked plant %s does not contain item section",
                                     plantId));
@@ -373,8 +412,21 @@ public class ConfigurationManager {
                         }
                         ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
                         linkedItemSettings = loadItemConfig(itemSection, false);
+                    } else if (itemString.startsWith("goods.")) {
+                        String[] goodsInfo = itemString.split("\\.", 2);
+                        if (goodsInfo.length < 2) {
+                            main.getLogger().warning(String.format("Link %s does not contain an id for its goods request in section: %s", link, section.getCurrentPath()));
+                            return null;
+                        }
+                        String goodId = goodsInfo[1];
+                        if (!linkedPlantConfig.isConfigurationSection(itemString)) {
+                            main.getLogger().warning(String.format("Linked plant %s does not contain good %s", plantId, itemString));
+                            return null;
+                        }
+                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection(itemString);
+                        linkedItemSettings = loadItemConfig(itemSection, false);
                     } else {
-                        main.getLogger().warning("Linked item was neither item or seed in item section: " + section.getCurrentPath());
+                        main.getLogger().warning("Linked item was neither item, seed, or good in item section: " + section.getCurrentPath());
                         return null;
                     }
                     // if linkedItem settings null, return null
@@ -577,6 +629,8 @@ public class ConfigurationManager {
         }
     }
 
+    //region Add Recipes
+
     void addCraftingRecipe(ConfigurationSection section, String recipeName) {
         String type = section.getString("type");
         if (type == null) {
@@ -604,12 +658,7 @@ public class ConfigurationManager {
                     main.getLogger().warning("No shape section (must be list) for shaped crafting recipe at " + section.getCurrentPath());
                     return;
                 }
-
-                String[] shape = section.getStringList("shape").toArray(new String[0]);
-                for (String shapeRow : shape) {
-                    main.getLogger().info(String.format("%d - %s", shapeRow.length(), shapeRow));
-                }
-                recipe.shape(shape);
+                recipe.shape(section.getStringList("shape").toArray(new String[0]));
                 // get ingredients to understand shape
                 if (!section.isConfigurationSection("ingredients")) {
                     main.getLogger().warning("No ingredients section for shaped crafting recipe at " + section.getCurrentPath());
@@ -696,26 +745,26 @@ public class ConfigurationManager {
         }
     }
 
-    void addFurnaceRecipe(ConfigurationSection section, String recipeName) {
+    CookingRecipeSettings loadCookingRecipeConfig(ConfigurationSection section) {
         // get result
         if (!section.isConfigurationSection("result")) {
-            main.getLogger().warning("No result section for furnace recipe at " + section.getCurrentPath());
-            return;
+            main.getLogger().warning("No result section for cooking recipe at " + section.getCurrentPath());
+            return null;
         }
         ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
         // if no item settings, return (something went wrong or linked item did not exist)
         if (resultSettings == null) {
-            return;
+            return null;
         }
         // get input
         if (!section.isConfigurationSection("result")) {
-            main.getLogger().warning("No result section for furnace recipe at " + section.getCurrentPath());
-            return;
+            main.getLogger().warning("No result section for cooking recipe at " + section.getCurrentPath());
+            return null;
         }
         ItemSettings inputSettings = loadItemConfig(section.getConfigurationSection("input"), true);
         // if no item settings, return (something went wrong or linked item did not exist)
         if (inputSettings == null) {
-            return;
+            return null;
         }
         // get experience
         float experience = 0;
@@ -730,13 +779,20 @@ public class ConfigurationManager {
         // create item stacks
         ItemStack resultStack = resultSettings.generateItemStack();
         ItemStack inputStack = inputSettings.generateItemStack();
+        return new CookingRecipeSettings(resultStack, new RecipeChoice.ExactChoice(inputStack), experience, cookingTime);
+    }
+
+    void addFurnaceRecipe(ConfigurationSection section, String recipeName) {
+        CookingRecipeSettings recipeSettings = loadCookingRecipeConfig(section);
+        if (recipeSettings == null) {
+            return;
+        }
         try {
-            // create furnace recipe
             FurnaceRecipe recipe = new FurnaceRecipe(new NamespacedKey(main, "furnace_" + recipeName),
-                    resultStack,
-                    new RecipeChoice.ExactChoice(inputStack),
-                    experience,
-                    cookingTime);
+                    recipeSettings.getResult(),
+                    recipeSettings.getInputChoice(),
+                    recipeSettings.getExperience(),
+                    recipeSettings.getCookingTime());
             // add recipe to server
             main.getServer().addRecipe(recipe);
             // add recipe to recipe manager
@@ -747,6 +803,74 @@ public class ConfigurationManager {
                     section.getCurrentPath(), e.getMessage()));
         }
     }
+
+    void addBlastingRecipe(ConfigurationSection section, String recipeName) {
+        CookingRecipeSettings recipeSettings = loadCookingRecipeConfig(section);
+        if (recipeSettings == null) {
+            return;
+        }
+        try {
+            BlastingRecipe recipe = new BlastingRecipe(new NamespacedKey(main, "blasting_" + recipeName),
+                    recipeSettings.getResult(),
+                    recipeSettings.getInputChoice(),
+                    recipeSettings.getExperience(),
+                    recipeSettings.getCookingTime());
+            // add recipe to server
+            main.getServer().addRecipe(recipe);
+            // add recipe to recipe manager
+            main.getRecipeManager().addRecipe(recipe);
+            main.getLogger().info("Registered blast furnace recipe: " + recipeName);
+        } catch (Exception e) {
+            main.getLogger().warning(String.format("Failed to add blast furnace recipe at %s due to exception: %s",
+                    section.getCurrentPath(), e.getMessage()));
+        }
+    }
+
+    void addSmokingRecipe(ConfigurationSection section, String recipeName) {
+        CookingRecipeSettings recipeSettings = loadCookingRecipeConfig(section);
+        if (recipeSettings == null) {
+            return;
+        }
+        try {
+            SmokingRecipe recipe = new SmokingRecipe(new NamespacedKey(main, "smoking_" + recipeName),
+                    recipeSettings.getResult(),
+                    recipeSettings.getInputChoice(),
+                    recipeSettings.getExperience(),
+                    recipeSettings.getCookingTime());
+            // add recipe to server
+            main.getServer().addRecipe(recipe);
+            // add recipe to recipe manager
+            main.getRecipeManager().addRecipe(recipe);
+            main.getLogger().info("Registered smoker recipe: " + recipeName);
+        } catch (Exception e) {
+            main.getLogger().warning(String.format("Failed to add smoker recipe at %s due to exception: %s",
+                    section.getCurrentPath(), e.getMessage()));
+        }
+    }
+
+    void addCampfireRecipe(ConfigurationSection section, String recipeName) {
+        CookingRecipeSettings recipeSettings = loadCookingRecipeConfig(section);
+        if (recipeSettings == null) {
+            return;
+        }
+        try {
+            CampfireRecipe recipe = new CampfireRecipe(new NamespacedKey(main, "campfire_" + recipeName),
+                    recipeSettings.getResult(),
+                    recipeSettings.getInputChoice(),
+                    recipeSettings.getExperience(),
+                    recipeSettings.getCookingTime());
+            // add recipe to server
+            main.getServer().addRecipe(recipe);
+            // add recipe to recipe manager
+            main.getRecipeManager().addRecipe(recipe);
+            main.getLogger().info("Registered campfire recipe: " + recipeName);
+        } catch (Exception e) {
+            main.getLogger().warning(String.format("Failed to add campfire recipe at %s due to exception: %s",
+                    section.getCurrentPath(), e.getMessage()));
+        }
+    }
+
+    //endregion
 
     String getFileNameWithoutExtension(File file) {
         String fileName = "";
