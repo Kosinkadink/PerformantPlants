@@ -3,12 +3,18 @@ package me.kosinkadink.performantplants.listeners;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBreakEvent;
+import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
+import me.kosinkadink.performantplants.events.PlantInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
+import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -42,28 +48,20 @@ public class PlantBlockEventListener implements Listener {
                 }
                 // do nothing if slot is empty
                 if (itemStack.getType() == Material.AIR) {
+                    event.setCancelled(true);
                     return;
                 }
                 BlockLocation blockLocation = new BlockLocation(block);
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
                 if (plantBlock.getGrows()) {
-                    if (!plantBlock.checkGrowthRequirements(main)) {
+                    if (!plantBlock.checkAllRequirements(main)) {
+                        event.setCancelled(true);
                         return;
                     }
                 }
                 main.getPlantManager().addPlantBlock(plantBlock);
-                if (itemStack.getAmount() > 1) {
-                    itemStack.setAmount(itemStack.getAmount() - 1);
-                }
-                else {
-                    // remove item from appropriate hand
-                    if (event.getHand() == EquipmentSlot.OFF_HAND) {
-                        event.getPlayer().getInventory().setItemInOffHand(new ItemStack(Material.AIR));
-                    } else {
-                        event.getPlayer().getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-                    }
-                }
+                decrementPlayerItemStackInHand(event.getPlayer(), itemStack, event.getHand());
             }
         }
     }
@@ -73,6 +71,71 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
             destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
+        }
+    }
+
+    @EventHandler
+    public void onPlantFarmlandTrample(PlantFarmlandTrampleEvent event) {
+        if (!event.isCancelled()) {
+            main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
+            // set trampled block to dirt for growth requirement check purposes
+            event.getTrampledBlock().setType(Material.DIRT);
+            if (!event.getPlantBlock().checkGrowthRequirements(main)) {
+                destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
+            }
+            // set it back to farmland to avoid weird effect on player
+            // actual turning into dirt should happen due to PlayerInteractEvent not being cancelled
+            event.getTrampledBlock().setType(Material.FARMLAND);
+        }
+    }
+
+    @EventHandler
+    public void onPlantInteract(PlantInteractEvent event) {
+        if (!event.isCancelled()) {
+            main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
+            // get item in appropriate hand hand
+            ItemStack itemStack;
+            if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                itemStack = event.getPlayer().getInventory().getItemInOffHand();
+            } else {
+                itemStack = event.getPlayer().getInventory().getItemInMainHand();
+            }
+            // get PlantInteract behavior for itemStack, if any
+            PlantInteract plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+            // if no plant interact behavior, cancel event and do nothing
+            if (plantInteract == null) {
+                event.setCancelled(true);
+                return;
+            }
+            // drop items, if any
+            performDrops(plantInteract.getDropStorage(), event.getBlock());
+            // drop plant block's drops if set that way
+            if (plantInteract.isGiveBlockDrops() && event.getPlantBlock().isDropOnInteract()) {
+                performDrops(event.getPlantBlock(), event.getBlock());
+            }
+            // if specific growth stage is given to advance to, change growth stage
+            if (plantInteract.isChangeStage()) {
+                boolean success = false;
+                if (plantInteract.getGoToStage() != null) {
+                    StageStorage stageStorage = event.getPlantBlock().getPlant().getStageStorage();
+                    if (stageStorage.isValidStage(plantInteract.getGoToStage())) {
+                        int stageIndex = stageStorage.getGrowthStageIndex(plantInteract.getGoToStage());
+                        success = event.getPlantBlock().goToStageForcefully(main, stageIndex);
+                    }
+                }
+                // if goToNext is set to true, then advance to next growth stage as if plant grew
+                else if (plantInteract.isGoToNext()) {
+                    success = event.getPlantBlock().goToNextStage(main);
+                }
+                // if not successfully changed stage, cancel event and do nothing
+                if (!success) {
+                    event.setCancelled(true);
+                }
+                // otherwise do other actions
+                if (plantInteract.isDecrementItem()) {
+                    decrementPlayerItemStackInHand(event.getPlayer(), itemStack, event.getHand());
+                }
+            }
         }
     }
 
@@ -242,22 +305,8 @@ public class PlantBlockEventListener implements Listener {
             return;
         }
         // handle drops
-        if (drops) {
-            ArrayList<Drop> dropsList = plantBlock.getDrops();
-            int dropLimit = plantBlock.getDropLimit();
-            boolean limited = dropLimit >= 1;
-            int dropCount = 0;
-            for (Drop drop : dropsList) {
-                // if there is a limit and have reached it, stop dropping
-                if (limited && dropCount >= dropLimit) {
-                    break;
-                }
-                ItemStack dropStack = drop.generateDrop();
-                if (dropStack.getAmount() != 0) {
-                    dropCount++;
-                    block.getWorld().dropItemNaturally(block.getLocation(), dropStack);
-                }
-            }
+        if (drops && plantBlock.isDropOnBreak()) {
+            performDrops(plantBlock, block);
         }
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {
@@ -286,6 +335,43 @@ public class PlantBlockEventListener implements Listener {
         PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
         if (plantBlock != null) {
             destroyPlantBlock(plantBlock.getBlock(), plantBlock, drops);
+        }
+    }
+
+    void performDrops(Droppable droppable, Block block) {
+        ArrayList<Drop> dropsList = droppable.getDrops();
+        int dropLimit = droppable.getDropLimit();
+        boolean limited = dropLimit >= 1;
+        int dropCount = 0;
+        for (Drop drop : dropsList) {
+            // if there is a limit and have reached it, stop dropping
+            if (limited && dropCount >= dropLimit) {
+                break;
+            }
+            ItemStack dropStack = drop.generateDrop();
+            if (dropStack.getAmount() != 0) {
+                dropCount++;
+                block.getWorld().dropItemNaturally(block.getLocation(), dropStack);
+            }
+        }
+    }
+
+    void decrementPlayerItemStackInHand(Player player, ItemStack itemStack, EquipmentSlot hand) {
+        // if material is air, do nothing
+        if (itemStack.getType() == Material.AIR) {
+            return;
+        }
+        // if more than 1 item, decrease amount by 1
+        if (itemStack.getAmount() > 1) {
+            itemStack.setAmount(itemStack.getAmount() - 1);
+        }
+        else {
+            // remove item from appropriate hand
+            if (hand == EquipmentSlot.OFF_HAND) {
+                player.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
+            } else {
+                player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+            }
         }
     }
 

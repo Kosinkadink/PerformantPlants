@@ -1,21 +1,24 @@
 package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-public class PlantBlock {
+public class PlantBlock implements Droppable {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
@@ -23,6 +26,8 @@ public class PlantBlock {
     private Plant plant;
     private int stageIndex;
     private int dropStageIndex;
+    private boolean dropOnBreak = true;
+    private boolean dropOnInteract = true;
     private String stageBlockId;
     private boolean grows;
     private long taskStartTime;
@@ -133,6 +138,22 @@ public class PlantBlock {
         }
     }
 
+    public boolean isDropOnBreak() {
+        return dropOnBreak;
+    }
+
+    public void setDropOnBreak(boolean dropOnBreak) {
+        this.dropOnBreak = dropOnBreak;
+    }
+
+    public boolean isDropOnInteract() {
+        return dropOnInteract;
+    }
+
+    public void setDropOnInteract(boolean dropOnInteract) {
+        this.dropOnInteract = dropOnInteract;
+    }
+
     public String getStageBlockId() {
         return stageBlockId;
     }
@@ -173,6 +194,11 @@ public class PlantBlock {
         return 0;
     }
 
+    @Override
+    public void setDropLimit(int limit) {
+        // do nothing
+    }
+
     public ArrayList<Drop> getDrops() {
         if (!plant.hasGrowthStages()) {
             return drops;
@@ -189,6 +215,11 @@ public class PlantBlock {
             }
         }
         return new ArrayList<>();
+    }
+
+    @Override
+    public void addDrop(Drop drop) {
+        // do nothing
     }
 
     public boolean isBreakChildren() {
@@ -221,6 +252,26 @@ public class PlantBlock {
         return false;
     }
 
+    public boolean isStopGrowth() {
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.isStopGrowth();
+            }
+        }
+        return false;
+    }
+
+    public PlantInteract getOnInteract(ItemStack itemStack) {
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnInteract(itemStack);
+            }
+        }
+        return null;
+    }
+
     //region Task Control
 
     public void startTask(Main main) {
@@ -236,7 +287,7 @@ public class PlantBlock {
         // set new growth start time
         taskStartTime = System.currentTimeMillis();
         // start task for current growth stage
-        growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
+        growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
     }
 
     public void pauseTask() {
@@ -282,22 +333,55 @@ public class PlantBlock {
         startTask(main);
     }
 
-    public void performGrowth(Main main) {
+    public boolean goToNextStage(Main main) {
+        // perform growth without advancement
+        boolean canGrow = performGrowth(main, false);
+        // if couldn't grow, do nothing
+        if (!canGrow) {
+            return false;
+        }
+        // otherwise, pause task
+        pauseTask();
+        // advance to next stage (or finish growing, if applicable)
+        advanceStage(main, true);
+        return true;
+    }
+
+    public boolean goToStageForcefully(Main main, int growthStageIndex) {
+        // check that growthsStageIndex is valid
+        if (!plant.isValidStage(growthStageIndex)) {
+            return false;
+        }
+        // perform growth without advancement
+        boolean canGrow = performGrowth(main, false);
+        // if couldn't grow, do nothing (grow naturally)
+        if (!canGrow) {
+            return false;
+        }
+        // otherwise, pause task
+        pauseTask();
+        int previousStageIndex = stageIndex;
+        stageIndex = growthStageIndex;
+        // perform growth again without advancement to get block to this stage
+        canGrow = performGrowth(main, false);
+        // if can't grow, revert back to previous state and continue previous task
+        if (!canGrow) {
+            stageIndex = previousStageIndex;
+            startTask(main);
+            return false;
+        }
+        // otherwise, advance to next stage
+        advanceStage(main, true);
+        return true;
+    }
+
+    public boolean performGrowth(Main main, boolean advance) {
         // if plant metadata for block is not set, don't do anything and stop task
         if (!MetadataHelper.hasPlantBlockMetadata(getBlock())) {
-            return;
+            return false;
         }
         // check if requirements are met for stage growth
-        boolean canGrow = true;
-        // check that grow block requirements are met
-        if (!checkGrowthRequirements(main)) {
-            canGrow = false;
-        }
-        // check that space is available for blocks that are required to be placed
-        if (!checkSpaceRequirements(main)) {
-            main.getLogger().info("No space to grow for " + toString());
-            canGrow = false;
-        }
+        boolean canGrow = checkAllRequirements(main);
         // if requirements are met, perform growth actions
         if (canGrow) {
             Block thisBlock = getBlock();
@@ -351,8 +435,17 @@ public class PlantBlock {
                 // add child to guardian block
                 guardianBlock.addChildLocation(newPlantBlock.getLocation());
             }
+        }
+        if (advance) {
+            advanceStage(main, canGrow);
+        }
+        return canGrow;
+    }
+
+    void advanceStage(Main main, boolean canGrow) {
+        if (canGrow) {
             // increment growth stage; if would not be valid, stop growing
-            if (plant.isValidStage(stageIndex+1)) {
+            if (plant.isValidStage(stageIndex + 1)) {
                 stageIndex++;
             } else {
                 grows = false;
@@ -366,8 +459,8 @@ public class PlantBlock {
             // set new growth duration
             duration = plant.generateGrowthTime(stageIndex);
             // queue up new task
-            growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main), duration);
-            main.getLogger().info("Growth Task queued up for "+ toString()
+            growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
+            main.getLogger().info("Growth Task queued up for " + toString()
                     + " in " + duration + " ticks; at stage " + stageIndex);
         } else {
             main.getLogger().info("Plant can't grow any further for block type '"
@@ -378,6 +471,19 @@ public class PlantBlock {
     //endregion
 
     //region Requirements Check
+
+    public boolean checkAllRequirements(Main main) {
+        // check that grow block requirements are met
+        if (!checkGrowthRequirements(main)) {
+            return false;
+        }
+        // check that space is available for blocks that are required to be placed
+        if (!checkSpaceRequirements(main)) {
+            main.getLogger().info("No space to grow for " + toString());
+            return false;
+        }
+        return true;
+    }
 
     public boolean checkGrowthRequirements(Main main) {
         if (plant.isWaterRequired()) {

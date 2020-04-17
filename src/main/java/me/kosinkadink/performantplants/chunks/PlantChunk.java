@@ -13,6 +13,7 @@ public class PlantChunk {
     private final ChunkLocation location;
     private ConcurrentHashMap<BlockLocation, PlantBlock> plantBlocks = new ConcurrentHashMap<>();
     private boolean loaded = false;
+    private boolean loadedSinceSave = false;
 
     public PlantChunk(ChunkLocation chunkLocation) {
         location = chunkLocation;
@@ -27,11 +28,15 @@ public class PlantChunk {
     }
 
     public void addPlantBlock(PlantBlock plantBlock) {
+        // mark as loaded since save
+        loadedSinceSave = true;
         // add plantBlock to hash map
         plantBlocks.put(plantBlock.getLocation(), plantBlock);
     }
 
     public boolean removePlantBlock(PlantBlock plantBlock) {
+        // mark as loaded since save
+        loadedSinceSave = true;
         // remove plantBlock from hash map
         PlantBlock removed = plantBlocks.remove(plantBlock.getLocation());
         return removed != null;
@@ -49,6 +54,14 @@ public class PlantChunk {
         return loaded;
     }
 
+    public boolean wasLoadedSinceSave() {
+        return loadedSinceSave;
+    }
+
+    public void clearLoadedSinceSave() {
+        loadedSinceSave = false;
+    }
+
     public boolean isChunkLoaded() {
         return location.getChunk().isLoaded();
     }
@@ -57,6 +70,8 @@ public class PlantChunk {
         // start up task for each plantBlock
         plantBlocks.forEach((blockLocation, plantBlock) -> main.getPlantManager().startGrowthTask(plantBlock));
         loaded = true;
+        // mark as loaded since save
+        loadedSinceSave = true;
     }
 
     public void unload(Main main) {

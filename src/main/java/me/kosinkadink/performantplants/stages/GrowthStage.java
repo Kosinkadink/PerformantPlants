@@ -11,22 +11,19 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GrowthStage implements Droppable {
 
+    private String id;
     private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private long minGrowthTime = -1;
     private long maxGrowthTime = -1;
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
 
-    public GrowthStage() { }
-
-    public GrowthStage(int minTime, int maxTime) {
-        setMinGrowthTime(minTime);
-        setMaxGrowthTime(maxTime);
+    public GrowthStage(String id) {
+        this.id = id;
     }
 
-    public GrowthStage(int minTime, int maxTime, int limit) {
-        this(minTime, maxTime);
-        setDropLimit(limit);
+    public String getId() {
+        return id;
     }
 
     public ArrayList<Drop> getDrops() {

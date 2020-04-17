@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.inventory.ItemStack;
 
@@ -15,6 +16,7 @@ public class Plant {
     private PlantItem plantItem;
     private PlantItem plantSeedItem;
     private HashMap<String, PlantItem> goods = new HashMap<>();
+    private StageStorage stageStorage = new StageStorage();
     private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
     private boolean waterRequired = false;
@@ -75,24 +77,28 @@ public class Plant {
 
     //region Growth Stage Actions
 
+    public StageStorage getStageStorage() {
+        return stageStorage;
+    }
+
     public GrowthStage getGrowthStage(int stageIndex) {
-        return stages.get(stageIndex);
+        return stageStorage.getGrowthStage(stageIndex);
     }
 
     public void addGrowthStage(GrowthStage growthStage) {
-        stages.add(growthStage);
+        stageStorage.addGrowthStage(growthStage);
     }
 
     public int getTotalGrowthStages() {
-        return stages.size();
+        return stageStorage.getTotalGrowthStages();
     }
 
     public boolean hasGrowthStages() {
-        return getTotalGrowthStages() > 0;
+        return stageStorage.hasGrowthStages();
     }
 
     public boolean isValidStage(int stage) {
-        return stage >=0 && stage < stages.size();
+        return stageStorage.isValidStage(stage);
     }
 
     //endregion

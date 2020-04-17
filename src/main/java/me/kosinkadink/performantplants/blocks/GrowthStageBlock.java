@@ -3,10 +3,12 @@ package me.kosinkadink.performantplants.blocks;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
-import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 
@@ -21,11 +23,11 @@ public class GrowthStageBlock implements Droppable {
     private boolean breakParent = false;
     private boolean updateStageOnBreak = false;
     private boolean ignoreSpace = false;
-    private boolean keepVanilla = false;
+    private boolean stopGrowth = false;
     private boolean randomOrientation = false;
     private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
-    // TODO: store map of ItemStack(maybe?) -> DropStorage to keep track of interact behavior
+    private PlantInteractStorage onInteract;
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings, String skullTexture) {
         this.id = id;
@@ -108,12 +110,12 @@ public class GrowthStageBlock implements Droppable {
         this.ignoreSpace = ignoreSpace;
     }
 
-    public boolean isKeepVanilla() {
-        return keepVanilla;
+    public boolean isStopGrowth() {
+        return stopGrowth;
     }
 
-    public void setKeepVanilla(boolean keepVanilla) {
-        this.keepVanilla = keepVanilla;
+    public void setStopGrowth(boolean stopGrowth) {
+        this.stopGrowth = stopGrowth;
     }
 
     public boolean isUpdateStageOnBreak() {
@@ -140,4 +142,18 @@ public class GrowthStageBlock implements Droppable {
         this.randomOrientation = randomOrientation;
     }
 
+    public PlantInteractStorage getOnInteract() {
+        return onInteract;
+    }
+
+    public PlantInteract getOnInteract(ItemStack itemStack) {
+        if (onInteract != null) {
+            return onInteract.getPlantInteract(itemStack);
+        }
+        return null;
+    }
+
+    public void setOnInteract(PlantInteractStorage onInteract) {
+        this.onInteract = onInteract;
+    }
 }

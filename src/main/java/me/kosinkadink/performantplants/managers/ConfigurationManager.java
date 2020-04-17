@@ -4,7 +4,6 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
-import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
@@ -197,13 +196,13 @@ public class ConfigurationManager {
                         return;
                     } else {
                         ConfigurationSection stagesConfig = growingConfig.getConfigurationSection("stages");
-                        for (String stageName : stagesConfig.getKeys(false)) {
-                            ConfigurationSection stageConfig = stagesConfig.getConfigurationSection(stageName);
+                        for (String stageId : stagesConfig.getKeys(false)) {
+                            ConfigurationSection stageConfig = stagesConfig.getConfigurationSection(stageId);
                             if (stageConfig == null) {
                                 main.getLogger().warning("Could not load stageConfig for plant: " + plantId);
                                 return;
                             }
-                            GrowthStage growthStage = new GrowthStage();
+                            GrowthStage growthStage = new GrowthStage(stageId);
                             // set min and max growth times, if present for stage
                             if (stageConfig.isInt("min-growth-time") && stageConfig.isInt("max-growth-time")) {
                                 int stageMinGrowthTime = stageConfig.getInt("min-growth-time");
@@ -868,6 +867,40 @@ public class ConfigurationManager {
             main.getLogger().warning(String.format("Failed to add campfire recipe at %s due to exception: %s",
                     section.getCurrentPath(), e.getMessage()));
         }
+    }
+
+    void addStonecuttingRecipe(ConfigurationSection section, String recipeName) {
+        // get result
+        if (!section.isConfigurationSection("result")) {
+            main.getLogger().warning("No result section for stonecutting recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (resultSettings == null) {
+            return;
+        }
+        // get input
+        if (!section.isConfigurationSection("result")) {
+            main.getLogger().warning("No result section for stonecutting recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings inputSettings = loadItemConfig(section.getConfigurationSection("input"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (inputSettings == null) {
+            return;
+        }
+        // create item stacks
+        ItemStack resultStack = resultSettings.generateItemStack();
+        ItemStack inputStack = inputSettings.generateItemStack();
+        StonecuttingRecipe recipe = new StonecuttingRecipe(new NamespacedKey(main, "stonecutting_" + recipeName),
+                resultStack,
+                new RecipeChoice.ExactChoice(inputStack));
+        // add recipe to server
+        main.getServer().addRecipe(recipe);
+        // add recipe to recipe manager
+        main.getRecipeManager().addRecipe(recipe);
+        main.getLogger().info("Registered stonecutting recipe: " + recipeName);
     }
 
     //endregion
