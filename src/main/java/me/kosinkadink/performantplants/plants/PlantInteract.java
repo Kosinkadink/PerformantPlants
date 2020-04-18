@@ -3,12 +3,15 @@ package me.kosinkadink.performantplants.plants;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class PlantInteract {
 
     private boolean giveBlockDrops = false;
     private boolean goToNext = false;
     private String goToStage;
     private boolean consumeItem = false;
+    private double chance = 100.0;
 
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
@@ -73,4 +76,19 @@ public class PlantInteract {
     public void setConsumeItem(boolean consumeItem) {
         this.consumeItem = consumeItem;
     }
+
+    public double getChance() {
+        return chance;
+    }
+
+    public void setChance(double chance) {
+        if (chance >= 0.0 && chance <= 100.0) {
+            this.chance = chance;
+        }
+    }
+
+    public boolean generateChance() {
+        return ThreadLocalRandom.current().nextDouble() <= chance / 100.0;
+    }
+
 }

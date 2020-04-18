@@ -226,13 +226,13 @@ public class ConfigurationManager {
                                     return;
                                 }
                             }
-                            // set stop growth, if present
-                            if (stageConfig.isBoolean("stop-growth")) {
-                                growthStage.setStopGrowth(stageConfig.getBoolean("stop-growth"));
+                            // set growth checkpoint, if present
+                            if (stageConfig.isBoolean("growth-checkpoint")) {
+                                growthStage.setGrowthCheckpoint(stageConfig.getBoolean("growth-checkpoint"));
                             }
                             // set blocks for growth
                             if (!stageConfig.isConfigurationSection("blocks")) {
-                                main.getLogger().warning("No blocks provided for growth stage in plant: " + plantId);
+                                main.getLogger().warning(String.format("No blocks provided for growth stage %s in plant %s: ", stageId, plantId));
                                 return;
                             }
                             ConfigurationSection blocksConfig = stageConfig.getConfigurationSection("blocks");
@@ -642,9 +642,18 @@ public class ConfigurationManager {
         if (section.isBoolean("go-to-next")) {
             plantInteract.setGoToNext(section.getBoolean("go-to-next"));
         }
-        // get go to stage, if present
+        // set go to stage, if present
         if (section.isString("go-to-stage")) {
             plantInteract.setGoToStage(section.getString("go-to-stage"));
+        }
+        // set chance of stage advancement, if present
+        if (section.isDouble("chance") || section.isInt("chance")) {
+            double chance = section.getDouble("chance");
+            if (chance <= 0.0 || chance > 100.0) {
+                main.getLogger().warning("chance was not greater than 0.0 and less/equal to 100.0 for interact section: " + section.getCurrentPath());
+                return null;
+            }
+            plantInteract.setChance(chance);
         }
         // add drops, if present
         if (section.isConfigurationSection("drops")) {

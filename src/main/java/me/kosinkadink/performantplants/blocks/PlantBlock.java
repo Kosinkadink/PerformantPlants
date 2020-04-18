@@ -343,11 +343,9 @@ public class PlantBlock implements Droppable {
         }
         // otherwise, pause task
         pauseTask();
-        // enable growth
-        grows = true;
         // advance to next stage (or finish growing, if applicable)
         main.getLogger().info("goToNextStage advancing stage for block: " + toString());
-        advanceStage(main, true);
+        advanceStage(main, true, true);
         return true;
     }
 
@@ -449,10 +447,14 @@ public class PlantBlock implements Droppable {
         return canGrow;
     }
 
-    void advanceStage(Main main, boolean canGrow) {
+    void advanceStage(Main main, boolean canGrow, boolean interacted) {
         // see if current stage is a stopping point
-        boolean isStopGrowth = plant.isStopGrowth(stageIndex);
-        if (canGrow && !isStopGrowth && grows) {
+        boolean growthCheckpoint = plant.isGrowthCheckpoint(stageIndex) && !interacted;
+        boolean forcedToGrow = !grows && interacted;
+        if (forcedToGrow) {
+            grows = true;
+        }
+        if (canGrow && !growthCheckpoint && grows) {
             // increment growth stage; if would not be valid, stop growing
             if (plant.isValidStage(stageIndex + 1)) {
                 stageIndex++;
@@ -462,11 +464,15 @@ public class PlantBlock implements Droppable {
             }
         }
         // queue new task only if block is still growing
-        if (grows && !isStopGrowth) {
+        if (grows && !growthCheckpoint) {
             // set new growth start time
             taskStartTime = System.currentTimeMillis();
             // set new growth duration
-            duration = plant.generateGrowthTime(stageIndex);
+            if (forcedToGrow) {
+                duration = 0;
+            } else {
+                duration = plant.generateGrowthTime(stageIndex);
+            }
             // queue up new task
             growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
             main.getLogger().info("Growth Task queued up for " + toString()
@@ -474,7 +480,12 @@ public class PlantBlock implements Droppable {
         } else {
             main.getLogger().info("Plant can't grow any further for block type '"
                     + plant.getId() + "' at stage: " + stageIndex);
+            grows = false;
         }
+    }
+
+    void advanceStage(Main main, boolean canGrow) {
+        advanceStage(main, canGrow, false);
     }
 
     //endregion

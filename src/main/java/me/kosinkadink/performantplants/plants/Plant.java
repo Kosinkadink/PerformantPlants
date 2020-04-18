@@ -176,10 +176,10 @@ public class Plant {
         return 0;
     }
 
-    public boolean isStopGrowth(int stageIndex) {
+    public boolean isGrowthCheckpoint(int stageIndex) {
         // if valid, return isStopGrowth
         if (isValidStage(stageIndex)) {
-            return getGrowthStage(stageIndex).isStopGrowth();
+            return getGrowthStage(stageIndex).isGrowthCheckpoint();
         }
         // otherwise return false (default value)
         return false;

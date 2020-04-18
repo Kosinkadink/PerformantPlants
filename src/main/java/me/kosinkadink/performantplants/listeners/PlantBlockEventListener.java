@@ -99,11 +99,13 @@ public class PlantBlockEventListener implements Listener {
             }
             main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
             // get item in main hand
+            EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
             PlantInteract plantInteract = event.getPlantBlock().getOnInteract(itemStack);
             // if no plant interact behavior, try again for the offhand
             if (plantInteract == null) {
+                hand = EquipmentSlot.OFF_HAND;
                 itemStack = event.getPlayer().getInventory().getItemInOffHand();
                 plantInteract = event.getPlantBlock().getOnInteract(itemStack);
             }
@@ -112,34 +114,38 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            // drop items, if any
-            performDrops(plantInteract.getDropStorage(), event.getBlock());
-            // drop plant block's drops if set that way
-            if (plantInteract.isGiveBlockDrops() && event.getPlantBlock().isDropOnInteract()) {
-                performDrops(event.getPlantBlock(), event.getBlock());
-            }
-            // if specific growth stage is given to advance to, change growth stage
-            if (plantInteract.isChangeStage()) {
-                boolean success = false;
-                if (plantInteract.getGoToStage() != null) {
-                    StageStorage stageStorage = event.getPlantBlock().getPlant().getStageStorage();
-                    if (stageStorage.isValidStage(plantInteract.getGoToStage())) {
-                        int stageIndex = stageStorage.getGrowthStageIndex(plantInteract.getGoToStage());
-                        success = event.getPlantBlock().goToStageForcefully(main, stageIndex);
+            // see if randomly generated chance is okay
+            if (plantInteract.generateChance()) {
+                // drop items, if any
+                performDrops(plantInteract.getDropStorage(), event.getBlock());
+                // drop plant block's drops if set that way
+                if (plantInteract.isGiveBlockDrops() && event.getPlantBlock().isDropOnInteract()) {
+                    performDrops(event.getPlantBlock(), event.getBlock());
+                }
+                // if specific growth stage is given to advance to, change growth stage
+                if (plantInteract.isChangeStage()) {
+                    boolean success = false;
+                    if (plantInteract.getGoToStage() != null) {
+                        StageStorage stageStorage = event.getPlantBlock().getPlant().getStageStorage();
+                        if (stageStorage.isValidStage(plantInteract.getGoToStage())) {
+                            int stageIndex = stageStorage.getGrowthStageIndex(plantInteract.getGoToStage());
+                            success = event.getPlantBlock().goToStageForcefully(main, stageIndex);
+                        }
+                    }
+                    // if goToNext is set to true, then advance to next growth stage as if plant grew
+                    else if (plantInteract.isGoToNext()) {
+                        success = event.getPlantBlock().goToNextStage(main);
+                    }
+                    // if not successfully changed stage, cancel event and do nothing
+                    if (!success) {
+                        event.setCancelled(true);
+                        return;
                     }
                 }
-                // if goToNext is set to true, then advance to next growth stage as if plant grew
-                else if (plantInteract.isGoToNext()) {
-                    success = event.getPlantBlock().goToNextStage(main);
-                }
-                // if not successfully changed stage, cancel event and do nothing
-                if (!success) {
-                    event.setCancelled(true);
-                }
-                // otherwise do other actions
-                if (plantInteract.isConsumeItem()) {
-                    decrementPlayerItemStackInHand(event.getPlayer(), itemStack, event.getHand());
-                }
+            }
+            // do other actions regardless of chance
+            if (plantInteract.isConsumeItem()) {
+                decrementPlayerItemStackInHand(event.getPlayer(), itemStack, hand);
             }
         }
     }

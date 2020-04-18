@@ -15,7 +15,7 @@ public class GrowthStage implements Droppable {
     private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private long minGrowthTime = -1;
     private long maxGrowthTime = -1;
-    private boolean stopGrowth = false;
+    private boolean growthCheckpoint = false;
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
 
@@ -90,11 +90,11 @@ public class GrowthStage implements Droppable {
         }
     }
 
-    public boolean isStopGrowth() {
-        return stopGrowth;
+    public boolean isGrowthCheckpoint() {
+        return growthCheckpoint;
     }
 
-    public void setStopGrowth(boolean stopGrowth) {
-        this.stopGrowth = stopGrowth;
+    public void setGrowthCheckpoint(boolean growthCheckpoint) {
+        this.growthCheckpoint = growthCheckpoint;
     }
 }
