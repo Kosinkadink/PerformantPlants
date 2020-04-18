@@ -1,9 +1,12 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -17,7 +20,6 @@ public class Plant {
     private PlantItem plantSeedItem;
     private HashMap<String, PlantItem> goods = new HashMap<>();
     private StageStorage stageStorage = new StageStorage();
-    private ArrayList<GrowthStage> stages = new ArrayList<>();
     // growth requirements
     private boolean waterRequired = false;
     private boolean lavaRequired = false;
@@ -172,6 +174,45 @@ public class Plant {
             }
         }
         return 0;
+    }
+
+    public boolean isStopGrowth(int stageIndex) {
+        // if valid, return isStopGrowth
+        if (isValidStage(stageIndex)) {
+            return getGrowthStage(stageIndex).isStopGrowth();
+        }
+        // otherwise return false (default value)
+        return false;
+    }
+
+    public boolean validateStages() {
+        for (GrowthStage growthStage : stageStorage.getGrowthStages()) {
+            // verify go to stages use valid stage ids
+            for (GrowthStageBlock growthStageBlock : growthStage.getBlocks().values()) {
+                PlantInteractStorage interactStorage = growthStageBlock.getOnInteract();
+                if (interactStorage == null) {
+                    continue;
+                }
+                ArrayList<PlantInteract> checkInteractList = new ArrayList<>();
+                // add default interact to check, if present
+                if (interactStorage.getDefaultInteract() != null) {
+                    checkInteractList.add(interactStorage.getDefaultInteract());
+                }
+                // add all item interacts to check
+                checkInteractList.addAll(interactStorage.getInteractList());
+                // check interacts
+                for (PlantInteract plantInteract : checkInteractList) {
+                    if (plantInteract.getGoToStage() != null) {
+                        if (!stageStorage.isValidStage(plantInteract.getGoToStage())) {
+                            Bukkit.getLogger().warning(String.format("Stage with id '%s' does not exist for plant: %s",
+                                    plantInteract.getGoToStage(), id));
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
 }

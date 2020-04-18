@@ -6,9 +6,9 @@ import org.bukkit.inventory.ItemStack;
 public class PlantInteract {
 
     private boolean giveBlockDrops = false;
-    private boolean goToNext = true;
+    private boolean goToNext = false;
     private String goToStage;
-    private boolean decrementItem = true;
+    private boolean consumeItem = false;
 
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
@@ -21,6 +21,10 @@ public class PlantInteract {
 
     public DropStorage getDropStorage() {
         return dropStorage;
+    }
+
+    public void setDropStorage(DropStorage dropStorage) {
+        this.dropStorage = dropStorage;
     }
 
     public String getGoToStage() {
@@ -62,11 +66,11 @@ public class PlantInteract {
     }
 
 
-    public boolean isDecrementItem() {
-        return decrementItem;
+    public boolean isConsumeItem() {
+        return consumeItem;
     }
 
-    public void setDecrementItem(boolean decrementItem) {
-        this.decrementItem = decrementItem;
+    public void setConsumeItem(boolean consumeItem) {
+        this.consumeItem = consumeItem;
     }
 }

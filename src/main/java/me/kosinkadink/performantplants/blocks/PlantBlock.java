@@ -123,7 +123,7 @@ public class PlantBlock implements Droppable {
     }
 
     public void setStageIndex(int index) {
-        if (index > 0) {
+        if (index >= 0) {
             stageIndex = index;
         }
     }
@@ -133,7 +133,7 @@ public class PlantBlock implements Droppable {
     }
 
     public void setDropStageIndex(int index) {
-        if (index > 0) {
+        if (index >= 0) {
             dropStageIndex = index;
         }
     }
@@ -334,6 +334,7 @@ public class PlantBlock implements Droppable {
     }
 
     public boolean goToNextStage(Main main) {
+        main.getLogger().info("goToNextStage fired for block: " + toString());
         // perform growth without advancement
         boolean canGrow = performGrowth(main, false);
         // if couldn't grow, do nothing
@@ -342,12 +343,16 @@ public class PlantBlock implements Droppable {
         }
         // otherwise, pause task
         pauseTask();
+        // enable growth
+        grows = true;
         // advance to next stage (or finish growing, if applicable)
+        main.getLogger().info("goToNextStage advancing stage for block: " + toString());
         advanceStage(main, true);
         return true;
     }
 
     public boolean goToStageForcefully(Main main, int growthStageIndex) {
+        main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
         // check that growthsStageIndex is valid
         if (!plant.isValidStage(growthStageIndex)) {
             return false;
@@ -371,6 +376,8 @@ public class PlantBlock implements Droppable {
             return false;
         }
         // otherwise, advance to next stage
+        grows = true;
+        main.getLogger().info(String.format("goToStageForcefully advancing stage (from %d to %d for block: %s)",previousStageIndex, stageIndex, toString()));
         advanceStage(main, true);
         return true;
     }
@@ -443,7 +450,9 @@ public class PlantBlock implements Droppable {
     }
 
     void advanceStage(Main main, boolean canGrow) {
-        if (canGrow) {
+        // see if current stage is a stopping point
+        boolean isStopGrowth = plant.isStopGrowth(stageIndex);
+        if (canGrow && !isStopGrowth && grows) {
             // increment growth stage; if would not be valid, stop growing
             if (plant.isValidStage(stageIndex + 1)) {
                 stageIndex++;
@@ -453,7 +462,7 @@ public class PlantBlock implements Droppable {
             }
         }
         // queue new task only if block is still growing
-        if (grows) {
+        if (grows && !isStopGrowth) {
             // set new growth start time
             taskStartTime = System.currentTimeMillis();
             // set new growth duration

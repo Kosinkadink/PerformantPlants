@@ -12,6 +12,10 @@ public class PlantInteractStorage {
 
     public PlantInteractStorage() { }
 
+    public ArrayList<PlantInteract> getInteractList() {
+        return interactList;
+    }
+
     public PlantInteract getPlantInteract(ItemStack itemStack) {
         for (PlantInteract plantInteract : interactList) {
             if (itemStack.isSimilar(plantInteract.getItemStack())) {
@@ -32,7 +36,7 @@ public class PlantInteractStorage {
         return defaultInteract;
     }
 
-    public void setPlantInteract(PlantInteract plantInteract) {
+    public void setDefaultInteract(PlantInteract plantInteract) {
         defaultInteract = plantInteract;
     }
 

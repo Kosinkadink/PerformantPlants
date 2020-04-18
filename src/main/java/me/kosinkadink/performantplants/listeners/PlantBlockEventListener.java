@@ -92,17 +92,22 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantInteract(PlantInteractEvent event) {
         if (!event.isCancelled()) {
-            main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
-            // get item in appropriate hand hand
-            ItemStack itemStack;
+            // don't do anything if offhand triggered event; this listener processes both hands
             if (event.getHand() == EquipmentSlot.OFF_HAND) {
-                itemStack = event.getPlayer().getInventory().getItemInOffHand();
-            } else {
-                itemStack = event.getPlayer().getInventory().getItemInMainHand();
+                event.setCancelled(true);
+                return;
             }
-            // get PlantInteract behavior for itemStack, if any
+            main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
+            // get item in main hand
+            ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+            // get PlantInteract behavior for main hand, if any
             PlantInteract plantInteract = event.getPlantBlock().getOnInteract(itemStack);
-            // if no plant interact behavior, cancel event and do nothing
+            // if no plant interact behavior, try again for the offhand
+            if (plantInteract == null) {
+                itemStack = event.getPlayer().getInventory().getItemInOffHand();
+                plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+            }
+            // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {
                 event.setCancelled(true);
                 return;
@@ -132,7 +137,7 @@ public class PlantBlockEventListener implements Listener {
                     event.setCancelled(true);
                 }
                 // otherwise do other actions
-                if (plantInteract.isDecrementItem()) {
+                if (plantInteract.isConsumeItem()) {
                     decrementPlayerItemStackInHand(event.getPlayer(), itemStack, event.getHand());
                 }
             }

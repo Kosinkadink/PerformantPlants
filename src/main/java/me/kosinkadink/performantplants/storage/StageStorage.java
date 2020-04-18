@@ -12,6 +12,10 @@ public class StageStorage {
 
     public StageStorage() { }
 
+    public ArrayList<GrowthStage> getGrowthStages() {
+        return stages;
+    }
+
     public GrowthStage getGrowthStage(int stageIndex) {
         return stages.get(stageIndex);
     }
@@ -47,6 +51,9 @@ public class StageStorage {
 
     public boolean isValidStage(String stageId) {
         Integer stageIndex = stageIdMap.get(stageId);
+        if (stageIndex == null) {
+            return false;
+        }
         return isValidStage(stageIndex);
     }
 

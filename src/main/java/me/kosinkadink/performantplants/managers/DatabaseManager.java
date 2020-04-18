@@ -576,8 +576,11 @@ public class DatabaseManager {
                     rs.getInt("y"),
                     rs.getInt("z"),
                     worldName);
-            // TODO: check if plant type exists (returned not null)
             Plant plant = main.getPlantTypeManager().getPlantById(rs.getString("plant"));
+            // if plant does not exist, do nothing
+            if (plant == null) {
+                return;
+            }
             PlantBlock plantBlock;
             String uuidString = rs.getString("playerUUID");
             String plantUuidString = rs.getString("plantUUID");

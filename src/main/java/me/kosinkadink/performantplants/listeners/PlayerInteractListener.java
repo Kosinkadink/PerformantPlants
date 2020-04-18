@@ -43,6 +43,10 @@ public class PlayerInteractListener implements Listener {
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
             // interacting with offhand
             itemStack = player.getInventory().getItemInOffHand();
+            // if off hand is empty, don't process off hand
+            if (itemStack.getType() == Material.AIR) {
+                return;
+            }
             main.getLogger().info("Reviewing PlayerInteractEvent for Off Hand");
         }
         else {
@@ -51,8 +55,8 @@ public class PlayerInteractListener implements Listener {
             main.getLogger().info("Reviewing PlayerInteractEvent for Main Hand");
         }
         Block block = event.getClickedBlock();
+        // check if block is farmland; if so, got trampled
         if (event.getAction() == Action.PHYSICAL) {
-            // check if block is farmland; if so, got trampled
             try {
                 if (block.getType() == Material.FARMLAND) {
                     if (block.getWorld().getMaxHeight()-1 > block.getY()) {
@@ -85,7 +89,7 @@ public class PlayerInteractListener implements Listener {
             // get plant block interacted with
             PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
             if (plantBlock != null) {
-                // cancel event and send out PlantInteractEvent
+                // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
                 event.setCancelled(true);
                 main.getServer().getPluginManager().callEvent(
                         new PlantInteractEvent(player, plantBlock, block, event.getHand())

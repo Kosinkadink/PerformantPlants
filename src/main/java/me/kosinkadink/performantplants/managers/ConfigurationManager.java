@@ -8,9 +8,12 @@ import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
@@ -218,10 +221,14 @@ public class ConfigurationManager {
                             // set drops, if present
                             if (stageConfig.isSet("drops")) {
                                 // add drops
-                                boolean valid = addDropsToDroppable(stageConfig, growthStage, plant);
+                                boolean valid = addDropsToDroppable(stageConfig, growthStage);
                                 if (!valid) {
                                     return;
                                 }
+                            }
+                            // set stop growth, if present
+                            if (stageConfig.isBoolean("stop-growth")) {
+                                growthStage.setStopGrowth(stageConfig.getBoolean("stop-growth"));
                             }
                             // set blocks for growth
                             if (!stageConfig.isConfigurationSection("blocks")) {
@@ -291,15 +298,67 @@ public class ConfigurationManager {
                                 // set drops, if present
                                 if (blockConfig.isSet("drops")) {
                                     // add drops
-                                    boolean valid = addDropsToDroppable(blockConfig, growthStageBlock, plant);
+                                    boolean valid = addDropsToDroppable(blockConfig, growthStageBlock);
                                     if (!valid) {
                                         return;
                                     }
                                 }
+                                // set interact behavior, if present
+                                if (blockConfig.isConfigurationSection("on-interact")) {
+                                    ConfigurationSection onInteractSection = blockConfig.getConfigurationSection("on-interact");
+                                    PlantInteractStorage plantInteractStorage = new PlantInteractStorage();
+                                    // add default interaction, if present
+                                    if (onInteractSection.isConfigurationSection("default")) {
+                                        ConfigurationSection defaultInteractSection = onInteractSection.getConfigurationSection("default");
+                                        // load interaction from default path
+                                        PlantInteract plantInteract = loadPlantInteract(defaultInteractSection);
+                                        if (plantInteract == null) {
+                                            main.getLogger().warning("Default on-interact could not be loaded from section: " + defaultInteractSection.getCurrentPath());
+                                            return;
+                                        }
+                                        plantInteractStorage.setDefaultInteract(plantInteract);
+                                    }
+                                    // add item interactions, if present
+                                    if (onInteractSection.isConfigurationSection("items")) {
+                                        ConfigurationSection itemsInteractSection = onInteractSection.getConfigurationSection("items");
+                                        for (String placeholder : itemsInteractSection.getKeys(false)) {
+                                            ConfigurationSection itemInteractSection = itemsInteractSection.getConfigurationSection(placeholder);
+                                            if (itemInteractSection == null) {
+                                                main.getLogger().warning("Item on-interact section was null from section: " + itemsInteractSection.getCurrentPath());
+                                                return;
+                                            }
+                                            ConfigurationSection itemSection = itemInteractSection.getConfigurationSection("item");
+                                            if (itemSection == null) {
+                                                main.getLogger().warning("Item section not present in on-interact section from section: " + itemInteractSection.getCurrentPath());
+                                                return;
+                                            }
+                                            ItemSettings itemInteractSettings = loadItemConfig(itemSection, true);
+                                            if (itemInteractSettings == null) {
+                                                return;
+                                            }
+                                            PlantInteract plantInteract = loadPlantInteract(itemInteractSection);
+                                            if (plantInteract == null) {
+                                                main.getLogger().warning("Item on-interact could not be loaded from section: " + itemInteractSection.getCurrentPath());
+                                                return;
+                                            }
+                                            // set interact's item stack
+                                            plantInteract.setItemStack(itemInteractSettings.generateItemStack());
+                                            plantInteractStorage.addPlantInteract(plantInteract);
+                                        }
+                                    }
+                                    // add interactions to growth stage block
+                                    growthStageBlock.setOnInteract(plantInteractStorage);
+                                }
+                                // add growth stage block to stage
                                 growthStage.addGrowthStageBlock(growthStageBlock);
                             }
+                            // add growth stage to plant
                             plant.addGrowthStage(growthStage);
                         }
+                    }
+                    // validate stages
+                    if (!plant.validateStages()) {
+                        return;
                     }
                 }
             }
@@ -510,7 +569,7 @@ public class ConfigurationManager {
         return null;
     }
 
-    DropSettings loadDropConfig(ConfigurationSection section, Plant plant) {
+    DropSettings loadDropConfig(ConfigurationSection section) {
         if (section != null) {
             DropSettings dropSettings = new DropSettings();
             // set min and max amounts if present
@@ -566,7 +625,40 @@ public class ConfigurationManager {
         return null;
     }
 
-    boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable, Plant plant) {
+    PlantInteract loadPlantInteract(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        PlantInteract plantInteract = new PlantInteract();
+        // set if interaction should give block drops, if present
+        if (section.isBoolean("give-block-drops")) {
+            plantInteract.setGiveBlockDrops(section.getBoolean("give-block-drops"));
+        }
+        // set if should decrement item (consume), if present
+        if (section.isBoolean("consume-item")) {
+            plantInteract.setConsumeItem(section.getBoolean("consume-item"));
+        }
+        // set if should go to next (overridden by go to stage), if present
+        if (section.isBoolean("go-to-next")) {
+            plantInteract.setGoToNext(section.getBoolean("go-to-next"));
+        }
+        // get go to stage, if present
+        if (section.isString("go-to-stage")) {
+            plantInteract.setGoToStage(section.getString("go-to-stage"));
+        }
+        // add drops, if present
+        if (section.isConfigurationSection("drops")) {
+            DropStorage dropStorage = new DropStorage();
+            boolean valid = addDropsToDroppable(section, dropStorage);
+            if (!valid) {
+                return null;
+            }
+            plantInteract.setDropStorage(dropStorage);
+        }
+        return plantInteract;
+    }
+
+    boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable) {
         // iterate through drops
         if (!section.isConfigurationSection("drops")) {
             main.getLogger().warning("No drops provided for growth for plant: " + section.getCurrentPath());
@@ -580,7 +672,7 @@ public class ConfigurationManager {
                 return false;
             }
             // get drop settings
-            DropSettings dropSettings = loadDropConfig(dropConfig, plant);
+            DropSettings dropSettings = loadDropConfig(dropConfig);
             if (dropSettings == null) {
                 main.getLogger().warning("dropSettings were null for growth for plant: " + section.getCurrentPath());
                 return false;
