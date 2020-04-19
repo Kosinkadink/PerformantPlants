@@ -2,15 +2,15 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.events.PlantBreakEvent;
-import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
-import me.kosinkadink.performantplants.events.PlantInteractEvent;
-import me.kosinkadink.performantplants.events.PlantPlaceEvent;
+import me.kosinkadink.performantplants.effects.PlantEffect;
+import me.kosinkadink.performantplants.events.*;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.storage.StageStorage;
+import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -24,6 +24,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -117,10 +118,10 @@ public class PlantBlockEventListener implements Listener {
             // see if randomly generated chance is okay
             if (plantInteract.generateChance()) {
                 // drop items, if any
-                performDrops(plantInteract.getDropStorage(), event.getBlock());
+                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock());
                 // drop plant block's drops if set that way
                 if (plantInteract.isGiveBlockDrops() && event.getPlantBlock().isDropOnInteract()) {
-                    performDrops(event.getPlantBlock(), event.getBlock());
+                    DropHelper.performDrops(event.getPlantBlock(), event.getBlock());
                 }
                 // if specific growth stage is given to advance to, change growth stage
                 if (plantInteract.isChangeStage()) {
@@ -147,6 +148,36 @@ public class PlantBlockEventListener implements Listener {
             if (plantInteract.isConsumeItem()) {
                 decrementPlayerItemStackInHand(event.getPlayer(), itemStack, hand);
             }
+        }
+    }
+
+    @EventHandler
+    public void onPlantConsume(PlantConsumeEvent event) {
+        // if offhand and main hand is not empty, do nothing
+        if (event.getHand() == EquipmentSlot.OFF_HAND && event.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
+            event.setCancelled(true);
+            return;
+        }
+        main.getLogger().info("Reviewing PlantInteractEvent for item: " + event.getPlantItem().getId());
+        PlantConsumable plantConsumable = event.getPlantItem().getConsumable();
+        // do actions stored in item's PlantConsumable
+        if (plantConsumable.getItemStackToAdd() != null) {
+            // check that the items could be added
+            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(plantConsumable.getItemStackToAdd());
+            if (!remaining.isEmpty()) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage("Could not consume item; not enough room in inventory to receive items");
+                event.getPlayer().getInventory().removeItem(remaining.get(0));
+                return;
+            }
+        }
+        // decrement item, if set
+        if (plantConsumable.isDecrementItem()) {
+            decrementPlayerItemStackInHand(event.getPlayer(), event.getPlantItem().getItemStack(), event.getHand());
+        }
+        // perform effects
+        for (PlantEffect effect : plantConsumable.getEffects()) {
+            effect.performEffect(event.getPlayer(), event.getPlayer().getLocation());
         }
     }
 
@@ -317,7 +348,7 @@ public class PlantBlockEventListener implements Listener {
         }
         // handle drops
         if (drops && plantBlock.isDropOnBreak()) {
-            performDrops(plantBlock, block);
+            DropHelper.performDrops(plantBlock, block);
         }
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {
@@ -346,24 +377,6 @@ public class PlantBlockEventListener implements Listener {
         PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
         if (plantBlock != null) {
             destroyPlantBlock(plantBlock.getBlock(), plantBlock, drops);
-        }
-    }
-
-    void performDrops(Droppable droppable, Block block) {
-        ArrayList<Drop> dropsList = droppable.getDrops();
-        int dropLimit = droppable.getDropLimit();
-        boolean limited = dropLimit >= 1;
-        int dropCount = 0;
-        for (Drop drop : dropsList) {
-            // if there is a limit and have reached it, stop dropping
-            if (limited && dropCount >= dropLimit) {
-                break;
-            }
-            ItemStack dropStack = drop.generateDrop();
-            if (dropStack.getAmount() != 0) {
-                dropCount++;
-                block.getWorld().dropItemNaturally(block.getLocation(), dropStack);
-            }
         }
     }
 

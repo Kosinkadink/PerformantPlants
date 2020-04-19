@@ -9,6 +9,7 @@ import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.BlockHelper;
+import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Material;
@@ -26,6 +27,7 @@ public class PlantBlock implements Droppable {
     private Plant plant;
     private int stageIndex;
     private int dropStageIndex;
+    private boolean executedStage = false;
     private boolean dropOnBreak = true;
     private boolean dropOnInteract = true;
     private String stageBlockId;
@@ -136,6 +138,14 @@ public class PlantBlock implements Droppable {
         if (index >= 0) {
             dropStageIndex = index;
         }
+    }
+
+    public boolean isExecutedStage() {
+        return executedStage;
+    }
+
+    public void setExecutedStage(boolean executedStage) {
+        this.executedStage = executedStage;
     }
 
     public boolean isDropOnBreak() {
@@ -351,25 +361,30 @@ public class PlantBlock implements Droppable {
 
     public boolean goToStageForcefully(Main main, int growthStageIndex) {
         main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
+        // pause task
+        pauseTask();
         // check that growthsStageIndex is valid
         if (!plant.isValidStage(growthStageIndex)) {
+            startTask(main);
             return false;
         }
         // perform growth without advancement
         boolean canGrow = performGrowth(main, false);
         // if couldn't grow, do nothing (grow naturally)
         if (!canGrow) {
+            startTask(main);
             return false;
         }
         // otherwise, pause task
-        pauseTask();
         int previousStageIndex = stageIndex;
         stageIndex = growthStageIndex;
+        executedStage = false;
         // perform growth again without advancement to get block to this stage
         canGrow = performGrowth(main, false);
         // if can't grow, revert back to previous state and continue previous task
         if (!canGrow) {
             stageIndex = previousStageIndex;
+            executedStage = true;
             startTask(main);
             return false;
         }
@@ -388,7 +403,7 @@ public class PlantBlock implements Droppable {
         // check if requirements are met for stage growth
         boolean canGrow = checkAllRequirements(main);
         // if requirements are met, perform growth actions
-        if (canGrow) {
+        if (canGrow && !executedStage) {
             Block thisBlock = getBlock();
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
@@ -440,6 +455,14 @@ public class PlantBlock implements Droppable {
                 // add child to guardian block
                 guardianBlock.addChildLocation(newPlantBlock.getLocation());
             }
+            // perform on-execute
+            if (!executedStage) {
+                PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
+                if (onExecute != null) {
+                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock());
+                }
+            }
+            executedStage = true;
         }
         if (advance) {
             advanceStage(main, canGrow);
@@ -454,10 +477,20 @@ public class PlantBlock implements Droppable {
         if (forcedToGrow) {
             grows = true;
         }
+        PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
+        if (onExecute != null) {
+            if (onExecute.getGoToStage() != null) {
+                if (plant.getStageStorage().isValidStage(onExecute.getGoToStage())) {
+                    goToStageForcefully(main, plant.getStageStorage().getGrowthStageIndex(onExecute.getGoToStage()));
+                    return;
+                }
+            }
+        }
         if (canGrow && !growthCheckpoint && grows) {
             // increment growth stage; if would not be valid, stop growing
             if (plant.isValidStage(stageIndex + 1)) {
                 stageIndex++;
+                executedStage = false;
             } else {
                 grows = false;
                 duration = 0;
@@ -480,7 +513,10 @@ public class PlantBlock implements Droppable {
         } else {
             main.getLogger().info("Plant can't grow any further for block type '"
                     + plant.getId() + "' at stage: " + stageIndex);
-            grows = false;
+            // stop growth if failure to grow caused by checkpoint
+            if (growthCheckpoint) {
+                grows = false;
+            }
         }
     }
 
@@ -594,7 +630,7 @@ public class PlantBlock implements Droppable {
 
     @Override
     public String toString() {
-        return "PlantBlock @ " + location.toString();
+        return String.format("PlantBlock (%s) @ %s", plant.getId(), location.toString());
     }
 
 }

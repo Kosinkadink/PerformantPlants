@@ -230,6 +230,17 @@ public class ConfigurationManager {
                             if (stageConfig.isBoolean("growth-checkpoint")) {
                                 growthStage.setGrowthCheckpoint(stageConfig.getBoolean("growth-checkpoint"));
                             }
+                            // set on-execute, if present
+                            if (stageConfig.isConfigurationSection("on-execute")) {
+                                ConfigurationSection onExecuteSection = stageConfig.getConfigurationSection("on-execute");
+                                // load interaction from default path
+                                PlantInteract onExecute = loadPlantInteract(onExecuteSection);
+                                if (onExecute == null) {
+                                    main.getLogger().warning(String.format("Stage %s's on-execute could not be loaded from section: %s", stageId, onExecuteSection.getCurrentPath()));
+                                    return;
+                                }
+                                growthStage.setOnExecute(onExecute);
+                            }
                             // set blocks for growth
                             if (!stageConfig.isConfigurationSection("blocks")) {
                                 main.getLogger().warning(String.format("No blocks provided for growth stage %s in plant %s: ", stageId, plantId));
@@ -727,6 +738,13 @@ public class ConfigurationManager {
                 plantItem.setSellPrice(price);
             }
         }
+    }
+
+    void addConsumableToPlantItem(ConfigurationSection section, PlantItem plantItem) {
+        if (section == null) {
+            return;
+        }
+        // TODO: finish filling out
     }
 
     //region Add Recipes

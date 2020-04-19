@@ -271,6 +271,7 @@ public class DatabaseManager {
                 + "    grows BOOLEAN,\n"
                 + "    stage INTEGER,\n"
                 + "    drop_stage INTEGER,\n"
+                + "    executed_stage BOOLEAN,\n"
                 + "    drop_break BOOLEAN,\n"
                 + "    drop_interact BOOLEAN,\n"
                 + "    block_id TEXT,\n"
@@ -292,8 +293,8 @@ public class DatabaseManager {
     }
 
     boolean insertPlantBlockIntoTablePlantBlocks(Connection conn, PlantBlock block, PlantChunk chunk) {
-        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, drop_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID)\n"
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID)\n"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             // set values; index starts at 1
             pstmt.setInt(     1,block.getLocation().getX());
@@ -305,12 +306,13 @@ public class DatabaseManager {
             pstmt.setBoolean( 7,block.getGrows());
             pstmt.setInt(     8,block.getStageIndex());
             pstmt.setInt(     9,block.getDropStageIndex());
-            pstmt.setBoolean(10,block.isDropOnBreak());
-            pstmt.setBoolean(11,block.isDropOnInteract());
-            pstmt.setString( 12,block.getStageBlockId());
-            pstmt.setLong(   13,block.getDuration());
-            pstmt.setString( 14,block.getPlayerUUID().toString());
-            pstmt.setString( 15,block.getPlantUUID().toString());
+            pstmt.setBoolean(10,block.isExecutedStage());
+            pstmt.setBoolean(11,block.isDropOnBreak());
+            pstmt.setBoolean(12,block.isDropOnInteract());
+            pstmt.setString( 13,block.getStageBlockId());
+            pstmt.setLong(   14,block.getDuration());
+            pstmt.setString( 15,block.getPlayerUUID().toString());
+            pstmt.setString( 16,block.getPlantUUID().toString());
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -553,7 +555,7 @@ public class DatabaseManager {
         // Create table if doesn't already exist
         createTablePlantBlocks(conn);
         // Get and load all plant blocks stored in db
-        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, drop_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID FROM plantblocks;";
+        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID FROM plantblocks;";
         try (Statement stmt = conn.createStatement();
              ResultSet rs   = stmt.executeQuery(sql)) {
             // loop through result set
@@ -596,7 +598,8 @@ public class DatabaseManager {
             plantBlock.setStageIndex(rs.getInt("stage"));
             plantBlock.setDropStageIndex(rs.getInt("drop_stage"));
             plantBlock.setStageBlockId(rs.getString("block_id"));
-            // set dropOnBreak + dropOnInteract
+            // set executedStage + dropOnBreak + dropOnInteract
+            plantBlock.setExecutedStage(rs.getBoolean("executed_stage"));
             plantBlock.setDropOnBreak(rs.getBoolean("drop_break"));
             plantBlock.setDropOnInteract(rs.getBoolean("drop_interact"));
             // set duration

@@ -2,10 +2,12 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.events.PlantConsumeEvent;
 import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
 import me.kosinkadink.performantplants.events.PlantInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -97,8 +99,8 @@ public class PlayerInteractListener implements Listener {
                 return;
             }
         }
-        // check if trying to place down plant
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
+        // check if trying to place down plant or consume plant item
+        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) &&
                 itemStack.getType() != Material.AIR) {
             Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
             if (plant != null) {
@@ -127,10 +129,17 @@ public class PlayerInteractListener implements Listener {
                     main.getServer().getPluginManager().callEvent(
                             new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
                     );
+                    return;
                 }
-                else {
-                    main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
+                // check if plant item can be consumed
+                PlantItem plantItem = plant.getItemByItemStack(itemStack);
+                if (plantItem.isConsumable()) {
+                    event.setCancelled(true);
+                    main.getServer().getPluginManager().callEvent(
+                            new PlantConsumeEvent(player, plantItem, event.getHand())
+                    );
                 }
+                main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
             }
             else {
                 main.getLogger().info("Plant was NULL, doing nothing");

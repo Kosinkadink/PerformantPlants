@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.stages;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.util.TimeHelper;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public class GrowthStage implements Droppable {
     private boolean growthCheckpoint = false;
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
+    private PlantInteract onExecute;
 
     public GrowthStage(String id) {
         this.id = id;
@@ -97,4 +99,13 @@ public class GrowthStage implements Droppable {
     public void setGrowthCheckpoint(boolean growthCheckpoint) {
         this.growthCheckpoint = growthCheckpoint;
     }
+
+    public PlantInteract getOnExecute() {
+        return onExecute;
+    }
+
+    public void setOnExecute(PlantInteract plantInteract) {
+        onExecute = plantInteract;
+    }
+
 }

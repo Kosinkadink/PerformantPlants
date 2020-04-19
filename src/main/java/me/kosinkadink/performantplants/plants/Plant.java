@@ -32,6 +32,7 @@ public class Plant {
     public Plant(String id, PlantItem plantItem) {
         this.id = id;
         this.plantItem = plantItem;
+        this.plantItem.setId(this.id);
     }
 
     public String getId() {
@@ -63,6 +64,7 @@ public class Plant {
     }
 
     public void addGoodItem(String id, PlantItem goodItem) {
+        goodItem.setId(this.id + ".goods." + id);
         goods.put(id, goodItem);
     }
 
@@ -75,6 +77,22 @@ public class Plant {
 
     public void setSeedItem(PlantItem seedItem) {
         plantSeedItem = seedItem;
+        plantSeedItem.setId(id + ".seed");
+    }
+
+    public PlantItem getItemByItemStack(ItemStack itemStack) {
+        if (itemStack.isSimilar(plantItem.getItemStack())) {
+            return plantItem;
+        }
+        if (itemStack.isSimilar(plantSeedItem.getItemStack())) {
+            return plantSeedItem;
+        }
+        for (PlantItem good : goods.values()) {
+            if (itemStack.isSimilar(good.getItemStack())) {
+                return good;
+            }
+        }
+        return null;
     }
 
     //region Growth Stage Actions

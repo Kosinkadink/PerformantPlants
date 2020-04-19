@@ -4,9 +4,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class PlantItem {
 
+    private String id = "";
     private ItemStack itemStack;
     private double buyPrice;
     private double sellPrice;
+    private PlantConsumable consumable;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -16,6 +18,14 @@ public class PlantItem {
 
     public PlantItem(ItemStack itemStack) {
         this(itemStack, -1, -1);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public ItemStack getItemStack() {
@@ -41,4 +51,17 @@ public class PlantItem {
     public void setSellPrice(double sellPrice) {
         this.sellPrice = sellPrice;
     }
+
+    public boolean isConsumable() {
+        return consumable != null;
+    }
+
+    public PlantConsumable getConsumable() {
+        return consumable;
+    }
+
+    public void setConsumable(PlantConsumable consumable) {
+        this.consumable = consumable;
+    }
+
 }
