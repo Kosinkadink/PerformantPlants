@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class PlantPotionEffect implements PlantEffect {
+public class PlantPotionEffect extends PlantEffect {
 
     private PotionEffectType potionEffectType;
     private int duration;
@@ -37,12 +37,12 @@ public class PlantPotionEffect implements PlantEffect {
     }
 
     @Override
-    public void performEffect(Player player, Location location) {
+    void performEffectAction(Player player, Location location) {
         player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, ambient, particles, icon));
     }
 
     @Override
-    public void performEffect(Block block) { }
+    void performEffectAction(Block block) { }
 
     public PotionEffectType getPotionEffectType() {
         return potionEffectType;

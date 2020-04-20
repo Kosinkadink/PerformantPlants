@@ -4,15 +4,16 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.effects.PlantEffect;
+import me.kosinkadink.performantplants.effects.PlantFeedEffect;
+import me.kosinkadink.performantplants.effects.PlantHealEffect;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.plants.Drop;
-import me.kosinkadink.performantplants.plants.Plant;
-import me.kosinkadink.performantplants.plants.PlantInteract;
-import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
@@ -138,6 +139,8 @@ public class ConfigurationManager {
         PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
+        // add consumable behavior
+        addConsumableToPlantItem(itemConfig, plantItem);
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
         // if growing section is present, get seed item + stages
@@ -386,6 +389,7 @@ public class ConfigurationManager {
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(ItemHelper.fromItemSettings(goodSettings, goodId, false));
                     addPricesToPlantItem(goodSection, goodItem);
+                    addConsumableToPlantItem(goodSection, goodItem);
                     plant.addGoodItem(goodId, goodItem);
                     main.getLogger().info(String.format("Added good item '%s' to plant: %s", goodId, plantId));
                 }
@@ -645,9 +649,9 @@ public class ConfigurationManager {
         if (section.isBoolean("give-block-drops")) {
             plantInteract.setGiveBlockDrops(section.getBoolean("give-block-drops"));
         }
-        // set if should decrement item (consume), if present
-        if (section.isBoolean("consume-item")) {
-            plantInteract.setConsumeItem(section.getBoolean("consume-item"));
+        // set if should take item, if present
+        if (section.isBoolean("take-item")) {
+            plantInteract.setTakeItem(section.getBoolean("take-item"));
         }
         // set if should go to next (overridden by go to stage), if present
         if (section.isBoolean("go-to-next")) {
@@ -744,8 +748,161 @@ public class ConfigurationManager {
         if (section == null) {
             return;
         }
-        // TODO: finish filling out
+        if (!section.isConfigurationSection("consumable")) {
+            return;
+        }
+        ConfigurationSection consumableSection = section.getConfigurationSection("consumable");
+        PlantConsumable consumable = new PlantConsumable();
+        // set take item, if present
+        if (consumableSection.isBoolean("take-item")) {
+            consumable.setTakeItem(consumableSection.getBoolean("take-item"));
+        }
+        // set missing food, if present
+        if (consumableSection.isBoolean("missing-food")) {
+            consumable.setMissingFood(consumableSection.getBoolean("missing-food"));
+        }
+        // set give item, if present
+        if (consumableSection.isConfigurationSection("give-item")) {
+            ConfigurationSection itemSection = consumableSection.getConfigurationSection("add-item");
+             ItemSettings itemSettings = loadItemConfig(itemSection, true);
+             if (itemSettings == null) {
+                 main.getLogger().warning(String.format("Problem getting add-item in consumable section %s for item %s;" +
+                         "will continue to load, but this item will not be consumable (fix config)",
+                         itemSection.getCurrentPath(), plantItem.getId()));
+                 return;
+             }
+             consumable.setItemToAdd(itemSettings.generateItemStack());
+        }
+        // set required items, if present
+        if (consumableSection.isConfigurationSection("required-items")) {
+            ConfigurationSection requiredItemsSection = consumableSection.getConfigurationSection("required-items");
+            for (String placeholder : requiredItemsSection.getKeys(false)) {
+                ConfigurationSection requiredItemSection = requiredItemsSection.getConfigurationSection(placeholder);
+                // set item
+                ConfigurationSection itemSection = requiredItemSection.getConfigurationSection("item");
+                if (itemSection == null) {
+                    main.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
+                            "will continue to load, but item won't be consumable (fix config)",
+                            placeholder, requiredItemsSection));
+                    return;
+                }
+                ItemSettings itemSettings = loadItemConfig(itemSection, true);
+                if (itemSettings == null) {
+                    main.getLogger().warning(String.format("Problem getting required item in section %s;" +
+                            "will continue to load, but this item will not be consumable (fix config)",
+                            itemSection.getCurrentPath()));
+                    return;
+                }
+                // create required item from item
+                RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
+                // set take item, if set
+                if (requiredItemSection.isBoolean("take-item")) {
+                    requiredItem.setTakeItem(requiredItemSection.getBoolean("take-item"));
+                }
+                // set if required item should be in hand (offhand or main hand), if set
+                if (requiredItemSection.isBoolean("in-hand")) {
+                    requiredItem.setInHand(requiredItemSection.getBoolean("in-hand"));
+                }
+                consumable.addRequiredItem(requiredItem);
+            }
+        }
+        // add effects, if present
+        addEffectsToEffectStorage(consumableSection, consumable.getEffectStorage());
+        // add effect limit, if present
+        if (consumableSection.isInt("effect-limit")) {
+            consumable.getEffectStorage().setEffectLimit(consumableSection.getInt("effect-limit"));
+        }
+        //add consumable to plant item
+        plantItem.setConsumable(consumable);
     }
+
+    void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        if (section == null || effectStorage == null) {
+            return;
+        }
+        if (!section.isConfigurationSection("effects")) {
+            return;
+        }
+        ConfigurationSection effectsSection = section.getConfigurationSection("effects");
+        for (String placeholder : effectsSection.getKeys(false)) {
+            ConfigurationSection effectSection = effectsSection.getConfigurationSection(placeholder);
+            if (effectSection != null) {
+                addEffect(effectSection, effectStorage);
+            }
+        }
+    }
+
+    //region Add Effects
+
+    boolean addEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        String type = section.getString("type");
+        if (type == null) {
+            main.getLogger().warning("Type not set for effect at: " + section.getCurrentPath());
+            return false;
+        }
+        if (type.equalsIgnoreCase("feed")) {
+            return addFeedEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("heal")) {
+            return addHealEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("sound")) {
+            return addSoundEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("particle")) {
+            return addParticleEffect(section, effectStorage);
+        }
+        main.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
+                type, section.getCurrentPath()));
+        return false;
+    }
+
+    boolean addFeedEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        PlantFeedEffect effect = new PlantFeedEffect();
+        // set food amount, if present
+        if (section.isInt("food-amount")) {
+            effect.setFoodAmount(section.getInt("food-amount"));
+        }
+        // set saturation amount, if present
+        if (section.isDouble("saturate-amount") || section.isInt("saturate-amount")) {
+            effect.setSaturationAmount((float)section.getDouble("saturate-amount"));
+        }
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
+        return true;
+    }
+
+    boolean addHealEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        PlantHealEffect effect = new PlantHealEffect();
+        // set heal amount, if set
+        if (section.isDouble("heal-amount") || section.isInt("heal-amount")) {
+            effect.setHealAmount(section.getDouble("heal-amount"));
+        }
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
+        return true;
+    }
+
+    boolean addSoundEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        return true;
+    }
+
+    boolean addParticleEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        return true;
+    }
+
+    void addChanceAndDelayToEffect(ConfigurationSection section, PlantEffect effect) {
+        // set chance, if present
+        if (section.isDouble("chance") || section.isInt("chance")) {
+            effect.setChance(section.getDouble("chance"));
+        }
+        // set delay, if present
+        if (section.isInt("delay")) {
+            effect.setDelay(section.getInt("delay"));
+        }
+    }
+
+    //endregion
 
     //region Add Recipes
 

@@ -4,7 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public class PlantSoundEffect implements PlantEffect {
+public class PlantSoundEffect extends PlantEffect {
 
     private String sound;
     private float volume;
@@ -18,8 +18,12 @@ public class PlantSoundEffect implements PlantEffect {
         this.clientside = clientside;
     }
 
+    public PlantSoundEffect(String sound, float volume, float pitch) {
+        this(sound, volume, pitch, true);
+    }
+
     @Override
-    public void performEffect(Player player, Location location) {
+    void performEffectAction(Player player, Location location) {
         if (clientside) {
             player.playSound(player.getEyeLocation(), sound, volume, pitch);
         } else {
@@ -28,7 +32,7 @@ public class PlantSoundEffect implements PlantEffect {
     }
 
     @Override
-    public void performEffect(Block block) {
+    void performEffectAction(Block block) {
         block.getWorld().playSound(block.getLocation(), sound, volume, pitch);
     }
 

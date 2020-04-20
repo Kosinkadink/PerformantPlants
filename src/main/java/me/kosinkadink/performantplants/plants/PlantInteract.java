@@ -10,7 +10,7 @@ public class PlantInteract {
     private boolean giveBlockDrops = false;
     private boolean goToNext = false;
     private String goToStage;
-    private boolean consumeItem = false;
+    private boolean takeItem = false;
     private double chance = 100.0;
 
     private ItemStack itemStack;
@@ -69,12 +69,12 @@ public class PlantInteract {
     }
 
 
-    public boolean isConsumeItem() {
-        return consumeItem;
+    public boolean isTakeItem() {
+        return takeItem;
     }
 
-    public void setConsumeItem(boolean consumeItem) {
-        this.consumeItem = consumeItem;
+    public void setTakeItem(boolean takeItem) {
+        this.takeItem = takeItem;
     }
 
     public double getChance() {

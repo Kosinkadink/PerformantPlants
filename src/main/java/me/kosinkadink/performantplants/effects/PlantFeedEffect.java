@@ -1,13 +1,18 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.util.RandomHelper;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
-public class PlantFeedEffect implements PlantEffect {
+public class PlantFeedEffect extends PlantEffect {
 
     private int foodAmount = 0;
     private float saturationAmount = 0;
+
+    public PlantFeedEffect() { }
 
     public PlantFeedEffect(int foodAmount, float saturationAmount) {
         this.foodAmount = foodAmount;
@@ -15,15 +20,12 @@ public class PlantFeedEffect implements PlantEffect {
     }
 
     @Override
-    public void performEffect(Player player, Location location) {
+    void performEffectAction(Player player, Location location) {
         int newFoodLevel = Math.min(20, player.getFoodLevel() + foodAmount);
         float newSaturationLevel = Math.min(newFoodLevel, player.getSaturation() + saturationAmount);
         player.setFoodLevel(newFoodLevel);
         player.setSaturation(newSaturationLevel);
     }
-
-    @Override
-    public void performEffect(Block block) { }
 
     public int getFoodAmount() {
         return foodAmount;

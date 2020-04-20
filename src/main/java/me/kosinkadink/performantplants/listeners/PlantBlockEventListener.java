@@ -4,9 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.effects.PlantEffect;
 import me.kosinkadink.performantplants.events.*;
-import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.BlockLocation;
-import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.storage.StageStorage;
@@ -14,7 +12,6 @@ import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -62,7 +59,7 @@ public class PlantBlockEventListener implements Listener {
                     }
                 }
                 main.getPlantManager().addPlantBlock(plantBlock);
-                decrementPlayerItemStackInHand(event.getPlayer(), itemStack, event.getHand());
+                decrementItemStack(itemStack);
             }
         }
     }
@@ -145,8 +142,8 @@ public class PlantBlockEventListener implements Listener {
                 }
             }
             // do other actions regardless of chance
-            if (plantInteract.isConsumeItem()) {
-                decrementPlayerItemStackInHand(event.getPlayer(), itemStack, hand);
+            if (plantInteract.isTakeItem()) {
+                decrementItemStack(itemStack);
             }
         }
     }
@@ -154,16 +151,24 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantConsume(PlantConsumeEvent event) {
         // if offhand and main hand is not empty, do nothing
-        if (event.getHand() == EquipmentSlot.OFF_HAND && event.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
+        //if (event.getHand() == EquipmentSlot.OFF_HAND && event.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
             event.setCancelled(true);
             return;
         }
-        main.getLogger().info("Reviewing PlantInteractEvent for item: " + event.getPlantItem().getId());
+        main.getLogger().info("Reviewing PlantConsumeEvent for item: " + event.getPlantItem().getId());
         PlantConsumable plantConsumable = event.getPlantItem().getConsumable();
+        // see if requires missing food to use consumable
+        if (plantConsumable.isMissingFood()) {
+            if (event.getPlayer().getFoodLevel() >= 20) {
+                event.setCancelled(true);
+                return;
+            }
+        }
         // do actions stored in item's PlantConsumable
-        if (plantConsumable.getItemStackToAdd() != null) {
+        if (plantConsumable.getItemToAdd() != null) {
             // check that the items could be added
-            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(plantConsumable.getItemStackToAdd());
+            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(plantConsumable.getItemToAdd());
             if (!remaining.isEmpty()) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("Could not consume item; not enough room in inventory to receive items");
@@ -171,14 +176,18 @@ public class PlantBlockEventListener implements Listener {
                 return;
             }
         }
+        ItemStack itemStack;
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            itemStack = event.getPlayer().getInventory().getItemInOffHand();
+        } else {
+            itemStack = event.getPlayer().getInventory().getItemInMainHand();
+        }
         // decrement item, if set
-        if (plantConsumable.isDecrementItem()) {
-            decrementPlayerItemStackInHand(event.getPlayer(), event.getPlantItem().getItemStack(), event.getHand());
+        if (plantConsumable.isTakeItem()) {
+            decrementItemStack(itemStack);
         }
         // perform effects
-        for (PlantEffect effect : plantConsumable.getEffects()) {
-            effect.performEffect(event.getPlayer(), event.getPlayer().getLocation());
-        }
+        plantConsumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
     }
 
     // region Block Creation
@@ -380,23 +389,12 @@ public class PlantBlockEventListener implements Listener {
         }
     }
 
-    void decrementPlayerItemStackInHand(Player player, ItemStack itemStack, EquipmentSlot hand) {
+    void decrementItemStack(ItemStack itemStack) {
         // if material is air, do nothing
         if (itemStack.getType() == Material.AIR) {
             return;
         }
-        // if more than 1 item, decrease amount by 1
-        if (itemStack.getAmount() > 1) {
-            itemStack.setAmount(itemStack.getAmount() - 1);
-        }
-        else {
-            // remove item from appropriate hand
-            if (hand == EquipmentSlot.OFF_HAND) {
-                player.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
-            } else {
-                player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-            }
-        }
+        itemStack.setAmount(itemStack.getAmount() - 1);
     }
 
 }

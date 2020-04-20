@@ -117,19 +117,25 @@ public class PlayerInteractListener implements Listener {
                         main.getLogger().info("Right clicked on campfire holding a plant item");
                         return;
                     }
-                    // TODO: open inventory of anvil, enchanting table, and workbench when clicked while not sneaking
-                    // if plant's item not seed (placeable), cancel event
-                    if (!plant.hasSeed() || !plant.getSeedItemStack().isSimilar(itemStack)) {
-                        event.setCancelled(true);
-                        main.getLogger().info("Prevented unplaceable plant block from being placed");
+                    // TODO: decide if should make exception for blocks that should be interactable while holding plant
+                    //  item
+                    // if interactable block, let action go through if not sneaking
+//                    if (!player.isSneaking() && (block.getType() == Material.ANVIL ||
+//                            block.getType() == Material.CHIPPED_ANVIL || block.getType() == Material.DAMAGED_ANVIL ||
+//                            block.getType() == Material.ENCHANTING_TABLE || block.getType() == Material.STONECUTTER ||
+//                            block.getType() == Material.CRAFTING_TABLE)) {
+//                        main.getLogger().info("Prevented block from being placed on interactable block");
+//                        return;
+//                    }
+                    // check if item is a seed (cancel event regardless)
+                    event.setCancelled(true);
+                    if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
+                        // cancel event and send out PlantBlockEvent
+                        main.getServer().getPluginManager().callEvent(
+                                new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
+                        );
                         return;
                     }
-                    // cancel event and send out PlantBlockEvent
-                    event.setCancelled(true);
-                    main.getServer().getPluginManager().callEvent(
-                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
-                    );
-                    return;
                 }
                 // check if plant item can be consumed
                 PlantItem plantItem = plant.getItemByItemStack(itemStack);
