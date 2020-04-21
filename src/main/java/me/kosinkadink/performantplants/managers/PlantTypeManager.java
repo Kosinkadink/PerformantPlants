@@ -32,14 +32,18 @@ public class PlantTypeManager {
 
     public Plant getPlantByItemStack(ItemStack itemStack) {
         for (Plant plant : plantTypeMap.values()) {
-            if (plant.getItemStack().isSimilar(itemStack)) {
+            if (plant.getItemByItemStack(itemStack) != null) {
                 return plant;
             }
-            if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
-                return plant;
-            }
-            if (plant.isSimilarToAnyGood(itemStack)) {
-                return plant;
+        }
+        return null;
+    }
+
+    public PlantItem getPlantItemByItemStack(ItemStack itemStack) {
+        for (Plant plant : plantTypeMap.values()) {
+            PlantItem plantItem = plant.getItemByItemStack(itemStack);
+            if (plantItem != null) {
+                return plantItem;
             }
         }
         return null;

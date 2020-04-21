@@ -316,7 +316,7 @@ public class PlantBlock implements Droppable {
         }
     }
 
-    public void setTaskStage(Main main, int growthStageIndex) {
+    public void goToPreviousStageGracefully(Main main, int growthStageIndex) {
         // check if proposed growth stage is valid; if not, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
             main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
@@ -332,14 +332,16 @@ public class PlantBlock implements Droppable {
             return;
         }
         // if trying to go forward a stage,
-        main.getLogger().info("Changing stage to " + growthStageIndex + " for block " + toString());
+        main.getLogger().info("Changing stage to " + growthStageIndex + " from " + stageIndex + " for block " + toString());
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
         duration = plant.generateGrowthTime(stageIndex);
         // set grows to true
+        // set execute to false
         grows = true;
+        executedStage = false;
         startTask(main);
     }
 
@@ -479,6 +481,9 @@ public class PlantBlock implements Droppable {
         }
         PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
         if (onExecute != null) {
+            // perform any effects set
+            onExecute.getEffectStorage().performEffects(getBlock());
+            // go to stage, if set
             if (onExecute.getGoToStage() != null) {
                 if (plant.getStageStorage().isValidStage(onExecute.getGoToStage())) {
                     goToStageForcefully(main, plant.getStageStorage().getGrowthStageIndex(onExecute.getGoToStage()));

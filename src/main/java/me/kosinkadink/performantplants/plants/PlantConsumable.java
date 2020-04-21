@@ -9,6 +9,7 @@ public class PlantConsumable {
 
     private boolean takeItem = true;
     private boolean missingFood = false;
+    private boolean normalEat = true;
     private ItemStack itemToAdd;
     private ArrayList<RequiredItem> requiredItems = new ArrayList<>();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
@@ -29,6 +30,14 @@ public class PlantConsumable {
 
     public void setMissingFood(boolean missingFood) {
         this.missingFood = missingFood;
+    }
+
+    public boolean isNormalEat() {
+        return normalEat;
+    }
+
+    public void setNormalEat(boolean normalEat) {
+        this.normalEat = normalEat;
     }
 
     public ItemStack getItemToAdd() {

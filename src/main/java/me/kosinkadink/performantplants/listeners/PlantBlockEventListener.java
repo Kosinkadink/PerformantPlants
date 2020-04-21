@@ -36,7 +36,7 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
-            if (block.getType() == Material.AIR && !MetadataHelper.hasPlantBlockMetadata(block)) {
+            if (block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
                 // get item in appropriate hand hand
                 ItemStack itemStack;
                 if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -152,6 +152,7 @@ public class PlantBlockEventListener implements Listener {
     public void onPlantConsume(PlantConsumeEvent event) {
         // if offhand and main hand is not empty, do nothing
         //if (event.getHand() == EquipmentSlot.OFF_HAND && event.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
+        // TODO: make onPlantConsume compatible with both off and main hand
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
             event.setCancelled(true);
             return;
@@ -165,6 +166,8 @@ public class PlantBlockEventListener implements Listener {
                 return;
             }
         }
+        // TODO: check for consumption requirements
+
         // do actions stored in item's PlantConsumable
         if (plantConsumable.getItemToAdd() != null) {
             // check that the items could be added

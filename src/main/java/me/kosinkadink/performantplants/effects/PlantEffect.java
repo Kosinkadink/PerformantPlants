@@ -20,7 +20,7 @@ public abstract class PlantEffect {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffect(player, location),
+                            () -> performEffectAction(player, location),
                             delay
                     );
                 } else {
@@ -41,7 +41,7 @@ public abstract class PlantEffect {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffect(block),
+                            () -> performEffectAction(block),
                             delay
                     );
                 } else {

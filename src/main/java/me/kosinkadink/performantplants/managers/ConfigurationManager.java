@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.effects.PlantEffect;
 import me.kosinkadink.performantplants.effects.PlantFeedEffect;
 import me.kosinkadink.performantplants.effects.PlantHealEffect;
+import me.kosinkadink.performantplants.effects.PlantSoundEffect;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
@@ -19,6 +20,7 @@ import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.*;
@@ -761,6 +763,10 @@ public class ConfigurationManager {
         if (consumableSection.isBoolean("missing-food")) {
             consumable.setMissingFood(consumableSection.getBoolean("missing-food"));
         }
+        // set normal eat, if present
+        if (consumableSection.isBoolean("normal-eat")) {
+            consumable.setNormalEat(consumableSection.getBoolean("normal-eat"));
+        }
         // set give item, if present
         if (consumableSection.isConfigurationSection("give-item")) {
             ConfigurationSection itemSection = consumableSection.getConfigurationSection("add-item");
@@ -884,6 +890,39 @@ public class ConfigurationManager {
     }
 
     boolean addSoundEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        // set sound
+        PlantSoundEffect effect = new PlantSoundEffect();
+        if (!section.isString("sound")) {
+            main.getLogger().warning("Sound effect not added; sound field not found in section: " + section.getCurrentPath());
+            return false;
+        }
+        String soundName = section.getString("sound");
+        if (soundName == null) {
+            main.getLogger().warning("Sound effect not added; sound field was null in section: " + section.getCurrentPath());
+            return false;
+        }
+        Sound sound;
+        try {
+            sound = Sound.valueOf(soundName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            main.getLogger().warning(String.format("Sound effect not added; sound '%s' not recognized", soundName));
+            return false;
+        }
+        effect.setSound(sound);
+        // set volume, if present
+        if (section.isDouble("volume") || section.isInt("volume")) {
+            effect.setVolume((float)section.getDouble("volume"));
+        }
+        // set pitch, if present
+        if (section.isDouble("pitch") || section.isInt("pitch")) {
+            effect.setVolume((float)section.getDouble("pitch"));
+        }
+        // set client-side, if present
+        if (section.isBoolean("client-side")) {
+            effect.setClientSide(section.getBoolean("client-side"));
+        }
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
         return true;
     }
 

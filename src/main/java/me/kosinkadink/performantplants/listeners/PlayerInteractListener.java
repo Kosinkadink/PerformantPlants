@@ -16,7 +16,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -35,6 +37,41 @@ public class PlayerInteractListener implements Listener {
             if (main.getPlantTypeManager().getPlantByItemStack(event.getItemInHand()) != null) {
                 event.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
+        PlantItem plantItem = main.getPlantTypeManager().getPlantItemByItemStack(event.getItem());
+        if (plantItem != null) {
+            // create PlantConsumeEvent if is consumable by default consume
+            event.setCancelled(true);
+            if (plantItem.getConsumable() != null && plantItem.getConsumable().isNormalEat()) {
+                EquipmentSlot hand;
+                if (event.getItem().isSimilar(event.getPlayer().getInventory().getItemInOffHand())) {
+                    hand = EquipmentSlot.OFF_HAND;
+                } else {
+                    hand = EquipmentSlot.HAND;
+                }
+                main.getServer().getPluginManager().callEvent(
+                        new PlantConsumeEvent(event.getPlayer(), plantItem, hand)
+                );
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        ItemStack itemStack;
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            itemStack = event.getPlayer().getInventory().getItemInOffHand();
+        } else {
+            itemStack = event.getPlayer().getInventory().getItemInMainHand();
+        }
+        PlantItem plantItem = main.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+        // don't let plant items be used to feed animals/be interacted with entities
+        if (plantItem != null) {
+            event.setCancelled(true);
         }
     }
 
@@ -104,6 +141,7 @@ public class PlayerInteractListener implements Listener {
                 itemStack.getType() != Material.AIR) {
             Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
             if (plant != null) {
+                PlantItem plantItem;
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
                     // if block is inventory holder and player is sneaking, open block's inventory
@@ -128,22 +166,27 @@ public class PlayerInteractListener implements Listener {
 //                        return;
 //                    }
                     // check if item is a seed (cancel event regardless)
-                    event.setCancelled(true);
-                    if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
-                        // cancel event and send out PlantBlockEvent
-                        main.getServer().getPluginManager().callEvent(
-                                new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
-                        );
-                        return;
+                    plantItem = plant.getItemByItemStack(itemStack);
+                    if (!plantItem.isConsumable() || player.isSneaking()) {
+                        event.setCancelled(true);
+                        if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
+                            // cancel event and send out PlantBlockEvent
+                            main.getServer().getPluginManager().callEvent(
+                                    new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
+                            );
+                            return;
+                        }
                     }
                 }
                 // check if plant item can be consumed
-                PlantItem plantItem = plant.getItemByItemStack(itemStack);
+                plantItem = plant.getItemByItemStack(itemStack);
                 if (plantItem.isConsumable()) {
-                    event.setCancelled(true);
-                    main.getServer().getPluginManager().callEvent(
-                            new PlantConsumeEvent(player, plantItem, event.getHand())
-                    );
+                    if (!plantItem.getItemStack().getType().isEdible() || !plantItem.getConsumable().isNormalEat()) {
+                        event.setCancelled(true);
+                        main.getServer().getPluginManager().callEvent(
+                                new PlantConsumeEvent(player, plantItem, event.getHand())
+                        );
+                    }
                 }
                 main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
             }

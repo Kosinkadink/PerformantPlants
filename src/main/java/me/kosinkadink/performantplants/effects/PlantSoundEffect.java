@@ -1,30 +1,23 @@
 package me.kosinkadink.performantplants.effects;
 
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 public class PlantSoundEffect extends PlantEffect {
 
-    private String sound;
-    private float volume;
-    private float pitch;
-    private boolean clientside;
+    //private String sound;
+    private Sound sound;
+    private float volume = 1;
+    private float pitch = 1;
+    private boolean clientSide = true;
 
-    public PlantSoundEffect(String sound, float volume, float pitch, boolean clientside) {
-        this.sound = sound;
-        this.volume = volume;
-        this.pitch = pitch;
-        this.clientside = clientside;
-    }
-
-    public PlantSoundEffect(String sound, float volume, float pitch) {
-        this(sound, volume, pitch, true);
-    }
+    public PlantSoundEffect() { }
 
     @Override
     void performEffectAction(Player player, Location location) {
-        if (clientside) {
+        if (clientSide) {
             player.playSound(player.getEyeLocation(), sound, volume, pitch);
         } else {
             player.getWorld().playSound(player.getEyeLocation(), sound, volume, pitch);
@@ -36,11 +29,11 @@ public class PlantSoundEffect extends PlantEffect {
         block.getWorld().playSound(block.getLocation(), sound, volume, pitch);
     }
 
-    public String getSound() {
+    public Sound getSound() {
         return sound;
     }
 
-    public void setSound(String sound) {
+    public void setSound(Sound sound) {
         this.sound = sound;
     }
 
@@ -49,7 +42,7 @@ public class PlantSoundEffect extends PlantEffect {
     }
 
     public void setVolume(float volume) {
-        this.volume = volume;
+        this.volume = Math.max(0, volume);
     }
 
     public float getPitch() {
@@ -57,14 +50,14 @@ public class PlantSoundEffect extends PlantEffect {
     }
 
     public void setPitch(float pitch) {
-        this.pitch = pitch;
+        this.pitch = Math.max(0.5F,Math.min(2.0F, pitch));
     }
 
-    public boolean isClientside() {
-        return clientside;
+    public boolean isClientSide() {
+        return clientSide;
     }
 
-    public void setClientside(boolean clientside) {
-        this.clientside = clientside;
+    public void setClientSide(boolean clientSide) {
+        this.clientSide = clientSide;
     }
 }

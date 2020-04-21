@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -15,6 +16,7 @@ public class PlantInteract {
 
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
+    private PlantEffectStorage effectStorage = new PlantEffectStorage();
 
     public PlantInteract() { }
 
@@ -28,6 +30,14 @@ public class PlantInteract {
 
     public void setDropStorage(DropStorage dropStorage) {
         this.dropStorage = dropStorage;
+    }
+
+    public PlantEffectStorage getEffectStorage() {
+        return effectStorage;
+    }
+
+    public void setEffectStorage(PlantEffectStorage effectStorage) {
+        this.effectStorage = effectStorage;
     }
 
     public String getGoToStage() {

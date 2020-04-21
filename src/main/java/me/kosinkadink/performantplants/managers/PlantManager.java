@@ -81,7 +81,7 @@ public class PlantManager {
                 parent.removeChildLocation(block.getLocation());
                 // if parent's stage should be updated, do it
                 if (block.isUpdateStageOnBreak()) {
-                    setGrowthTaskStage(parent, block.getStageIndex());
+                    parent.goToPreviousStageGracefully(main, block.getStageIndex());
                 }
             }
         }
@@ -159,7 +159,7 @@ public class PlantManager {
     }
 
     public void setGrowthTaskStage(PlantBlock plantBlock, int stage) {
-        plantBlock.setTaskStage(main, stage);
+        plantBlock.goToPreviousStageGracefully(main, stage);
     }
 
     public void setGrowthTaskStage(BlockLocation blockLocation, int stage) {
