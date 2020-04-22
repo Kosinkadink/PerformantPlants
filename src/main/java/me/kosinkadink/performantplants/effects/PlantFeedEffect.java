@@ -1,11 +1,7 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.util.RandomHelper;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 public class PlantFeedEffect extends PlantEffect {
 

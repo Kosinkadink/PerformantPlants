@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.events.PlantInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -20,7 +21,6 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 public class PlayerInteractListener implements Listener {
@@ -127,7 +127,7 @@ public class PlayerInteractListener implements Listener {
                 MetadataHelper.hasPlantBlockMetadata(block)) {
             // get plant block interacted with
             PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
-            if (plantBlock != null) {
+            if (plantBlock != null && !player.isSneaking()) {
                 // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
                 event.setCancelled(true);
                 main.getServer().getPluginManager().callEvent(
@@ -145,29 +145,18 @@ public class PlayerInteractListener implements Listener {
                 if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                         block != null) {
                     // if block is inventory holder and player is sneaking, open block's inventory
-                    if (block.getState() instanceof InventoryHolder && !player.isSneaking()) {
-                        event.setCancelled(true);
-                        player.openInventory(((InventoryHolder) block.getState()).getInventory());
-                        main.getLogger().info("Prevented block from being placed on InventoryHolder block");
-                        return;
-                    }
                     if (block.getType() == Material.CAMPFIRE) {
                         main.getLogger().info("Right clicked on campfire holding a plant item");
                         return;
                     }
-                    // TODO: decide if should make exception for blocks that should be interactable while holding plant
-                    //  item
-                    // if interactable block, let action go through if not sneaking
-//                    if (!player.isSneaking() && (block.getType() == Material.ANVIL ||
-//                            block.getType() == Material.CHIPPED_ANVIL || block.getType() == Material.DAMAGED_ANVIL ||
-//                            block.getType() == Material.ENCHANTING_TABLE || block.getType() == Material.STONECUTTER ||
-//                            block.getType() == Material.CRAFTING_TABLE)) {
-//                        main.getLogger().info("Prevented block from being placed on interactable block");
-//                        return;
-//                    }
-                    // check if item is a seed (cancel event regardless)
+                    if (BlockHelper.isInteractable(block) && !player.isSneaking()) {
+                        main.getLogger().info("Prevented block from being placed on interactable block");
+                        return;
+                    }
+                    // check if item is consumable or player is sneaking
                     plantItem = plant.getItemByItemStack(itemStack);
                     if (!plantItem.isConsumable() || player.isSneaking()) {
+                        // check if item is a seed (cancel event regardless)
                         event.setCancelled(true);
                         if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
                             // cancel event and send out PlantBlockEvent

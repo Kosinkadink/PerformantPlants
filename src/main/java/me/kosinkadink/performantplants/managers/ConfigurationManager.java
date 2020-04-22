@@ -4,10 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
-import me.kosinkadink.performantplants.effects.PlantEffect;
-import me.kosinkadink.performantplants.effects.PlantFeedEffect;
-import me.kosinkadink.performantplants.effects.PlantHealEffect;
-import me.kosinkadink.performantplants.effects.PlantSoundEffect;
+import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
@@ -24,6 +21,7 @@ import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.*;
+import org.bukkit.potion.PotionEffectType;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -681,6 +679,8 @@ public class ConfigurationManager {
             }
             plantInteract.setDropStorage(dropStorage);
         }
+        // add effects, it present
+        addEffectsToEffectStorage(section, plantInteract.getEffectStorage());
         return plantInteract;
     }
 
@@ -814,10 +814,6 @@ public class ConfigurationManager {
         }
         // add effects, if present
         addEffectsToEffectStorage(consumableSection, consumable.getEffectStorage());
-        // add effect limit, if present
-        if (consumableSection.isInt("effect-limit")) {
-            consumable.getEffectStorage().setEffectLimit(consumableSection.getInt("effect-limit"));
-        }
         //add consumable to plant item
         plantItem.setConsumable(consumable);
     }
@@ -835,6 +831,10 @@ public class ConfigurationManager {
             if (effectSection != null) {
                 addEffect(effectSection, effectStorage);
             }
+        }
+        // set effect limit, if present
+        if (section.isInt("effect-limit")) {
+            effectStorage.setEffectLimit(section.getInt("effect-limit"));
         }
     }
 
@@ -857,6 +857,9 @@ public class ConfigurationManager {
         }
         if (type.equalsIgnoreCase("particle")) {
             return addParticleEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("potion")) {
+            return addPotionEffect(section, effectStorage);
         }
         main.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
                 type, section.getCurrentPath()));
@@ -927,6 +930,50 @@ public class ConfigurationManager {
     }
 
     boolean addParticleEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        return true;
+    }
+
+    boolean addPotionEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        // set potion effect type
+        PlantPotionEffect effect = new PlantPotionEffect();
+        if (!section.isString("potion")) {
+            main.getLogger().warning("Potion effect not added; potion field not found in section: " + section.getCurrentPath());
+            return false;
+        }
+        String potionName = section.getString("potion");
+        if (potionName == null) {
+            main.getLogger().warning("Potion effect not added; potion field was null in section: " + section.getCurrentPath());
+            return false;
+        }
+        PotionEffectType potionEffectType = PotionEffectType.getByName(potionName.toUpperCase());
+        if (potionEffectType == null) {
+            main.getLogger().warning(String.format("Potion effect not added; potion '%s' not recognized", potionName));
+            return false;
+        }
+        effect.setPotionEffectType(potionEffectType);
+        // set duration, if present
+        if (section.isInt("duration")) {
+            effect.setDuration(section.getInt("duration"));
+        }
+        // set amplifier, if present
+        if (section.isInt("amplifier")) {
+            effect.setAmplifier(section.getInt("amplifier")-1);
+        }
+        // set ambient, if present
+        if (section.isBoolean("ambient")) {
+            effect.setAmbient(section.getBoolean("ambient"));
+        }
+        // set particles, if present
+        if (section.isBoolean("particles")) {
+            effect.setParticles(section.getBoolean("particles"));
+        }
+        // set icon
+        if (section.isBoolean("icon")) {
+            effect.setIcon(section.getBoolean("icon"));
+        }
+        // add chance + delay and store in effect storage
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
         return true;
     }
 

@@ -9,11 +9,13 @@ import org.bukkit.potion.PotionEffectType;
 public class PlantPotionEffect extends PlantEffect {
 
     private PotionEffectType potionEffectType;
-    private int duration;
-    private int amplifier;
-    private boolean ambient;
-    private boolean particles;
-    private boolean icon;
+    private int duration = 200;
+    private int amplifier = 0;
+    private boolean ambient = true;
+    private boolean particles = false;
+    private boolean icon = true;
+
+    public PlantPotionEffect() { }
 
     public PlantPotionEffect(PotionEffectType potionEffectType, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
         this.potionEffectType = potionEffectType;

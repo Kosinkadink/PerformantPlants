@@ -398,8 +398,9 @@ public class PlantBlock implements Droppable {
     }
 
     public boolean performGrowth(Main main, boolean advance) {
-        // if plant metadata for block is not set, don't do anything and stop task
+        // if plant metadata for block is not set, remove self and stop task
         if (!MetadataHelper.hasPlantBlockMetadata(getBlock())) {
+            main.getPlantManager().removePlantBlock(this);
             return false;
         }
         // check if requirements are met for stage growth

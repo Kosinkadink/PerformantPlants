@@ -2,11 +2,11 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.effects.PlantEffect;
 import me.kosinkadink.performantplants.events.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -34,9 +34,19 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantPlace(PlantPlaceEvent event) {
         if (!event.isCancelled()) {
+            // check if player has permission
+            if (!event.getPlayer().hasPermission("performantplants.place")) {
+                event.setCancelled(true);
+                return;
+            }
             main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
-            if (block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block)) {
+            if (block.isEmpty()) {
+                // check if empty block has plant metadata
+                if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                    // if so, destroy; erroneous existence and continue
+                    destroyPlantBlock(block, false);
+                }
                 // get item in appropriate hand hand
                 ItemStack itemStack;
                 if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -67,6 +77,11 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantBreak(PlantBreakEvent event) {
         if (!event.isCancelled()) {
+            // check if player has permission
+            if (!event.getPlayer().hasPermission("performantplants.break")) {
+                event.setCancelled(true);
+                return;
+            }
             main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
             destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
         }
@@ -75,6 +90,11 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantFarmlandTrample(PlantFarmlandTrampleEvent event) {
         if (!event.isCancelled()) {
+            // check if player has permission
+            if (!event.getPlayer().hasPermission("performantplants.interact")) {
+                event.setCancelled(true);
+                return;
+            }
             main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
@@ -90,6 +110,11 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantInteract(PlantInteractEvent event) {
         if (!event.isCancelled()) {
+            // check if player has permission
+            if (!event.getPlayer().hasPermission("performantplants.interact")) {
+                event.setCancelled(true);
+                return;
+            }
             // don't do anything if offhand triggered event; this listener processes both hands
             if (event.getHand() == EquipmentSlot.OFF_HAND) {
                 event.setCancelled(true);
@@ -150,10 +175,8 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onPlantConsume(PlantConsumeEvent event) {
-        // if offhand and main hand is not empty, do nothing
-        //if (event.getHand() == EquipmentSlot.OFF_HAND && event.getPlayer().getInventory().getItemInMainHand().getType() != Material.AIR) {
-        // TODO: make onPlantConsume compatible with both off and main hand
-        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+        // check if player has permission
+        if (!event.getPlayer().hasPermission("performantplants.consume")) {
             event.setCancelled(true);
             return;
         }
@@ -166,8 +189,32 @@ public class PlantBlockEventListener implements Listener {
                 return;
             }
         }
-        // TODO: check for consumption requirements
-
+        // get relevant item stacks (call hand and other hand)
+        ItemStack callStack;
+        ItemStack otherStack;
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            callStack = event.getPlayer().getInventory().getItemInOffHand();
+            otherStack = event.getPlayer().getInventory().getItemInMainHand();
+        } else {
+            callStack = event.getPlayer().getInventory().getItemInMainHand();
+            otherStack = event.getPlayer().getInventory().getItemInOffHand();
+        }
+        // check requirements
+        for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
+            // if in hand required, check that other hand contains item
+            if (requirement.isInHand()) {
+                if (!otherStack.isSimilar(requirement.getItemStack())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            } // else check that item exists somewhere in player's inventory
+            else {
+                if (!event.getPlayer().getInventory().contains(requirement.getItemStack())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
         // do actions stored in item's PlantConsumable
         if (plantConsumable.getItemToAdd() != null) {
             // check that the items could be added
@@ -179,15 +226,24 @@ public class PlantBlockEventListener implements Listener {
                 return;
             }
         }
-        ItemStack itemStack;
-        if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            itemStack = event.getPlayer().getInventory().getItemInOffHand();
-        } else {
-            itemStack = event.getPlayer().getInventory().getItemInMainHand();
-        }
         // decrement item, if set
         if (plantConsumable.isTakeItem()) {
-            decrementItemStack(itemStack);
+            decrementItemStack(callStack);
+        }
+        // decrement required items, if set
+        for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
+            if (requirement.isTakeItem()) {
+                // if should be in hand, decrement other hand's stack
+                if (requirement.isInHand()) {
+                    decrementItemStack(otherStack);
+                }
+                // otherwise take required item out of inventory
+                else {
+                    ItemStack removeStack = requirement.getItemStack().clone();
+                    removeStack.setAmount(1);
+                    event.getPlayer().getInventory().removeItem(removeStack);
+                }
+            }
         }
         // perform effects
         plantConsumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
@@ -289,6 +345,7 @@ public class PlantBlockEventListener implements Listener {
                 !event.getToBlock().getType().isSolid()) {
             Block block = event.getToBlock();
             destroyPlantBlock(block, true);
+            event.setCancelled(true);
         }
     }
 
