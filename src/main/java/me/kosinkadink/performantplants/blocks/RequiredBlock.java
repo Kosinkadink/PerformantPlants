@@ -14,6 +14,8 @@ public class RequiredBlock {
     private BlockData blockData;
     private String skullTexture;
     private boolean required = false;
+    private boolean blacklisted = false;
+    private boolean notAir = false;
 
     public RequiredBlock(int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings) {
         location = new RelativeLocation(xRel, yRel, zRel);
@@ -22,16 +24,6 @@ public class RequiredBlock {
 
     public RequiredBlock(int xRel, int yRel, int zRel, Material material) {
         this(xRel, yRel, zRel, material, new ArrayList<>());
-    }
-
-    public RequiredBlock(int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings,
-                         boolean required) {
-        this(xRel, yRel, zRel, material, blockDataStrings);
-        this.required = required;
-    }
-
-    public RequiredBlock(int xRel, int yRel, int zRel, Material material, boolean required) {
-        this(xRel, yRel, zRel, material, new ArrayList<>(), required);
     }
 
     public RelativeLocation getLocation() {
@@ -51,5 +43,25 @@ public class RequiredBlock {
 
     public boolean isRequired() {
         return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public boolean isBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(boolean blacklisted) {
+        this.blacklisted = blacklisted;
+    }
+
+    public boolean isNotAir() {
+        return notAir;
+    }
+
+    public void setNotAir(boolean notAir) {
+        this.notAir = notAir;
     }
 }

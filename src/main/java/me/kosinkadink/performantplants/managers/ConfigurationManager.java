@@ -184,7 +184,12 @@ public class ConfigurationManager {
                     if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
                         ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
                         for (String blockName : requiredBlocks.getKeys(false)) {
-                            BlockSettings blockSettings = loadBlockConfig(requiredBlocks.getConfigurationSection(blockName));
+                            ConfigurationSection requiredBlockSection = requiredBlocks.getConfigurationSection(blockName);
+                            if (requiredBlockSection == null) {
+                                main.getLogger().warning("config section was null for required block for plant: " + plantId);
+                                return;
+                            }
+                            BlockSettings blockSettings = loadBlockConfig(requiredBlockSection);
                             if (blockSettings == null) {
                                 main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
                                 return;
@@ -194,8 +199,19 @@ public class ConfigurationManager {
                                     blockSettings.getYRel(),
                                     blockSettings.getZRel(),
                                     blockSettings.getMaterial(),
-                                    blockSettings.getBlockDataStrings(),
-                                    blockSettings.isRequired());
+                                    blockSettings.getBlockDataStrings());
+                            // set required, if set
+                            if (requiredBlockSection.isBoolean("required")) {
+                                requiredBlock.setRequired(requiredBlockSection.getBoolean("required"));
+                            }
+                            // set blacklisted, if set
+                            if (requiredBlockSection.isBoolean("blacklisted")) {
+                                requiredBlock.setBlacklisted(requiredBlockSection.getBoolean("blacklisted"));
+                            }
+                            // set not air, if set
+                            if (requiredBlockSection.isBoolean("not-air")) {
+                                requiredBlock.setNotAir(requiredBlockSection.getBoolean("not-air"));
+                            }
                             plant.addRequiredBlockToGrow(requiredBlock);
                         }
                     }
@@ -554,35 +570,40 @@ public class ConfigurationManager {
     BlockSettings loadBlockConfig(ConfigurationSection section) {
         if (section != null) {
             // get block-related details from section
-            String materialName = section.getString("material");
-            if (materialName == null) {
-                main.getLogger().warning("Material not provided in block section: " + section.getCurrentPath());
-                return null;
+            String materialName = "STONE";
+            if (section.isString("material")) {
+                materialName = section.getString("material");
+                if (materialName == null) {
+                    main.getLogger().warning("Material not provided in block section: " + section.getCurrentPath());
+                    return null;
+                }
             }
             Material material = Material.getMaterial(materialName);
             if (material == null) {
                 main.getLogger().warning("Material '" + materialName + "' not recognized in block section: " + section.getCurrentPath());
                 return null;
             }
-            // get if required
-            boolean required = section.isBoolean("required") && section.getBoolean("required");
+
             // get skull texture
             String skullTexture = section.getString("skull-texture");
             ArrayList<String> blockDataStrings = new ArrayList<>(section.getStringList("data"));
             // get offset
-            if (!section.isSet("offset")) {
-                main.getLogger().warning("Offset not defined for block section: " + section.getCurrentPath());
-                return null;
+            int xRel = 0;
+            int yRel = 0;
+            int zRel = 0;
+            if (section.isSet("offset")) {
+                if (section.isInt("offset.x")) {
+                    xRel = section.getInt("offset.x");
+                }
+                if (section.isInt("offset.y")) {
+                    yRel = section.getInt("offset.y");
+                }
+                if (section.isInt("offset.z")) {
+                    zRel = section.getInt("offset.z");
+                }
             }
-            if (!section.isInt("offset.x") || !section.isInt("offset.y") || !section.isInt("offset.z")) {
-                main.getLogger().warning("Offset's x, y, or z not defined/integers for block section: " + section.getCurrentPath());
-                return null;
-            }
-            int xRel = section.getInt("offset.x");
-            int yRel = section.getInt("offset.y");
-            int zRel = section.getInt("offset.z");
             // create BlockSettings from values
-            BlockSettings blockSettings = new BlockSettings(xRel, yRel, zRel, material, required);
+            BlockSettings blockSettings = new BlockSettings(xRel, yRel, zRel, material);
             if (skullTexture != null) {
                 blockSettings.setSkullTexture(skullTexture);
             }

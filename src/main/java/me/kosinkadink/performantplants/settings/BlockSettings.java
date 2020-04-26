@@ -15,7 +15,6 @@ public class BlockSettings {
     private Material material;
     private ArrayList<String> blockDataStrings = new ArrayList<>();
     private String skullTexture;
-    private boolean required = false;
 
 
     public BlockSettings(int xRel, int yRel, int zRel, Material material) {
@@ -23,11 +22,6 @@ public class BlockSettings {
         this.yRel = yRel;
         this.zRel = zRel;
         this.material = material;
-    }
-
-    public BlockSettings(int xRel, int yRel, int zRel, Material material, boolean required) {
-        this(xRel, yRel, zRel, material);
-        this.required = required;
     }
 
     public int getXRel() {
@@ -67,7 +61,4 @@ public class BlockSettings {
         this.skullTexture = skullTexture;
     }
 
-    public boolean isRequired() {
-        return required;
-    }
 }

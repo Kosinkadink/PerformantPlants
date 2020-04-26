@@ -558,10 +558,20 @@ public class PlantBlock implements Droppable {
             for (RequiredBlock requiredBlock : plant.getRequiredBlocksToGrow()) {
                 Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, requiredBlock.getLocation());
                 if (requiredBlock.checkIfMatches(block)) {
-                    enoughMatch = true;
+                    // if blacklisted, then return false
+                    if (requiredBlock.isBlacklisted()) {
+                        return false;
+                    }
                 } else if (requiredBlock.isRequired()) {
                     return false;
                 }
+                // check if not air, if set
+                if (requiredBlock.isNotAir()) {
+                    if (block.getBlockData().getMaterial().isAir()) {
+                        return false;
+                    }
+                }
+                enoughMatch = true;
             }
             return enoughMatch;
         }
