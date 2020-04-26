@@ -12,11 +12,13 @@ public class PlantInteract {
     private boolean goToNext = false;
     private String goToStage;
     private boolean takeItem = false;
+    private boolean breakBlock = false;
     private double chance = 100.0;
 
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
+    private PlantConsumable consumable;
 
     public PlantInteract() { }
 
@@ -38,6 +40,14 @@ public class PlantInteract {
 
     public void setEffectStorage(PlantEffectStorage effectStorage) {
         this.effectStorage = effectStorage;
+    }
+
+    public PlantConsumable getConsumable() {
+        return consumable;
+    }
+
+    public void setConsumable(PlantConsumable consumable) {
+        this.consumable = consumable;
     }
 
     public String getGoToStage() {
@@ -85,6 +95,14 @@ public class PlantInteract {
 
     public void setTakeItem(boolean takeItem) {
         this.takeItem = takeItem;
+    }
+
+    public boolean isBreakBlock() {
+        return breakBlock;
+    }
+
+    public void setBreakBlock(boolean breakBlock) {
+        this.breakBlock = breakBlock;
     }
 
     public double getChance() {

@@ -81,6 +81,9 @@ public class Plant {
     }
 
     public PlantItem getItemByItemStack(ItemStack itemStack) {
+        if (itemStack == null) {
+            return null;
+        }
         if (itemStack.isSimilar(plantItem.getItemStack())) {
             return plantItem;
         }

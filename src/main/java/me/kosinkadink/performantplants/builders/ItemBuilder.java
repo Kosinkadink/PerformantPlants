@@ -2,8 +2,12 @@ package me.kosinkadink.performantplants.builders;
 
 import me.kosinkadink.performantplants.util.ReflectionHelper;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
 
 import java.util.List;
 
@@ -60,7 +64,7 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder appendLore(List<String> lore) {
+    public ItemBuilder addLore(List<String> lore) {
         ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta != null) {
             if (itemMeta.hasLore()) {
@@ -72,6 +76,40 @@ public class ItemBuilder {
             else {
                 itemMeta.setLore(lore);
             }
+            item.setItemMeta(itemMeta);
+        }
+        return this;
+    }
+
+    public ItemBuilder addEnchantment(Enchantment enchantment, int level) {
+        item.addUnsafeEnchantment(enchantment, level);
+        return this;
+    }
+
+    public ItemBuilder addPotionEffect(PotionEffect potionEffect) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta instanceof PotionMeta) {
+            PotionMeta potionMeta = (PotionMeta) itemMeta;
+            potionMeta.addCustomEffect(potionEffect, false);
+            item.setItemMeta(potionMeta);
+        }
+        return this;
+    }
+
+    public ItemBuilder damage(int amount) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta instanceof Damageable) {
+            Damageable damageable = (Damageable) itemMeta;
+            damageable.setDamage(amount);
+            item.setItemMeta((ItemMeta) damageable);
+        }
+        return this;
+    }
+
+    public ItemBuilder unbreakable(boolean unbreakable) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta != null) {
+            itemMeta.setUnbreakable(unbreakable);
             item.setItemMeta(itemMeta);
         }
         return this;

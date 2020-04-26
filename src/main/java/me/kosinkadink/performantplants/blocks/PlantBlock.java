@@ -28,8 +28,7 @@ public class PlantBlock implements Droppable {
     private int stageIndex;
     private int dropStageIndex;
     private boolean executedStage = false;
-    private boolean dropOnBreak = true;
-    private boolean dropOnInteract = true;
+    private float blockYaw;
     private String stageBlockId;
     private boolean grows;
     private long taskStartTime;
@@ -148,22 +147,6 @@ public class PlantBlock implements Droppable {
         this.executedStage = executedStage;
     }
 
-    public boolean isDropOnBreak() {
-        return dropOnBreak;
-    }
-
-    public void setDropOnBreak(boolean dropOnBreak) {
-        this.dropOnBreak = dropOnBreak;
-    }
-
-    public boolean isDropOnInteract() {
-        return dropOnInteract;
-    }
-
-    public void setDropOnInteract(boolean dropOnInteract) {
-        this.dropOnInteract = dropOnInteract;
-    }
-
     public String getStageBlockId() {
         return stageBlockId;
     }
@@ -280,6 +263,14 @@ public class PlantBlock implements Droppable {
             }
         }
         return null;
+    }
+
+    public float getBlockYaw() {
+        return blockYaw;
+    }
+
+    public void setBlockYaw(float blockYaw) {
+        this.blockYaw = blockYaw;
     }
 
     //region Task Control
@@ -416,15 +407,17 @@ public class PlantBlock implements Droppable {
                 if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     continue;
                 }
-                // update block data at location
-                BlockHelper.setBlockData(block, growthStageBlock);
                 // if at current location, update values of this PlantBlock; don't create a new one
                 if (growthStageBlock.getLocation().equals(new RelativeLocation(0, 0, 0))) {
+                    // update block data at location
+                    BlockHelper.setBlockData(block, growthStageBlock, this);
                     // set drop stage index
                     setDropStageIndex(stageIndex);
                     // set growth stage block
                     setStageBlockId(growthStageBlock.getId());
                 } else {
+                    // update block data at location without plantBlock
+                    BlockHelper.setBlockData(block, growthStageBlock, null);
                     // create plant blocks at location
                     PlantBlock newPlantBlock;
                     newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false,
@@ -463,6 +456,8 @@ public class PlantBlock implements Droppable {
                 PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
                 if (onExecute != null) {
                     DropHelper.performDrops(onExecute.getDropStorage(), getBlock());
+                    // perform any effects set
+                    onExecute.getEffectStorage().performEffects(getBlock());
                 }
             }
             executedStage = true;
@@ -482,8 +477,6 @@ public class PlantBlock implements Droppable {
         }
         PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
         if (onExecute != null) {
-            // perform any effects set
-            onExecute.getEffectStorage().performEffects(getBlock());
             // go to stage, if set
             if (onExecute.getGoToStage() != null) {
                 if (plant.getStageStorage().isValidStage(onExecute.getGoToStage())) {

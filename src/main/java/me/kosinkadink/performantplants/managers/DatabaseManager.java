@@ -146,6 +146,13 @@ public class DatabaseManager {
         // remove any blocks set for removal
         main.getLogger().info("Removing blocks from db for world: " + worldName + "...");
         ArrayList<BlockLocation> blocksToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
         for (BlockLocation blockLocation : new ArrayList<>(plantChunkStorage.getBlockLocationsToDelete())) {
             boolean success = removeBlockLocationFromTablePlantBlocks(conn, blockLocation);
             removeBlockLocationFromTableParents(conn, blockLocation);
@@ -155,6 +162,13 @@ public class DatabaseManager {
                 blocksToRemoveCache.add(blockLocation);
             }
         }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
         // remove cached removal blocks from being removed next time
         for (BlockLocation blockLocation : blocksToRemoveCache) {
             plantChunkStorage.removeBlockFromRemoval(blockLocation);
@@ -163,6 +177,7 @@ public class DatabaseManager {
         main.getLogger().info("Done removing blocks from db for world: " + worldName);
         // add/update all blocks for each chunk
         main.getLogger().info("Updating blocks in db for world: " + worldName + "...");
+        // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
@@ -199,6 +214,7 @@ public class DatabaseManager {
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
+        // =========== TRANSACTION END
         main.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
         return true;
     }
@@ -220,6 +236,13 @@ public class DatabaseManager {
         // remove any plantsSold set for removal
         main.getLogger().info("Removing plantsSold from db for world...");
         ArrayList<StatisticsAmount> plantsSoldToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
         for (StatisticsAmount plantsSold : new ArrayList<>(main.getStatisticsManager().getStatisticsAmountsToDelete())) {
             boolean success = removeStatisticsAmountFromTablePlantsSold(conn, plantsSold);
             // if deleted from db, remove from StatisticsManager
@@ -227,6 +250,13 @@ public class DatabaseManager {
                 plantsSoldToRemoveCache.add(plantsSold);
             }
         }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
         // remove cached removal blocks from being removed next time
         for (StatisticsAmount plantsSold : plantsSoldToRemoveCache) {
             main.getStatisticsManager().removeStatisticsAmountFromRemoval(plantsSold);
@@ -234,6 +264,7 @@ public class DatabaseManager {
         main.getLogger().info("Done removing plantsSold from db");
         // add/update all plantsSold entries
         main.getLogger().info("Updating plantsSold in db...");
+        // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
@@ -251,6 +282,7 @@ public class DatabaseManager {
         } catch (SQLException e) {
             main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
+        // =========== TRANSACTION END
         main.getLogger().info("Done updating plantsSold in db");
         return true;
     }
@@ -272,8 +304,7 @@ public class DatabaseManager {
                 + "    stage INTEGER,\n"
                 + "    drop_stage INTEGER,\n"
                 + "    executed_stage BOOLEAN,\n"
-                + "    drop_break BOOLEAN,\n"
-                + "    drop_interact BOOLEAN,\n"
+                + "    block_yaw FLOAT,\n"
                 + "    block_id TEXT,\n"
                 + "    duration INTEGER,\n"
                 + "    playerUUID TEXT,\n"
@@ -293,8 +324,8 @@ public class DatabaseManager {
     }
 
     boolean insertPlantBlockIntoTablePlantBlocks(Connection conn, PlantBlock block, PlantChunk chunk) {
-        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID)\n"
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        String sql = "REPLACE INTO plantblocks(x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, block_yaw, block_id, duration, playerUUID, plantUUID)\n"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             // set values; index starts at 1
             pstmt.setInt(     1,block.getLocation().getX());
@@ -307,12 +338,11 @@ public class DatabaseManager {
             pstmt.setInt(     8,block.getStageIndex());
             pstmt.setInt(     9,block.getDropStageIndex());
             pstmt.setBoolean(10,block.isExecutedStage());
-            pstmt.setBoolean(11,block.isDropOnBreak());
-            pstmt.setBoolean(12,block.isDropOnInteract());
-            pstmt.setString( 13,block.getStageBlockId());
-            pstmt.setLong(   14,block.getDuration());
-            pstmt.setString( 15,block.getPlayerUUID().toString());
-            pstmt.setString( 16,block.getPlantUUID().toString());
+            pstmt.setFloat(  11,block.getBlockYaw());
+            pstmt.setString( 12,block.getStageBlockId());
+            pstmt.setLong(   13,block.getDuration());
+            pstmt.setString( 14,block.getPlayerUUID().toString());
+            pstmt.setString( 15,block.getPlantUUID().toString());
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -555,7 +585,7 @@ public class DatabaseManager {
         // Create table if doesn't already exist
         createTablePlantBlocks(conn);
         // Get and load all plant blocks stored in db
-        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, drop_break, drop_interact, block_id, duration, playerUUID, plantUUID FROM plantblocks;";
+        String sql = "SELECT x, y, z, cx, cz, plant, grows, stage, drop_stage, executed_stage, block_yaw, block_id, duration, playerUUID, plantUUID FROM plantblocks;";
         try (Statement stmt = conn.createStatement();
              ResultSet rs   = stmt.executeQuery(sql)) {
             // loop through result set
@@ -598,10 +628,10 @@ public class DatabaseManager {
             plantBlock.setStageIndex(rs.getInt("stage"));
             plantBlock.setDropStageIndex(rs.getInt("drop_stage"));
             plantBlock.setStageBlockId(rs.getString("block_id"));
-            // set executedStage + dropOnBreak + dropOnInteract
+            // set executedStage
             plantBlock.setExecutedStage(rs.getBoolean("executed_stage"));
-            plantBlock.setDropOnBreak(rs.getBoolean("drop_break"));
-            plantBlock.setDropOnInteract(rs.getBoolean("drop_interact"));
+            // set blockYaw
+            plantBlock.setBlockYaw(rs.getFloat("block_yaw"));
             // set duration
             plantBlock.setDuration(rs.getLong("duration"));
             // add plantBlock to plantManager

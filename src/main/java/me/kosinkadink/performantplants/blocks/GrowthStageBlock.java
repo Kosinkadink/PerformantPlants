@@ -25,6 +25,7 @@ public class GrowthStageBlock implements Droppable {
     private boolean ignoreSpace = false;
     private boolean stopGrowth = false;
     private boolean randomOrientation = false;
+    private boolean placedOrientation = false;
     private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
     private PlantInteractStorage onInteract;
@@ -140,6 +141,14 @@ public class GrowthStageBlock implements Droppable {
 
     public void setRandomOrientation(boolean randomOrientation) {
         this.randomOrientation = randomOrientation;
+    }
+
+    public boolean isPlacedOrientation() {
+        return placedOrientation;
+    }
+
+    public void setPlacedOrientation(boolean placedOrientation) {
+        this.placedOrientation = placedOrientation;
     }
 
     public PlantInteractStorage getOnInteract() {

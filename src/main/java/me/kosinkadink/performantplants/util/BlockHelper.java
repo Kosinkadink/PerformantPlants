@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -59,10 +60,12 @@ public class BlockHelper {
         );
     }
 
-    public static void setBlockData(Block block, GrowthStageBlock stageBlock) {
+    public static void setBlockData(Block block, GrowthStageBlock stageBlock, PlantBlock plantBlock) {
         block.setBlockData(stageBlock.getBlockData());
         ReflectionHelper.setSkullTexture(block, stageBlock.getSkullTexture());
-        if (stageBlock.isRandomOrientation()) {
+        if (plantBlock != null && stageBlock.isPlacedOrientation()) {
+            setRotation(block, getOppositeDirectionFromYaw(plantBlock.getBlockYaw()));
+        } else if (stageBlock.isRandomOrientation()) {
             boolean rotated = setRotation(block, getRandomRotatableBlockFace());
             if (!rotated) {
                 setDirection(block, getRandomDirectionalBlockFace());
@@ -94,6 +97,67 @@ public class BlockHelper {
 
     public static BlockFace getRandomDirectionalBlockFace() {
         return directionalBlockFaces[ThreadLocalRandom.current().nextInt(directionalBlockFaces.length)];
+    }
+
+    public static BlockFace getOppositeDirectionFromYaw(float yaw) {
+        return getDirectionFromYaw(yaw).getOppositeFace();
+    }
+
+    public static BlockFace getDirectionFromYaw(float yaw) {
+        float rotation = yaw % 360.0F;
+        if (rotation < 0.0F) {
+            rotation += 360.0F;
+        }
+        if (0.0F <= rotation && rotation < 11.25F) {
+            return BlockFace.NORTH;
+        }
+        if ((11.25F <= rotation) && (rotation < 33.75F)) {
+            return BlockFace.NORTH_NORTH_EAST;
+        }
+        if ((33.75F <= rotation) && (rotation < 56.25F)) {
+            return BlockFace.NORTH_EAST;
+        }
+        if ((56.25F <= rotation) && (rotation < 78.75F)) {
+            return BlockFace.EAST_NORTH_EAST;
+        }
+        if ((78.75F <= rotation) && (rotation < 101.25F)) {
+            return BlockFace.EAST;
+        }
+        if ((101.25F <= rotation) && (rotation < 123.75F)) {
+            return BlockFace.EAST_SOUTH_EAST;
+        }
+        if ((123.75F <= rotation) && (rotation < 146.25F)) {
+            return BlockFace.SOUTH_EAST;
+        }
+        if ((146.25F <= rotation) && (rotation < 168.75F)) {
+            return BlockFace.SOUTH_SOUTH_EAST;
+        }
+        if ((168.75F <= rotation) && (rotation < 191.25F)) {
+            return BlockFace.SOUTH;
+        }
+        if ((191.25F <= rotation) && (rotation < 213.75F)) {
+            return BlockFace.SOUTH_SOUTH_WEST;
+        }
+        if ((213.75F <= rotation) && (rotation < 236.25F)) {
+            return BlockFace.SOUTH_WEST;
+        }
+        if ((236.25F <= rotation) && (rotation < 258.75F)) {
+            return BlockFace.WEST_SOUTH_WEST;
+        }
+        if ((258.75F <= rotation) && (rotation < 281.25F)) {
+            return BlockFace.WEST;
+        }
+        if ((281.25F <= rotation) && (rotation < 303.75F)) {
+            return BlockFace.WEST_NORTH_WEST;
+        }
+        if ((303.75F <= rotation) && (rotation < 326.25F)) {
+            return BlockFace.NORTH_WEST;
+        }
+        if ((326.2F <= rotation) && (rotation < 348.75F)) {
+            return BlockFace.NORTH_NORTH_WEST;
+        }
+        // if ((348.75F <= rotation) && (rotation < 360.0F))
+        return BlockFace.NORTH;
     }
 
     public static boolean hasWater(Block block) {

@@ -15,7 +15,7 @@ public class PlantHealEffect extends PlantEffect {
 
     @Override
     void performEffectAction(Player player, Location location) {
-        player.setHealth(Math.min(20, player.getHealth() + healAmount));
+        player.setHealth(Math.max(0, Math.min(20, player.getHealth() + healAmount)));
     }
 
     public double getHealAmount() {

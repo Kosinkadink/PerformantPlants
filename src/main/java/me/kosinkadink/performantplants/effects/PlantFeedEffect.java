@@ -17,8 +17,8 @@ public class PlantFeedEffect extends PlantEffect {
 
     @Override
     void performEffectAction(Player player, Location location) {
-        int newFoodLevel = Math.min(20, player.getFoodLevel() + foodAmount);
-        float newSaturationLevel = Math.min(newFoodLevel, player.getSaturation() + saturationAmount);
+        int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + foodAmount));
+        float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + saturationAmount));
         player.setFoodLevel(newFoodLevel);
         player.setSaturation(newSaturationLevel);
     }
@@ -28,7 +28,7 @@ public class PlantFeedEffect extends PlantEffect {
     }
 
     public void setFoodAmount(int foodAmount) {
-        this.foodAmount = Math.min(20, Math.max(0, foodAmount));
+        this.foodAmount = foodAmount;//Math.min(20, Math.max(0, foodAmount));
     }
 
     public float getSaturationAmount() {
@@ -36,7 +36,7 @@ public class PlantFeedEffect extends PlantEffect {
     }
 
     public void setSaturationAmount(float saturationAmount) {
-        this.saturationAmount = Math.min(20, Math.max(0, saturationAmount));
+        this.saturationAmount = saturationAmount;//Math.min(20, Math.max(0, saturationAmount));
     }
 
 }

@@ -7,6 +7,7 @@ public class RequiredItem {
     private ItemStack itemStack;
     private boolean takeItem = false;
     private boolean inHand = false;
+    private int addDamage = 0;
 
     public RequiredItem(ItemStack itemStack) {
         this.itemStack = itemStack;
@@ -36,4 +37,11 @@ public class RequiredItem {
         this.inHand = inHand;
     }
 
+    public int getAddDamage() {
+        return addDamage;
+    }
+
+    public void setAddDamage(int addDamage) {
+        this.addDamage = addDamage;
+    }
 }

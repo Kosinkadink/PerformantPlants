@@ -140,7 +140,10 @@ public class ConfigurationManager {
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
         // add consumable behavior
-        addConsumableToPlantItem(itemConfig, plantItem);
+        PlantConsumable consumable = loadPlantConsumable(itemConfig);
+        if (consumable != null) {
+            plantItem.setConsumable(consumable);
+        }
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
         // if growing section is present, get seed item + stages
@@ -294,6 +297,10 @@ public class ConfigurationManager {
                                 if (blockConfig.isBoolean("random-rotation")) {
                                     growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
                                 }
+                                // set placed orientation, if present
+                                if (blockConfig.isBoolean("placed-rotation")) {
+                                    growthStageBlock.setPlacedOrientation(blockConfig.getBoolean("placed-rotation"));
+                                }
                                 // set childOf, if present
                                 if (blockConfig.isSet("child-of")) {
                                     if (!blockConfig.isConfigurationSection("child-of")
@@ -389,7 +396,10 @@ public class ConfigurationManager {
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(ItemHelper.fromItemSettings(goodSettings, goodId, false));
                     addPricesToPlantItem(goodSection, goodItem);
-                    addConsumableToPlantItem(goodSection, goodItem);
+                    PlantConsumable goodConsumable = loadPlantConsumable(goodSection);
+                    if (goodConsumable != null) {
+                        goodItem.setConsumable(goodConsumable);
+                    }
                     plant.addGoodItem(goodId, goodItem);
                     main.getLogger().info(String.format("Added good item '%s' to plant: %s", goodId, plantId));
                 }
@@ -645,6 +655,10 @@ public class ConfigurationManager {
             return null;
         }
         PlantInteract plantInteract = new PlantInteract();
+        // set if block should break on interact, if present
+        if (section.isBoolean("break-block")) {
+            plantInteract.setBreakBlock(section.getBoolean("break-block"));
+        }
         // set if interaction should give block drops, if present
         if (section.isBoolean("give-block-drops")) {
             plantInteract.setGiveBlockDrops(section.getBoolean("give-block-drops"));
@@ -679,9 +693,94 @@ public class ConfigurationManager {
             }
             plantInteract.setDropStorage(dropStorage);
         }
-        // add effects, it present
+        // add effects, if present
         addEffectsToEffectStorage(section, plantInteract.getEffectStorage());
+        // add consumable, if present
+        PlantConsumable consumable = loadPlantConsumable(section);
+        if (consumable != null) {
+            plantInteract.setConsumable(consumable);
+        }
         return plantInteract;
+    }
+
+    PlantConsumable loadPlantConsumable(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        if (!section.isConfigurationSection("consumable")) {
+            return null;
+        }
+        ConfigurationSection consumableSection = section.getConfigurationSection("consumable");
+        PlantConsumable consumable = new PlantConsumable();
+        // set take item, if present
+        if (consumableSection.isBoolean("take-item")) {
+            consumable.setTakeItem(consumableSection.getBoolean("take-item"));
+        }
+        // set missing food, if present
+        if (consumableSection.isBoolean("missing-food")) {
+            consumable.setMissingFood(consumableSection.getBoolean("missing-food"));
+        }
+        // set normal eat, if present
+        if (consumableSection.isBoolean("normal-eat")) {
+            consumable.setNormalEat(consumableSection.getBoolean("normal-eat"));
+        }
+        // set damage to add to item, if present
+        if (consumableSection.isInt("add-damage")) {
+            consumable.setAddDamage(consumableSection.getInt("add-damage"));
+        }
+        // set give item, if present
+        if (consumableSection.isConfigurationSection("give-item")) {
+            ConfigurationSection itemSection = consumableSection.getConfigurationSection("add-item");
+            ItemSettings itemSettings = loadItemConfig(itemSection, true);
+            if (itemSettings == null) {
+                main.getLogger().warning(String.format("Problem getting add-item in consumable section %s;" +
+                                "will continue to load, but this item will not be consumable (fix config)",
+                        itemSection.getCurrentPath()));
+                return null;
+            }
+            consumable.setItemToAdd(itemSettings.generateItemStack());
+        }
+        // set required items, if present
+        if (consumableSection.isConfigurationSection("required-items")) {
+            ConfigurationSection requiredItemsSection = consumableSection.getConfigurationSection("required-items");
+            for (String placeholder : requiredItemsSection.getKeys(false)) {
+                ConfigurationSection requiredItemSection = requiredItemsSection.getConfigurationSection(placeholder);
+                // set item
+                ConfigurationSection itemSection = requiredItemSection.getConfigurationSection("item");
+                if (itemSection == null) {
+                    main.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
+                                    "will continue to load, but item won't be consumable (fix config)",
+                            placeholder, requiredItemsSection));
+                    return null;
+                }
+                ItemSettings itemSettings = loadItemConfig(itemSection, true);
+                if (itemSettings == null) {
+                    main.getLogger().warning(String.format("Problem getting required item in section %s;" +
+                                    "will continue to load, but this item will not be consumable (fix config)",
+                            itemSection.getCurrentPath()));
+                    return null;
+                }
+                // create required item from item
+                RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
+                // set take item, if set
+                if (requiredItemSection.isBoolean("take-item")) {
+                    requiredItem.setTakeItem(requiredItemSection.getBoolean("take-item"));
+                }
+                // set if required item should be in hand (offhand or main hand), if set
+                if (requiredItemSection.isBoolean("in-hand")) {
+                    requiredItem.setInHand(requiredItemSection.getBoolean("in-hand"));
+                }
+                // set damage to add to item, if present
+                if (requiredItemSection.isInt("add-damage")) {
+                    requiredItem.setAddDamage(requiredItemSection.getInt("add-damage"));
+                }
+                consumable.addRequiredItem(requiredItem);
+            }
+        }
+        // add effects, if present
+        addEffectsToEffectStorage(consumableSection, consumable.getEffectStorage());
+        // return consumable
+        return consumable;
     }
 
     boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable) {
@@ -744,78 +843,6 @@ public class ConfigurationManager {
                 plantItem.setSellPrice(price);
             }
         }
-    }
-
-    void addConsumableToPlantItem(ConfigurationSection section, PlantItem plantItem) {
-        if (section == null) {
-            return;
-        }
-        if (!section.isConfigurationSection("consumable")) {
-            return;
-        }
-        ConfigurationSection consumableSection = section.getConfigurationSection("consumable");
-        PlantConsumable consumable = new PlantConsumable();
-        // set take item, if present
-        if (consumableSection.isBoolean("take-item")) {
-            consumable.setTakeItem(consumableSection.getBoolean("take-item"));
-        }
-        // set missing food, if present
-        if (consumableSection.isBoolean("missing-food")) {
-            consumable.setMissingFood(consumableSection.getBoolean("missing-food"));
-        }
-        // set normal eat, if present
-        if (consumableSection.isBoolean("normal-eat")) {
-            consumable.setNormalEat(consumableSection.getBoolean("normal-eat"));
-        }
-        // set give item, if present
-        if (consumableSection.isConfigurationSection("give-item")) {
-            ConfigurationSection itemSection = consumableSection.getConfigurationSection("add-item");
-             ItemSettings itemSettings = loadItemConfig(itemSection, true);
-             if (itemSettings == null) {
-                 main.getLogger().warning(String.format("Problem getting add-item in consumable section %s for item %s;" +
-                         "will continue to load, but this item will not be consumable (fix config)",
-                         itemSection.getCurrentPath(), plantItem.getId()));
-                 return;
-             }
-             consumable.setItemToAdd(itemSettings.generateItemStack());
-        }
-        // set required items, if present
-        if (consumableSection.isConfigurationSection("required-items")) {
-            ConfigurationSection requiredItemsSection = consumableSection.getConfigurationSection("required-items");
-            for (String placeholder : requiredItemsSection.getKeys(false)) {
-                ConfigurationSection requiredItemSection = requiredItemsSection.getConfigurationSection(placeholder);
-                // set item
-                ConfigurationSection itemSection = requiredItemSection.getConfigurationSection("item");
-                if (itemSection == null) {
-                    main.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
-                            "will continue to load, but item won't be consumable (fix config)",
-                            placeholder, requiredItemsSection));
-                    return;
-                }
-                ItemSettings itemSettings = loadItemConfig(itemSection, true);
-                if (itemSettings == null) {
-                    main.getLogger().warning(String.format("Problem getting required item in section %s;" +
-                            "will continue to load, but this item will not be consumable (fix config)",
-                            itemSection.getCurrentPath()));
-                    return;
-                }
-                // create required item from item
-                RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
-                // set take item, if set
-                if (requiredItemSection.isBoolean("take-item")) {
-                    requiredItem.setTakeItem(requiredItemSection.getBoolean("take-item"));
-                }
-                // set if required item should be in hand (offhand or main hand), if set
-                if (requiredItemSection.isBoolean("in-hand")) {
-                    requiredItem.setInHand(requiredItemSection.getBoolean("in-hand"));
-                }
-                consumable.addRequiredItem(requiredItem);
-            }
-        }
-        // add effects, if present
-        addEffectsToEffectStorage(consumableSection, consumable.getEffectStorage());
-        //add consumable to plant item
-        plantItem.setConsumable(consumable);
     }
 
     void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage) {

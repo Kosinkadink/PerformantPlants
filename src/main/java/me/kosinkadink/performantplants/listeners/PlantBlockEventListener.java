@@ -9,6 +9,7 @@ import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -19,6 +20,7 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,6 +70,8 @@ public class PlantBlockEventListener implements Listener {
                         return;
                     }
                 }
+                // set block orientation (only used if orientable block to be placed)
+                plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
                 main.getPlantManager().addPlantBlock(plantBlock);
                 decrementItemStack(itemStack);
             }
@@ -137,14 +141,18 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
+            PlantConsumable consumable = plantInteract.getConsumable();
+            // if consumable exists, check that food bar is not full when missing food required
+            if (consumable != null) {
+                if (consumable.isMissingFood()) {
+                    if (event.getPlayer().getFoodLevel() >= 20) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
             // see if randomly generated chance is okay
             if (plantInteract.generateChance()) {
-                // drop items, if any
-                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock());
-                // drop plant block's drops if set that way
-                if (plantInteract.isGiveBlockDrops() && event.getPlantBlock().isDropOnInteract()) {
-                    DropHelper.performDrops(event.getPlantBlock(), event.getBlock());
-                }
                 // if specific growth stage is given to advance to, change growth stage
                 if (plantInteract.isChangeStage()) {
                     boolean success = false;
@@ -165,10 +173,21 @@ public class PlantBlockEventListener implements Listener {
                         return;
                     }
                 }
+                // break block, if applicable
+                if (plantInteract.isBreakBlock()) {
+                    // drop block items, if applicable
+                    destroyPlantBlock(event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops());
+                }
+                // drop interact items, if any
+                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock());
             }
             // do other actions regardless of chance
             if (plantInteract.isTakeItem()) {
                 decrementItemStack(itemStack);
+            }
+            // do consumable actions
+            if (consumable != null) {
+                consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
             }
         }
     }
@@ -203,13 +222,30 @@ public class PlantBlockEventListener implements Listener {
         for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
             // if in hand required, check that other hand contains item
             if (requirement.isInHand()) {
-                if (!otherStack.isSimilar(requirement.getItemStack())) {
+                boolean matches;
+                // if Damageable, match types and amounts only
+                if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
+                    matches = otherStack.getType() == requirement.getItemStack().getType() &&
+                                otherStack.getAmount() >= requirement.getItemStack().getAmount();
+                } else {
+                    matches = otherStack.isSimilar(requirement.getItemStack());
+                }
+                if (!matches) {
+                    main.getLogger().info("Required item was NOT found in other hand");
                     event.setCancelled(true);
                     return;
                 }
             } // else check that item exists somewhere in player's inventory
             else {
-                if (!event.getPlayer().getInventory().contains(requirement.getItemStack())) {
+                boolean matches;
+                // if Damageable, match types and amounts only
+                if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
+                    matches = event.getPlayer().getInventory().contains(requirement.getItemStack().getType(), requirement.getItemStack().getAmount());
+                } else {
+                    matches = event.getPlayer().getInventory().containsAtLeast(requirement.getItemStack(), requirement.getItemStack().getAmount());
+                }
+                if (!matches) {
+                    main.getLogger().info("Required item did NOT exist in inventory");
                     event.setCancelled(true);
                     return;
                 }
@@ -230,6 +266,10 @@ public class PlantBlockEventListener implements Listener {
         if (plantConsumable.isTakeItem()) {
             decrementItemStack(callStack);
         }
+        // add damage to item, if set
+        if (plantConsumable.getAddDamage() != 0) {
+            ItemHelper.updateDamage(callStack, plantConsumable.getAddDamage());
+        }
         // decrement required items, if set
         for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
             if (requirement.isTakeItem()) {
@@ -242,6 +282,25 @@ public class PlantBlockEventListener implements Listener {
                     ItemStack removeStack = requirement.getItemStack().clone();
                     removeStack.setAmount(1);
                     event.getPlayer().getInventory().removeItem(removeStack);
+                }
+            }
+            if (requirement.getAddDamage() != 0) {
+                if (requirement.isInHand()) {
+                    ItemHelper.updateDamage(otherStack, requirement.getAddDamage());
+                }
+                else {
+                    int slot;
+                    if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
+                        slot = event.getPlayer().getInventory().first(requirement.getItemStack().getType());
+                    } else {
+                        slot = event.getPlayer().getInventory().first(requirement.getItemStack());
+                    }
+                    if (slot >= 0) {
+                        ItemStack slotStack = event.getPlayer().getInventory().getItem(slot);
+                        if (slotStack != null) {
+                            ItemHelper.updateDamage(slotStack, requirement.getAddDamage());
+                        }
+                    }
                 }
             }
         }
@@ -416,7 +475,7 @@ public class PlantBlockEventListener implements Listener {
             return;
         }
         // handle drops
-        if (drops && plantBlock.isDropOnBreak()) {
+        if (drops) {
             DropHelper.performDrops(plantBlock, block);
         }
         // if block's children should be removed, remove them
