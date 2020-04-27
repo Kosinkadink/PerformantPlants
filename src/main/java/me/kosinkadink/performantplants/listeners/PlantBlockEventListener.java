@@ -152,7 +152,8 @@ public class PlantBlockEventListener implements Listener {
                 }
             }
             // see if randomly generated chance is okay
-            if (plantInteract.generateChance()) {
+            boolean chanceSuccess = plantInteract.generateChance();
+            if (chanceSuccess) {
                 // if specific growth stage is given to advance to, change growth stage
                 if (plantInteract.isChangeStage()) {
                     boolean success = false;
@@ -184,6 +185,10 @@ public class PlantBlockEventListener implements Listener {
             // do other actions regardless of chance
             if (plantInteract.isTakeItem()) {
                 decrementItemStack(itemStack);
+            }
+            // do interact actions for block
+            if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
+                plantInteract.getEffectStorage().performEffects(event.getBlock());
             }
             // do consumable actions
             if (consumable != null) {

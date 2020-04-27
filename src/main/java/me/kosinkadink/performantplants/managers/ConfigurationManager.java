@@ -17,6 +17,7 @@ import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -705,6 +706,10 @@ public class ConfigurationManager {
             }
             plantInteract.setChance(chance);
         }
+        // set if effects should only happen on successful chance, if present
+        if (section.isBoolean("only-effects-on-chance")) {
+            plantInteract.setOnlyEffectsOnChance(section.getBoolean("only-effects-on-chance"));
+        }
         // add drops, if present
         if (section.isConfigurationSection("drops")) {
             DropStorage dropStorage = new DropStorage();
@@ -947,16 +952,16 @@ public class ConfigurationManager {
             main.getLogger().warning("Sound effect not added; sound field not found in section: " + section.getCurrentPath());
             return false;
         }
-        String soundName = section.getString("sound");
-        if (soundName == null) {
+        String name = section.getString("sound");
+        if (name == null) {
             main.getLogger().warning("Sound effect not added; sound field was null in section: " + section.getCurrentPath());
             return false;
         }
         Sound sound;
         try {
-            sound = Sound.valueOf(soundName.toUpperCase());
+            sound = Sound.valueOf(name.toUpperCase());
         } catch (IllegalArgumentException e) {
-            main.getLogger().warning(String.format("Sound effect not added; sound '%s' not recognized", soundName));
+            main.getLogger().warning(String.format("Sound effect not added; sound '%s' not recognized", name));
             return false;
         }
         effect.setSound(sound);
@@ -966,7 +971,21 @@ public class ConfigurationManager {
         }
         // set pitch, if present
         if (section.isDouble("pitch") || section.isInt("pitch")) {
-            effect.setVolume((float)section.getDouble("pitch"));
+            effect.setPitch((float)section.getDouble("pitch"));
+        }
+        // set offsets, if present
+        if (section.isInt("offset-x") || section.isDouble("offset-x")) {
+            effect.setOffsetX(section.getDouble("offset-x"));
+        }
+        if (section.isInt("offset-y") || section.isDouble("offset-y")) {
+            effect.setOffsetY(section.getDouble("offset-y"));
+        }
+        if (section.isInt("offset-z") || section.isDouble("offset-z")) {
+            effect.setOffsetZ(section.getDouble("offset-z"));
+        }
+        // set if should be eye location, if present
+        if (section.isBoolean("eye-location")) {
+            effect.setEyeLocation(section.getBoolean("eye-location"));
         }
         // set client-side, if present
         if (section.isBoolean("client-side")) {
@@ -978,6 +997,71 @@ public class ConfigurationManager {
     }
 
     boolean addParticleEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        // set particle
+        PlantParticleEffect effect = new PlantParticleEffect();
+        if (!section.isString("particle")) {
+            main.getLogger().warning("Particle effect not added; particle field not found in section: " + section.getCurrentPath());
+            return false;
+        }
+        String name = section.getString("particle");
+        if (name == null) {
+            main.getLogger().warning("Particle effect not added; particle field was null in section: " + section.getCurrentPath());
+            return false;
+        }
+        Particle particle;
+        try {
+            particle = Particle.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            main.getLogger().warning(String.format("Particle effect not added; particle '%s' not recognized", name));
+            return false;
+        }
+        effect.setParticle(particle);
+        // set count, if present
+        if (section.isInt("count")) {
+            effect.setCount(section.getInt("count"));
+        }
+        // set offsets, if present
+        if (section.isInt("offset-x") || section.isDouble("offset-x")) {
+            effect.setOffsetX(section.getDouble("offset-x"));
+        }
+        if (section.isInt("offset-y") || section.isDouble("offset-y")) {
+            effect.setOffsetY(section.getDouble("offset-y"));
+        }
+        if (section.isInt("offset-z") || section.isDouble("offset-z")) {
+            effect.setOffsetZ(section.getDouble("offset-z"));
+        }
+        // set data offsets, if present
+        if (section.isInt("data-offset-x") || section.isDouble("data-offset-x")) {
+            effect.setDataOffsetX(section.getDouble("data-offset-x"));
+        }
+        if (section.isInt("data-offset-y") || section.isDouble("data-offset-y")) {
+            effect.setDataOffsetY(section.getDouble("data-offset-y"));
+        }
+        if (section.isInt("data-offset-z") || section.isDouble("data-offset-z")) {
+            effect.setDataOffsetZ(section.getDouble("data-offset-z"));
+        }
+        // set multiplier, if present
+        if (section.isInt("multiplier") || section.isDouble("multiplier")) {
+            effect.setMultiplier(section.getDouble("multiplier"));
+        }
+        // set extra, if present
+        if (section.isInt("extra") || section.isDouble("extra")) {
+            effect.setExtra(section.getDouble("extra"));
+        }
+        // set if should be eye location, if present
+        if (section.isBoolean("eye-location")) {
+            effect.setEyeLocation(section.getBoolean("eye-location"));
+        }
+        // set if should ignore y component of facing direction
+        if (section.isBoolean("ignore-direction-y")) {
+            effect.setIgnoreDirectionY(section.getBoolean("ignore-direction-y"));
+        }
+        // set client-side, if present
+        if (section.isBoolean("client-side")) {
+            effect.setClientSide(section.getBoolean("client-side"));
+        }
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
         return true;
     }
 

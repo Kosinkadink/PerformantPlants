@@ -13,6 +13,7 @@ public class PlantInteract {
     private String goToStage;
     private boolean takeItem = false;
     private boolean breakBlock = false;
+    private boolean onlyEffectsOnChance = true;
     private double chance = 100.0;
 
     private ItemStack itemStack;
@@ -103,6 +104,14 @@ public class PlantInteract {
 
     public void setBreakBlock(boolean breakBlock) {
         this.breakBlock = breakBlock;
+    }
+
+    public boolean isOnlyEffectsOnChance() {
+        return onlyEffectsOnChance;
+    }
+
+    public void setOnlyEffectsOnChance(boolean onlyEffectsOnChance) {
+        this.onlyEffectsOnChance = onlyEffectsOnChance;
     }
 
     public double getChance() {

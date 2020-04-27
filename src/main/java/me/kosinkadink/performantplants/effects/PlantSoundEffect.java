@@ -7,26 +7,39 @@ import org.bukkit.entity.Player;
 
 public class PlantSoundEffect extends PlantEffect {
 
-    //private String sound;
     private Sound sound;
     private float volume = 1;
     private float pitch = 1;
+    private double offsetX = 0;
+    private double offsetY = 0;
+    private double offsetZ = 0;
+    private boolean eyeLocation = true;
     private boolean clientSide = true;
 
     public PlantSoundEffect() { }
 
     @Override
     void performEffectAction(Player player, Location location) {
-        if (clientSide) {
-            player.playSound(player.getEyeLocation(), sound, volume, pitch);
+        Location spawnLocation;
+        if (eyeLocation) {
+            spawnLocation = player.getEyeLocation();
         } else {
-            player.getWorld().playSound(player.getEyeLocation(), sound, volume, pitch);
+            spawnLocation = player.getLocation();
+        }
+        spawnLocation.add(offsetX, offsetY, offsetZ);
+        if (clientSide) {
+            player.playSound(spawnLocation, sound, volume, pitch);
+        } else {
+            player.getWorld().playSound(spawnLocation, sound, volume, pitch);
         }
     }
 
     @Override
     void performEffectAction(Block block) {
-        block.getWorld().playSound(block.getLocation(), sound, volume, pitch);
+        Location spawnLocation = block.getLocation();
+        spawnLocation.add(0.5, 0.5, 0.5);
+        spawnLocation.add(offsetX, offsetY, offsetZ);
+        block.getWorld().playSound(spawnLocation, sound, volume, pitch);
     }
 
     public Sound getSound() {
@@ -53,6 +66,38 @@ public class PlantSoundEffect extends PlantEffect {
         this.pitch = Math.max(0.5F,Math.min(2.0F, pitch));
     }
 
+    public double getOffsetX() {
+        return offsetX;
+    }
+
+    public void setOffsetX(double offsetX) {
+        this.offsetX = offsetX;
+    }
+
+    public double getOffsetY() {
+        return offsetY;
+    }
+
+    public void setOffsetY(double offsetY) {
+        this.offsetY = offsetY;
+    }
+
+    public double getOffsetZ() {
+        return offsetZ;
+    }
+
+    public void setOffsetZ(double offsetZ) {
+        this.offsetZ = offsetZ;
+    }
+
+    public boolean isEyeLocation() {
+        return eyeLocation;
+    }
+
+    public void setEyeLocation(boolean eyeLocation) {
+        this.eyeLocation = eyeLocation;
+    }
+
     public boolean isClientSide() {
         return clientSide;
     }
@@ -60,4 +105,5 @@ public class PlantSoundEffect extends PlantEffect {
     public void setClientSide(boolean clientSide) {
         this.clientSide = clientSide;
     }
+
 }

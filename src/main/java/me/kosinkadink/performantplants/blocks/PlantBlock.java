@@ -562,6 +562,7 @@ public class PlantBlock implements Droppable {
                     if (requiredBlock.isBlacklisted()) {
                         return false;
                     }
+                    enoughMatch = true;
                 } else if (requiredBlock.isRequired()) {
                     return false;
                 }
@@ -570,8 +571,8 @@ public class PlantBlock implements Droppable {
                     if (block.getBlockData().getMaterial().isAir()) {
                         return false;
                     }
+                    enoughMatch = true;
                 }
-                enoughMatch = true;
             }
             return enoughMatch;
         }
