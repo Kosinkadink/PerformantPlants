@@ -1,8 +1,11 @@
 package me.kosinkadink.performantplants.settings;
 
 import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
+import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +17,11 @@ public class ItemSettings {
     private List<String> lore;
     private String skullTexture;
     private int amount = 1;
+    private List<EnchantmentLevel> enchantments = new ArrayList<>();
+    private List<PotionEffect> potionEffects = new ArrayList<>();
+    private int damage = 0;
+    private boolean unbreakable = false;
+
     private ItemStack itemStack;
 
     public ItemSettings(Material material, String displayName, List<String> lore, String skullTexture, int amount) {
@@ -82,6 +90,30 @@ public class ItemSettings {
         }
     }
 
+    public int getDamage() {
+        return damage;
+    }
+
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
+    public boolean isUnbreakable() {
+        return unbreakable;
+    }
+
+    public void setUnbreakable(boolean unbreakable) {
+        this.unbreakable = unbreakable;
+    }
+
+    public void addEnchantmentLevel(EnchantmentLevel enchantmentLevel) {
+        enchantments.add(enchantmentLevel);
+    }
+
+    public void addPotionEffect(PotionEffect potionEffect) {
+        potionEffects.add(potionEffect);
+    }
+
     public ItemStack getItemStack() {
         return itemStack;
     }
@@ -94,12 +126,38 @@ public class ItemSettings {
         if (getItemStack() != null) {
             return getItemStack();
         }
-        return new ItemBuilder(getMaterial())
+        ItemBuilder builder = new ItemBuilder(getMaterial())
                 .displayName(getDisplayName())
                 .lore(getLore())
                 .skullTexture(getSkullTexture())
-                .amount(getAmount())
+                .damage(getDamage())
+                .unbreakable(isUnbreakable())
+                .amount(getAmount());
+        // add all enchantments
+        for (EnchantmentLevel enchantment : enchantments) {
+            builder.addEnchantment(enchantment.getEnchantment(), enchantment.getLevel());
+        }
+        // add all potion effects
+        for (PotionEffect potionEffect : potionEffects) {
+            builder.addPotionEffect(potionEffect);
+        }
+        return builder.build();
+    }
+
+    public ItemStack generatePlantItemStack(String finalDisplayName, boolean isSeed) {
+        ItemStack generatedStack = generateItemStack();
+        if (getDisplayName() != null) {
+            finalDisplayName = getDisplayName();
+        } else if (isSeed) {
+            finalDisplayName += " Seed";
+        }
+        return new PlantItemBuilder(generatedStack)
+                .displayName(finalDisplayName)
                 .build();
+    }
+
+    public ItemStack generatePlantItemStack(String finalDisplayName) {
+        return generatePlantItemStack(finalDisplayName, false);
     }
 
 }

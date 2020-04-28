@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.managers;
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
-import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
@@ -13,7 +12,7 @@ import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
-import me.kosinkadink.performantplants.util.ItemHelper;
+import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -21,6 +20,8 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
 import org.bukkit.potion.PotionEffectType;
@@ -138,7 +139,7 @@ public class ConfigurationManager {
             return;
         }
         // create plant ItemStack and add it to plant type manager
-        PlantItem plantItem = new PlantItem(ItemHelper.fromItemSettings(itemSettings, plantId));
+        PlantItem plantItem = new PlantItem(itemSettings.generatePlantItemStack(plantId));
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
         // add consumable behavior
@@ -162,7 +163,7 @@ public class ConfigurationManager {
                     ItemSettings seedItemSettings = loadItemConfig(seedConfig,false);
                     if (seedItemSettings != null) {
                         // set seed buy/sell price
-                        PlantItem seedItem = new PlantItem(ItemHelper.fromItemSettings(seedItemSettings, plantId, true));
+                        PlantItem seedItem = new PlantItem(seedItemSettings.generatePlantItemStack(plantId, true));
                         addPricesToPlantItem(seedConfig, seedItem);
                         plant.setSeedItem(seedItem);
                     } else {
@@ -412,7 +413,7 @@ public class ConfigurationManager {
                 ConfigurationSection goodSection = goodsSection.getConfigurationSection(goodId);
                 ItemSettings goodSettings = loadItemConfig(goodSection, false);
                 if (goodSettings != null) {
-                    PlantItem goodItem = new PlantItem(ItemHelper.fromItemSettings(goodSettings, goodId, false));
+                    PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
                     addPricesToPlantItem(goodSection, goodItem);
                     PlantConsumable goodConsumable = loadPlantConsumable(goodSection);
                     if (goodConsumable != null) {
@@ -631,12 +632,46 @@ public class ConfigurationManager {
             String displayName = TextHelper.translateAlternateColorCodes(section.getString("display-name"));
             List<String> lore = TextHelper.translateAlternateColorCodes(section.getStringList("lore"));
 
-            if (linkedItemSettings == null) {
-                return new ItemSettings(material, displayName, lore, skullTexture, amount);
-            } else {
+            // return linked item settings, if present
+            if (linkedItemSettings != null) {
                 linkedItemSettings.setAmount(amount);
-                return new ItemSettings(ItemHelper.fromItemSettings(linkedItemSettings, plantId));
+                return new ItemSettings(linkedItemSettings.generatePlantItemStack(plantId));
             }
+
+            ItemSettings finalItemSettings = new ItemSettings(material, displayName, lore, skullTexture, amount);
+            if (section.isInt("damage")) {
+                finalItemSettings.setDamage(Math.max(0, section.getInt("damage")));
+            }
+            if (section.isBoolean("unbreakable")) {
+                finalItemSettings.setUnbreakable(section.getBoolean("unbreakable"));
+            }
+            // get enchantments -> Enchantment:Level
+            List<String> enchantmentStrings = section.getStringList("enchantments");
+            for (String enchantmentString : enchantmentStrings) {
+                String[] splitString = enchantmentString.split(":");
+                if (splitString.length != 2) {
+                    main.getLogger().warning("Enchantment string was invalid in item section: " + section.getCurrentPath());
+                    continue;
+                }
+                String enchantmentName = splitString[0];
+                int level;
+                try {
+                    level = Math.max(1, Integer.parseInt(splitString[1]));
+                } catch (NumberFormatException e) {
+                    main.getLogger().warning("Enchantment level was not an integer in item section: " + section.getCurrentPath());
+                    continue;
+                }
+                // get enchantment
+                Enchantment enchantment = EnchantmentWrapper.getByKey(NamespacedKey.minecraft(enchantmentName));
+                if (enchantment == null) {
+                    main.getLogger().warning(String.format("Enchantment '%s' not recognized in item section: %s",
+                            enchantmentName, section.getCurrentPath()));
+                    continue;
+                }
+                finalItemSettings.addEnchantmentLevel(new EnchantmentLevel(enchantment, level));
+            }
+            // get potion effects -> PotionEffectType:Duration:Amplifier
+            return finalItemSettings;
         }
         return null;
     }
@@ -906,19 +941,8 @@ public class ConfigurationManager {
                 return false;
             }
             ItemSettings dropItemSettings = dropSettings.getItemSettings();
-            ItemStack dropItemStack;
-            // if no item stack, then generate one from settings
-            if (dropItemSettings.getItemStack() == null) {
-                dropItemStack = new ItemBuilder(dropItemSettings.getMaterial())
-                        .lore(dropItemSettings.getLore())
-                        .displayName(dropItemSettings.getDisplayName())
-                        .build();
-            } else {
-                // otherwise use provided item stack
-                dropItemStack = dropItemSettings.getItemStack();
-            }
             Drop drop = new Drop(
-                    dropItemStack,
+                    dropItemSettings.generateItemStack(),
                     dropSettings.getMinAmount(),
                     dropSettings.getMaxAmount(),
                     dropSettings.getChance()

@@ -39,22 +39,4 @@ public class ItemHelper {
         }
     }
 
-    public static ItemStack fromItemSettings(ItemSettings settings, String displayName, boolean isSeed) {
-        if (settings.getDisplayName() != null) {
-            displayName = settings.getDisplayName();
-        } else if (isSeed) {
-            displayName += " Seed";
-        }
-        return new PlantItemBuilder(settings.getMaterial())
-                .displayName(displayName)
-                .lore(settings.getLore())
-                .skullTexture(settings.getSkullTexture())
-                .amount(settings.getAmount())
-                .build();
-    }
-
-    public static ItemStack fromItemSettings(ItemSettings settings, String displayName) {
-        return fromItemSettings(settings, displayName, false);
-    }
-
 }
