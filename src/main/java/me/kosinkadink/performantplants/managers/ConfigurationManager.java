@@ -1235,11 +1235,11 @@ public class ConfigurationManager {
 
     boolean addAirEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
         PlantAirEffect effect = new PlantAirEffect();
-        if (!section.isInt("air")) {
-            main.getLogger().warning("Air effect not added; no air int provided in section: " + section.getCurrentPath());
+        if (!section.isInt("amount")) {
+            main.getLogger().warning("Air effect not added; no amount provided in section: " + section.getCurrentPath());
             return false;
         }
-        effect.setAir(section.getInt("air"));
+        effect.setAmount(section.getInt("amount"));
         // add chance + delay and store in effect storage
         addChanceAndDelayToEffect(section, effect);
         effectStorage.addEffect(effect);

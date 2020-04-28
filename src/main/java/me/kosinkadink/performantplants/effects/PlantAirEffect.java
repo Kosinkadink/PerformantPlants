@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 
 public class PlantAirEffect extends PlantEffect {
 
-    private int air = 0;
+    private int amount = 0;
 
     public PlantAirEffect() { }
 
@@ -13,15 +13,15 @@ public class PlantAirEffect extends PlantEffect {
     void performEffectAction(Player player, Location location) {
         player.setRemainingAir(
                 Math.min(player.getMaximumAir(),
-                        Math.max(0, player.getRemainingAir() + air))
+                        Math.max(0, player.getRemainingAir() + amount))
         );
     }
 
-    public int getAir() {
-        return air;
+    public int getAmount() {
+        return amount;
     }
 
-    public void setAir(int air) {
-        this.air = air;
+    public void setAmount(int amount) {
+        this.amount = amount;
     }
 }
