@@ -14,10 +14,7 @@ import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import me.kosinkadink.performantplants.util.TextHelper;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -920,7 +917,7 @@ public class ConfigurationManager {
     boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable) {
         // iterate through drops
         if (!section.isConfigurationSection("drops")) {
-            main.getLogger().warning("No drops provided for growth for plant: " + section.getCurrentPath());
+            main.getLogger().warning("No drops provided in section: " + section.getCurrentPath());
             return false;
         }
         // add drop limit, if present
@@ -931,16 +928,20 @@ public class ConfigurationManager {
         for (String dropName : dropsConfig.getKeys(false)) {
             ConfigurationSection dropConfig = dropsConfig.getConfigurationSection(dropName);
             if (dropConfig == null) {
-                main.getLogger().warning("dropConfig was null for growth for plant: " + section.getCurrentPath());
+                main.getLogger().warning("dropConfig was null in section: " + section.getCurrentPath());
                 return false;
             }
             // get drop settings
             DropSettings dropSettings = loadDropConfig(dropConfig);
             if (dropSettings == null) {
-                main.getLogger().warning("dropSettings were null for growth for plant: " + section.getCurrentPath());
+                main.getLogger().warning("dropSettings were null in section: " + section.getCurrentPath());
                 return false;
             }
             ItemSettings dropItemSettings = dropSettings.getItemSettings();
+            if (dropItemSettings == null) {
+                main.getLogger().warning("dropItemSettings were null in section: " + section.getCurrentPath());
+                return false;
+            }
             Drop drop = new Drop(
                     dropItemSettings.generateItemStack(),
                     dropSettings.getMinAmount(),
@@ -1014,6 +1015,15 @@ public class ConfigurationManager {
         }
         if (type.equalsIgnoreCase("potion")) {
             return addPotionEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("drop")) {
+            return addDropEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("air")) {
+            return addAirEffect(section, effectStorage);
+        }
+        if (type.equalsIgnoreCase("area")) {
+            return addAreaEffect(section, effectStorage);
         }
         main.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
                 type, section.getCurrentPath()));
@@ -1203,6 +1213,87 @@ public class ConfigurationManager {
         // set icon
         if (section.isBoolean("icon")) {
             effect.setIcon(section.getBoolean("icon"));
+        }
+        // add chance + delay and store in effect storage
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
+        return true;
+    }
+
+    boolean addDropEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        PlantDropEffect effect = new PlantDropEffect();
+        boolean added = addDropsToDroppable(section, effect.getDropStorage());
+        if (!added) {
+            main.getLogger().warning("Drop effect not added; issue getting drops");
+            return false;
+        }
+        // add chance + delay and store in effect storage
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
+        return true;
+    }
+
+    boolean addAirEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        PlantAirEffect effect = new PlantAirEffect();
+        if (!section.isInt("air")) {
+            main.getLogger().warning("Air effect not added; no air int provided in section: " + section.getCurrentPath());
+            return false;
+        }
+        effect.setAir(section.getInt("air"));
+        // add chance + delay and store in effect storage
+        addChanceAndDelayToEffect(section, effect);
+        effectStorage.addEffect(effect);
+        return true;
+    }
+
+    boolean addAreaEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+        PlantAreaEffect effect = new PlantAreaEffect();
+        if (section.isConfigurationSection("color")) {
+            ConfigurationSection colorSection = section.getConfigurationSection("color");
+            if (colorSection != null) {
+                int r = 0;
+                int g = 0;
+                int b = 0;
+                if (colorSection.isInt("r")) {
+                    r = Math.min(255, Math.max(0, colorSection.getInt("r")));
+                }
+                if (colorSection.isInt("g")) {
+                    g = Math.min(255, Math.max(0, colorSection.getInt("g")));
+                }
+                if (colorSection.isInt("b")) {
+                    b = Math.min(255, Math.max(0, colorSection.getInt("b")));
+                }
+                effect.setColor(Color.fromRGB(r,g,b));
+            }
+        }
+        if (section.isInt("duration")) {
+            effect.setDuration(section.getInt("duration"));
+        }
+        if (section.isInt("duration-on-use")) {
+            effect.setDurationOnUse(section.getInt("duration-on-use"));
+        }
+        if (section.isString("particle")) {
+            String name = section.getString("particle");
+            try {
+                Particle particle = Particle.valueOf(name.toUpperCase());
+                effect.setParticle(particle);
+            } catch (IllegalArgumentException e) {
+                main.getLogger().warning(String.format("Area effect will not have chosen particle '%s'; not recognized in section %s",
+                        name, section.getCurrentPath()));
+            }
+        }
+        //effect.setParticle();
+        if (section.isInt("radius") || section.isDouble("radius")) {
+            effect.setRadius((float) section.getDouble("radius"));
+        }
+        if (section.isInt("radius-on-use") || section.isDouble("radius-on-use")) {
+            effect.setRadiusOnUse((float) section.getDouble("radius-on-use"));
+        }
+        if (section.isInt("radius-per-tick") || section.isDouble("radius-per-tick")) {
+            effect.setRadiusPerTick((float) section.getDouble("radius-per-tick"));
+        }
+        if (section.isInt("reapplication-delay")) {
+            effect.setReapplicationDelay(section.getInt("reapplication-delay"));
         }
         // add chance + delay and store in effect storage
         addChanceAndDelayToEffect(section, effect);

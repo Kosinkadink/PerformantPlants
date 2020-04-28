@@ -28,7 +28,7 @@ public class PlantFeedEffect extends PlantEffect {
     }
 
     public void setFoodAmount(int foodAmount) {
-        this.foodAmount = foodAmount;//Math.min(20, Math.max(0, foodAmount));
+        this.foodAmount = foodAmount;
     }
 
     public float getSaturationAmount() {
@@ -36,7 +36,7 @@ public class PlantFeedEffect extends PlantEffect {
     }
 
     public void setSaturationAmount(float saturationAmount) {
-        this.saturationAmount = saturationAmount;//Math.min(20, Math.max(0, saturationAmount));
+        this.saturationAmount = saturationAmount;
     }
 
 }

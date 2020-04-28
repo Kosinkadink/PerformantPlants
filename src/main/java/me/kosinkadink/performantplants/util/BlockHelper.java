@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -179,6 +180,10 @@ public class BlockHelper {
         return block.getType().isInteractable() &&
                 block.getType() != Material.PISTON_HEAD &&
                 !block.getType().toString().endsWith("STAIRS");
+    }
+
+    public static Location getCenter(Block block) {
+        return block.getLocation().add(0.5,0.5,0.5);
     }
 
 }

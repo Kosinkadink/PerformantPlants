@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -36,8 +37,7 @@ public class PlantSoundEffect extends PlantEffect {
 
     @Override
     void performEffectAction(Block block) {
-        Location spawnLocation = block.getLocation();
-        spawnLocation.add(0.5, 0.5, 0.5);
+        Location spawnLocation = BlockHelper.getCenter(block);
         spawnLocation.add(offsetX, offsetY, offsetZ);
         block.getWorld().playSound(spawnLocation, sound, volume, pitch);
     }
