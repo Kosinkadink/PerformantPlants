@@ -21,6 +21,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
 import org.bukkit.potion.PotionEffectType;
 
@@ -41,6 +42,7 @@ public class ConfigurationManager {
         configFile = new File(main.getDataFolder(), "config.yml");
         loadMainConfig();
         loadPlantConfigs();
+        loadVanillaDropConfig();
     }
 
     public ConfigSettings getConfigSettings() {
@@ -109,7 +111,6 @@ public class ConfigurationManager {
         }
         // put plant yaml config in config map for future reference
         plantConfigMap.put(plantId, plantConfig);
-
     }
 
     void loadPlantsFromConfigs() {
@@ -468,6 +469,78 @@ public class ConfigurationManager {
         main.getLogger().info("Successfully loaded plant: " + plantId);
     }
 
+    void loadVanillaDropConfig() {
+        if (config == null || !config.isConfigurationSection("vanilla-drops")) {
+            return;
+        }
+        ConfigurationSection vanillaDropsSection = config.getConfigurationSection("vanilla-drops");
+        for (String placeholder : vanillaDropsSection.getKeys(false)) {
+            ConfigurationSection dropSection = vanillaDropsSection.getConfigurationSection(placeholder);
+            if (dropSection == null) {
+                main.getLogger().warning("Vanilla drop section was null in section: " + dropSection.getCurrentPath());
+                return;
+            }
+            if (!dropSection.isString("type")) {
+                main.getLogger().warning("Vanilla drop section does not include type in section: " + dropSection.getCurrentPath());
+                return;
+            }
+            String type = dropSection.getString("type");
+            if (type.equalsIgnoreCase("block")) {
+                addBlockDrop(dropSection);
+            } else if (type.equalsIgnoreCase("entity")) {
+                addEntityDrop(dropSection);
+            }
+        }
+    }
+
+    void addBlockDrop(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        if (!section.isString("material")) {
+            main.getLogger().warning("Vanilla block drop not added; no entity-type provided");
+            return;
+        }
+        String name = section.getString("material");
+        Material material = Material.getMaterial(name.toUpperCase());
+        if (material == null) {
+            main.getLogger().warning(String.format("Vanilla block drop not added; material '%s' not recognized", name));
+            return;
+        }
+        // set drops
+        DropStorage storage = new DropStorage();
+        addDropsToDroppable(section, storage);
+        // add to vanilla drop manager
+        main.getVanillaDropManager().addDropStorage(material, storage);
+    }
+
+    void addEntityDrop(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        if (!section.isString("entity-type")) {
+            main.getLogger().warning("Vanilla entity drop not added; no entity provided");
+            return;
+        }
+        String name = section.getString("entity-type");
+        EntityType entityType;
+        try {
+            entityType = EntityType.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            main.getLogger().warning(String.format("Vanilla entity drop not added; entity '%s' not recognized", name));
+            return;
+        }
+        if (!entityType.isAlive()) {
+            main.getLogger().warning(String.format("Vanilla entity drop not added; entity '%s' is not alive", name));
+            return;
+        }
+        // set drops
+        DropStorage storage = new DropStorage();
+        addDropsToDroppable(section, storage);
+        // add to vanilla drop manager
+        main.getVanillaDropManager().addDropStorage(entityType, storage);
+    }
+
     ItemSettings loadItemConfig(ConfigurationSection section, boolean allowLink) {
         // check if section exists
         if (section != null) {
@@ -814,6 +887,10 @@ public class ConfigurationManager {
         if (!section.isConfigurationSection("drops")) {
             main.getLogger().warning("No drops provided for growth for plant: " + section.getCurrentPath());
             return false;
+        }
+        // add drop limit, if present
+        if (section.isInt("drop-limit")) {
+            droppable.setDropLimit(section.getInt("drop-limit"));
         }
         ConfigurationSection dropsConfig = section.getConfigurationSection("drops");
         for (String dropName : dropsConfig.getKeys(false)) {

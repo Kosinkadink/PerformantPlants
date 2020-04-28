@@ -22,6 +22,7 @@ public class Main extends JavaPlugin {
     private ConfigurationManager configManager;
     private StatisticsManager statisticsManager;
     private RecipeManager recipeManager;
+    private VanillaDropManager vanillaDropManager;
 
     @Override
     public void onEnable() {
@@ -63,6 +64,7 @@ public class Main extends JavaPlugin {
         plantManager = new PlantManager(this);
         plantTypeManager = new PlantTypeManager(this);
         recipeManager = new RecipeManager(this);
+        vanillaDropManager = new VanillaDropManager(this);
         configManager = new ConfigurationManager(this);
         statisticsManager = new StatisticsManager(this);
         databaseManager = new DatabaseManager(this);
@@ -74,6 +76,7 @@ public class Main extends JavaPlugin {
         pluginManager.registerEvents(new BlockBreakListener(this), this);
         pluginManager.registerEvents(new PlantBlockEventListener(this), this);
         pluginManager.registerEvents(new RecipeEventListener(this), this);
+        pluginManager.registerEvents(new VanillaDropListener(this), this);
     }
 
     private void registerCommands() {
@@ -130,4 +133,7 @@ public class Main extends JavaPlugin {
         return recipeManager;
     }
 
+    public VanillaDropManager getVanillaDropManager() {
+        return vanillaDropManager;
+    }
 }
