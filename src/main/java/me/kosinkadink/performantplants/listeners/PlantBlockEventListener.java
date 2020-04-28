@@ -440,11 +440,17 @@ public class PlantBlockEventListener implements Listener {
         }
         else if (!event.isCancelled()) {
             // check if any pushed blocks were Plants
+            boolean anyPlantBlocks = false;
             for (Block block : event.getBlocks()) {
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                    // destroy them
-                    destroyPlantBlock(block, true);
-                    event.setCancelled(true);
+                    anyPlantBlocks = true;
+                    break;
+                }
+            }
+            if (anyPlantBlocks) {
+                event.setCancelled(true);
+                if (MetadataHelper.hasPlantBlockMetadata(event.getBlocks().get(0))) {
+                    destroyPlantBlock(event.getBlocks().get(0), true);
                 }
             }
         }
@@ -458,13 +464,26 @@ public class PlantBlockEventListener implements Listener {
         }
         // if the piston is sticky, check if any plants are being pulled
         else if (!event.isCancelled() && event.isSticky()) {
+            // check if sticky piston is retracting a sticky block
+            boolean usingStickyBlock = false;
+            if (event.getBlocks().size() > 0 &&
+                    !MetadataHelper.hasPlantBlockMetadata(event.getBlocks().get(0)) && (
+                            event.getBlocks().get(0).getBlockData().getMaterial() == Material.SLIME_BLOCK ||
+                            event.getBlocks().get(0).getBlockData().getMaterial() == Material.HONEY_BLOCK
+                            )) {
+                usingStickyBlock = true;
+            }
             // check if any pulled blocks were Plants
             for (Block block : event.getBlocks()) {
                 // also check if the block was solid; non-solid can't get pulled
                 if (MetadataHelper.hasPlantBlockMetadata(block) &&
                         block.getType().isSolid()) {
-                    destroyPlantBlock(block, true);
                     event.setCancelled(true);
+                    // if was using sticky block, don't do anything now after cancellation
+                    if (usingStickyBlock) {
+                        return;
+                    }
+                    destroyPlantBlock(block, true);
                 }
             }
         }
