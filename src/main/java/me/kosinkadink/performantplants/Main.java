@@ -84,6 +84,13 @@ public class Main extends JavaPlugin {
         commandManager.registerCommand(new PlantStatsResetCommand(this));
         commandManager.registerCommand(new PlantStatsResetPlayerCommand(this));
         commandManager.registerCommand(new PlantStatsResetAllPlayersCommand(this));
+        // Plant Tag Commands
+        commandManager.registerCommand(new PlantTagRegisterCommand(this));
+        commandManager.registerCommand(new PlantTagAddCommand(this));
+        commandManager.registerCommand(new PlantTagUnregisterCommand(this));
+        commandManager.registerCommand(new PlantTagRemoveCommand(this));
+        commandManager.registerCommand(new PlantTagListCommand(this));
+        commandManager.registerCommand(new PlantTagInfoCommand(this));
     }
 
     private void registerVaultCommands() {

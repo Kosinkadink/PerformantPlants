@@ -6,8 +6,10 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
+import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import org.bukkit.OfflinePlayer;
 
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +22,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
     private final Pattern SELLPRICE_PATTERN = Pattern.compile("^sellprice_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern HASSEED_PATTERN = Pattern.compile("^hasseed_(?<plantId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern SOLD_PATTERN = Pattern.compile("^sold_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
+    private final Pattern SOLDTAG_PATTERN = Pattern.compile("^soldtag_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantTag>[a-zA-Z0-9_.\\-]+)$");
 
     public PerformantPlantExpansion(Main main) {
         this.main = main;
@@ -120,6 +123,31 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             if (plantItemsSold != null) {
                 amount = plantItemsSold.getAmount();
             }
+            return String.format("%d", amount);
+        }
+
+        // %performantplants_soldtag_<playerUUID>_<plantTag>% -> int
+        // Examples:
+        //   %performantplants_soldtag_{playerUUID}_vegetables%
+        //   %performantplants_soldtag_00000000-0000-0000-0000-000000000000_vegetables%
+        matcher = SOLDTAG_PATTERN.matcher(identifier);
+        if (matcher.find()) {
+            String playerUUID = matcher.group("playerUUID");
+            String plantTag = matcher.group("plantTag");
+            // get tag, if exists
+            StatisticsTagStorage storage = main.getStatisticsManager().getPlantTag(plantTag);
+            int amount = 0;
+            if (storage != null) {
+                ArrayList<String> plantIds = storage.getAllPlantIds();
+                for (String plantId : plantIds) {
+                    StatisticsAmount plantItemsSold = main.getStatisticsManager()
+                            .getPlantItemsSold(UUID.fromString(playerUUID), plantId);
+                    if (plantItemsSold != null) {
+                        amount += plantItemsSold.getAmount();
+                    }
+                }
+            }
+            // add up sold statistic for each plant in tag
             return String.format("%d", amount);
         }
 

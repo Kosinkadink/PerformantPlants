@@ -6,8 +6,10 @@ import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
+import me.kosinkadink.performantplants.statistics.StatisticsTagItem;
 import me.kosinkadink.performantplants.storage.PlantChunkStorage;
 import me.kosinkadink.performantplants.storage.StatisticsAmountStorage;
+import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -101,6 +103,11 @@ public class DatabaseManager {
         String url = getUrlFromFile(file);
         // Load plantsSold statistics from plantsSold
         boolean success = addPlantsSoldFromDatabase(conn, url);
+        if (!success) {
+            return false;
+        }
+        // Load plantTags statistics from plantTags
+        success = addPlantTagsFromDatabase(conn, url);
         if (!success) {
             return false;
         }
@@ -233,6 +240,10 @@ public class DatabaseManager {
         }
         // Create tables if don't already exist
         createTablePlantsSold(conn);
+        createTablePlantTags(conn);
+
+        //////////////////////////////////////////
+        // PLANTS SOLD
         // remove any plantsSold set for removal
         main.getLogger().info("Removing plantsSold from db for world...");
         ArrayList<StatisticsAmount> plantsSoldToRemoveCache = new ArrayList<>();
@@ -284,6 +295,62 @@ public class DatabaseManager {
         }
         // =========== TRANSACTION END
         main.getLogger().info("Done updating plantsSold in db");
+        //////////////////////////////////////////
+
+        //////////////////////////////////////////
+        // PLANT TAGS
+        // remove any tag items set for removal
+        main.getLogger().info("Removing plantTags from db for world...");
+        ArrayList<StatisticsTagItem> plantTagsToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (StatisticsTagItem tagItem : main.getStatisticsManager().getStatisticsTagToDeleteItem()) {
+            boolean success = removeStatisticsTagItemFromTablePlantsSold(conn, tagItem);
+            // if deleted from db, remove from StatisticsManager
+            if (success) {
+                plantTagsToRemoveCache.add(tagItem);
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        // remove cached removal blocks from being removed next time
+        for (StatisticsTagItem tagItem : plantTagsToRemoveCache) {
+            main.getStatisticsManager().removeStatisticTagFromRemoval(tagItem);
+        }
+        main.getLogger().info("Done removing plantTags from db");
+        // add/update all plantTags entries
+        main.getLogger().info("Updating plantTags in db...");
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (StatisticsTagStorage storage : main.getStatisticsManager().getPlantTagStorageMap().values()) {
+            for (StatisticsTagItem statisticsTagItem : storage.getStatisticsTagMap().values()) {
+                insertStatisticsTagItemIntoTablePlantTags(conn, statisticsTagItem);
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        main.getLogger().info("Done updating plantTags in db");
+        //////////////////////////////////////////
         return true;
     }
 
@@ -560,7 +627,6 @@ public class DatabaseManager {
         String sql = "DELETE FROM plantsSold\n"
                 + "    WHERE playerUUID = ?"
                 + "    AND plantItemId = ?;";
-        main.getLogger().info(String.format("Removing from plantsSold where playerUUID = %s and plantItemId = %s", sold.getPlayerUUID().toString(), sold.getId()));
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             // set values; index starts at 1
             pstmt.setString(1,sold.getPlayerUUID().toString());
@@ -571,6 +637,65 @@ public class DatabaseManager {
             main.getLogger().warning(
                     "Could not remove StatisticsAmount from plantsSold: " + sold.getPlayerUUID().toString() + ","
                             + sold.getId() + "; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    //endregion
+
+    //region PlantTags Table
+
+    boolean createTablePlantTags(Connection conn) {
+        // Create table if doesn't already exist
+        String sql = "CREATE TABLE IF NOT EXISTS plantTags (\n"
+                + "    tagId TEXT,\n"
+                + "    plantItemId TEXT,\n"
+                + "    PRIMARY KEY (tagId, plantItemId)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            main.getLogger().severe(
+                    "Exception occurred creating table 'plantTags'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertStatisticsTagItemIntoTablePlantTags(Connection conn, StatisticsTagItem item) {
+        String sql = "REPLACE INTO plantTags(tagId, plantItemId)\n"
+                + "VALUES(?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(   1,item.getId());
+            pstmt.setString(   2,item.getPlantId());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + item.toString() + "; " + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    boolean removeStatisticsTagItemFromTablePlantsSold(Connection conn, StatisticsTagItem item) {
+        String sql = "DELETE FROM plantTags\n"
+                + "    WHERE tagId = ?"
+                + "    AND plantItemId = ?;";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1,item.getId());
+            pstmt.setString(2,item.getPlantId());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning(
+                    "Could not remove StatisticsAmount from plantsSold: " + item.getId() + ","
+                            + item.getPlantId() + "; " + e.toString()
             );
             return false;
         }
@@ -779,7 +904,44 @@ public class DatabaseManager {
             // add to StatisticsManager
             main.getStatisticsManager().addPlantItemsSold(statisticsAmount);
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
+            main.getLogger().warning("SQLException occurred trying to load plantsSold; " + e.toString());
+        }
+    }
+
+    //endregion
+
+    //region Add PlantTags
+
+    boolean addPlantTagsFromDatabase(Connection conn, String url) {
+        // Create table if doesn't already exist
+        createTablePlantTags(conn);
+        // Get and load all StatisticsAmounts stored in db
+        String sql = "SELECT tagId, plantItemId FROM plantTags;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                // create parent from database row
+                addPlantTagsFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred loading plantTags from url: " + url + "; " + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    void addPlantTagsFromResultSet(ResultSet rs) {
+        try {
+            // create StatisticsTagItem from dbEntry
+            StatisticsTagItem statisticsTagItem = new StatisticsTagItem(
+                    rs.getString("tagId"),
+                    rs.getString("plantItemId")
+            );
+            // add to StatisticsManager
+            main.getStatisticsManager().registerPlantTag(statisticsTagItem);
+        } catch (SQLException e) {
+            main.getLogger().warning("SQLException occurred trying to load plantTags; " + e.toString());
         }
     }
 
