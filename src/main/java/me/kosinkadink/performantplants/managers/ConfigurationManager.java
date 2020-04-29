@@ -343,48 +343,24 @@ public class ConfigurationManager {
                                 // set interact behavior, if present
                                 if (blockConfig.isConfigurationSection("on-interact")) {
                                     ConfigurationSection onInteractSection = blockConfig.getConfigurationSection("on-interact");
-                                    PlantInteractStorage plantInteractStorage = new PlantInteractStorage();
-                                    // add default interaction, if present
-                                    if (onInteractSection.isConfigurationSection("default")) {
-                                        ConfigurationSection defaultInteractSection = onInteractSection.getConfigurationSection("default");
-                                        // load interaction from default path
-                                        PlantInteract plantInteract = loadPlantInteract(defaultInteractSection);
-                                        if (plantInteract == null) {
-                                            main.getLogger().warning("Default on-interact could not be loaded from section: " + defaultInteractSection.getCurrentPath());
-                                            return;
-                                        }
-                                        plantInteractStorage.setDefaultInteract(plantInteract);
-                                    }
-                                    // add item interactions, if present
-                                    if (onInteractSection.isConfigurationSection("items")) {
-                                        ConfigurationSection itemsInteractSection = onInteractSection.getConfigurationSection("items");
-                                        for (String placeholder : itemsInteractSection.getKeys(false)) {
-                                            ConfigurationSection itemInteractSection = itemsInteractSection.getConfigurationSection(placeholder);
-                                            if (itemInteractSection == null) {
-                                                main.getLogger().warning("Item on-interact section was null from section: " + itemsInteractSection.getCurrentPath());
-                                                return;
-                                            }
-                                            ConfigurationSection itemSection = itemInteractSection.getConfigurationSection("item");
-                                            if (itemSection == null) {
-                                                main.getLogger().warning("Item section not present in on-interact section from section: " + itemInteractSection.getCurrentPath());
-                                                return;
-                                            }
-                                            ItemSettings itemInteractSettings = loadItemConfig(itemSection, true);
-                                            if (itemInteractSettings == null) {
-                                                return;
-                                            }
-                                            PlantInteract plantInteract = loadPlantInteract(itemInteractSection);
-                                            if (plantInteract == null) {
-                                                main.getLogger().warning("Item on-interact could not be loaded from section: " + itemInteractSection.getCurrentPath());
-                                                return;
-                                            }
-                                            // set interact's item stack
-                                            plantInteract.setItemStack(itemInteractSettings.generateItemStack());
-                                            plantInteractStorage.addPlantInteract(plantInteract);
-                                        }
+                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onInteractSection);
+                                    if (plantInteractStorage == null) {
+                                        main.getLogger().warning("Could not load on-interact section: " + onInteractSection.getCurrentPath());
+                                        return;
                                     }
                                     // add interactions to growth stage block
                                     growthStageBlock.setOnInteract(plantInteractStorage);
+                                }
+                                // set break behavior, if present
+                                if (blockConfig.isConfigurationSection("on-break")) {
+                                    ConfigurationSection onBreakSection = blockConfig.getConfigurationSection("on-break");
+                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onBreakSection);
+                                    if (plantInteractStorage == null) {
+                                        main.getLogger().warning("Could not load on-break section: " + onBreakSection.getCurrentPath());
+                                        return;
+                                    }
+                                    // add interactions to growth stage block
+                                    growthStageBlock.setOnBreak(plantInteractStorage);
                                 }
                                 // add growth stage block to stage
                                 growthStage.addGrowthStageBlock(growthStageBlock);
@@ -775,6 +751,50 @@ public class ConfigurationManager {
             return dropSettings;
         }
         return null;
+    }
+
+    PlantInteractStorage loadPlantInteractStorage(ConfigurationSection section) {
+        PlantInteractStorage plantInteractStorage = new PlantInteractStorage();
+        // add default interaction, if present
+        if (section.isConfigurationSection("default")) {
+            ConfigurationSection defaultInteractSection = section.getConfigurationSection("default");
+            // load interaction from default path
+            PlantInteract plantInteract = loadPlantInteract(defaultInteractSection);
+            if (plantInteract == null) {
+                main.getLogger().warning("Default PlantInteract could not be loaded from section: " + defaultInteractSection.getCurrentPath());
+                return null;
+            }
+            plantInteractStorage.setDefaultInteract(plantInteract);
+        }
+        // add item interactions, if present
+        if (section.isConfigurationSection("items")) {
+            ConfigurationSection itemsInteractSection = section.getConfigurationSection("items");
+            for (String placeholder : itemsInteractSection.getKeys(false)) {
+                ConfigurationSection itemInteractSection = itemsInteractSection.getConfigurationSection(placeholder);
+                if (itemInteractSection == null) {
+                    main.getLogger().warning("Item PlantInteract section was null from section: " + itemsInteractSection.getCurrentPath());
+                    return null;
+                }
+                ConfigurationSection itemSection = itemInteractSection.getConfigurationSection("item");
+                if (itemSection == null) {
+                    main.getLogger().warning("Item section not present in PlantInteract section from section: " + itemInteractSection.getCurrentPath());
+                    return null;
+                }
+                ItemSettings itemInteractSettings = loadItemConfig(itemSection, true);
+                if (itemInteractSettings == null) {
+                    return null;
+                }
+                PlantInteract plantInteract = loadPlantInteract(itemInteractSection);
+                if (plantInteract == null) {
+                    main.getLogger().warning("Item PlantInteract could not be loaded from section: " + itemInteractSection.getCurrentPath());
+                    return null;
+                }
+                // set interact's item stack
+                plantInteract.setItemStack(itemInteractSettings.generateItemStack());
+                plantInteractStorage.addPlantInteract(plantInteract);
+            }
+        }
+        return plantInteractStorage;
     }
 
     PlantInteract loadPlantInteract(ConfigurationSection section) {

@@ -88,6 +88,23 @@ public class PlantBlockEventListener implements Listener {
             }
             main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
             destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
+            // get item in main hand, used to break the block
+            ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+            // get PlantInteract behavior for main hand, if any
+            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack);
+            if (plantInteract != null) {
+                // see if randomly generated chance is okay
+                boolean chanceSuccess = plantInteract.generateChance();
+                // do break actions for block
+                if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
+                    plantInteract.getEffectStorage().performEffects(event.getBlock());
+                }
+                PlantConsumable consumable = plantInteract.getConsumable();
+                // do consumable actions
+                if (consumable != null) {
+                    consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+                }
+            }
         }
     }
 

@@ -29,6 +29,7 @@ public class GrowthStageBlock implements Droppable {
     private int dropLimit = -1;
     private ArrayList<Drop> drops = new ArrayList<>();
     private PlantInteractStorage onInteract;
+    private PlantInteractStorage onBreak;
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings, String skullTexture) {
         this.id = id;
@@ -165,4 +166,20 @@ public class GrowthStageBlock implements Droppable {
     public void setOnInteract(PlantInteractStorage onInteract) {
         this.onInteract = onInteract;
     }
+
+    public PlantInteractStorage getOnBreak() {
+        return onBreak;
+    }
+
+    public PlantInteract getOnBreak(ItemStack itemStack) {
+        if (onBreak != null) {
+            return onBreak.getPlantInteract(itemStack);
+        }
+        return null;
+    }
+
+    public void setOnBreak(PlantInteractStorage onBreak) {
+        this.onBreak = onBreak;
+    }
+
 }

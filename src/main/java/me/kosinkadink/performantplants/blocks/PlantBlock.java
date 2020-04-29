@@ -265,6 +265,16 @@ public class PlantBlock implements Droppable {
         return null;
     }
 
+    public PlantInteract getOnBreak(ItemStack itemStack) {
+        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnBreak(itemStack);
+            }
+        }
+        return null;
+    }
+
     public float getBlockYaw() {
         return blockYaw;
     }
