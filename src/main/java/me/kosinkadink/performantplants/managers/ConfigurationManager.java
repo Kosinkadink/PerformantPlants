@@ -1041,36 +1041,52 @@ public class ConfigurationManager {
             main.getLogger().warning("Type not set for effect at: " + section.getCurrentPath());
             return false;
         }
-        if (type.equalsIgnoreCase("feed")) {
-            return addFeedEffect(section, effectStorage);
+        PlantEffect effect = null;
+        switch (type.toLowerCase()) {
+            case "feed":
+                effect = createFeedEffect(section);
+                break;
+            case "heal":
+                effect = createHealEffect(section);
+                break;
+            case "sound":
+                effect = createSoundEffect(section);
+                break;
+            case "particle":
+                effect = createParticleEffect(section);
+                break;
+            case "potion":
+                effect = createPotionEffect(section);
+                break;
+            case "drop":
+                effect = createDropEffect(section);
+                break;
+            case "air":
+                effect = createAirEffect(section);
+                break;
+            case "area":
+                effect = createAreaEffect(section);
+                break;
+            case "durability":
+                effect = createDurabilityEffect(section);
+                break;
+            case "chat":
+                effect = createChatEffect(section);
+                break;
+            default:
+                break;
         }
-        if (type.equalsIgnoreCase("heal")) {
-            return addHealEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("sound")) {
-            return addSoundEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("particle")) {
-            return addParticleEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("potion")) {
-            return addPotionEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("drop")) {
-            return addDropEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("air")) {
-            return addAirEffect(section, effectStorage);
-        }
-        if (type.equalsIgnoreCase("area")) {
-            return addAreaEffect(section, effectStorage);
+        if (effect != null) {
+            addChanceAndDelayToEffect(section, effect);
+            effectStorage.addEffect(effect);
+            return true;
         }
         main.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
                 type, section.getCurrentPath()));
         return false;
     }
 
-    boolean addFeedEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantFeedEffect createFeedEffect(ConfigurationSection section) {
         PlantFeedEffect effect = new PlantFeedEffect();
         // set food amount, if present
         if (section.isInt("food-amount")) {
@@ -1080,40 +1096,36 @@ public class ConfigurationManager {
         if (section.isDouble("saturate-amount") || section.isInt("saturate-amount")) {
             effect.setSaturationAmount((float)section.getDouble("saturate-amount"));
         }
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addHealEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantHealEffect createHealEffect(ConfigurationSection section) {
         PlantHealEffect effect = new PlantHealEffect();
         // set heal amount, if set
         if (section.isDouble("heal-amount") || section.isInt("heal-amount")) {
             effect.setHealAmount(section.getDouble("heal-amount"));
         }
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addSoundEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantSoundEffect createSoundEffect(ConfigurationSection section) {
         // set sound
         PlantSoundEffect effect = new PlantSoundEffect();
         if (!section.isString("sound")) {
             main.getLogger().warning("Sound effect not added; sound field not found in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         String name = section.getString("sound");
         if (name == null) {
             main.getLogger().warning("Sound effect not added; sound field was null in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         Sound sound;
         try {
             sound = Sound.valueOf(name.toUpperCase());
         } catch (IllegalArgumentException e) {
             main.getLogger().warning(String.format("Sound effect not added; sound '%s' not recognized", name));
-            return false;
+            return null;
         }
         effect.setSound(sound);
         // set volume, if present
@@ -1142,29 +1154,27 @@ public class ConfigurationManager {
         if (section.isBoolean("client-side")) {
             effect.setClientSide(section.getBoolean("client-side"));
         }
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addParticleEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantParticleEffect createParticleEffect(ConfigurationSection section) {
         // set particle
         PlantParticleEffect effect = new PlantParticleEffect();
         if (!section.isString("particle")) {
             main.getLogger().warning("Particle effect not added; particle field not found in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         String name = section.getString("particle");
         if (name == null) {
             main.getLogger().warning("Particle effect not added; particle field was null in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         Particle particle;
         try {
             particle = Particle.valueOf(name.toUpperCase());
         } catch (IllegalArgumentException e) {
             main.getLogger().warning(String.format("Particle effect not added; particle '%s' not recognized", name));
-            return false;
+            return null;
         }
         effect.setParticle(particle);
         // set count, if present
@@ -1211,27 +1221,25 @@ public class ConfigurationManager {
         if (section.isBoolean("client-side")) {
             effect.setClientSide(section.getBoolean("client-side"));
         }
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addPotionEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantPotionEffect createPotionEffect(ConfigurationSection section) {
         // set potion effect type
         PlantPotionEffect effect = new PlantPotionEffect();
         if (!section.isString("potion")) {
             main.getLogger().warning("Potion effect not added; potion field not found in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         String potionName = section.getString("potion");
         if (potionName == null) {
             main.getLogger().warning("Potion effect not added; potion field was null in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         PotionEffectType potionEffectType = PotionEffectType.getByName(potionName.toUpperCase());
         if (potionEffectType == null) {
             main.getLogger().warning(String.format("Potion effect not added; potion '%s' not recognized", potionName));
-            return false;
+            return null;
         }
         effect.setPotionEffectType(potionEffectType);
         // set duration, if present
@@ -1254,39 +1262,30 @@ public class ConfigurationManager {
         if (section.isBoolean("icon")) {
             effect.setIcon(section.getBoolean("icon"));
         }
-        // add chance + delay and store in effect storage
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addDropEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantDropEffect createDropEffect(ConfigurationSection section) {
         PlantDropEffect effect = new PlantDropEffect();
         boolean added = addDropsToDroppable(section, effect.getDropStorage());
         if (!added) {
             main.getLogger().warning("Drop effect not added; issue getting drops");
-            return false;
+            return null;
         }
-        // add chance + delay and store in effect storage
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addAirEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantAirEffect createAirEffect(ConfigurationSection section) {
         PlantAirEffect effect = new PlantAirEffect();
         if (!section.isInt("amount")) {
             main.getLogger().warning("Air effect not added; no amount provided in section: " + section.getCurrentPath());
-            return false;
+            return null;
         }
         effect.setAmount(section.getInt("amount"));
-        // add chance + delay and store in effect storage
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
     }
 
-    boolean addAreaEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    PlantAreaEffect createAreaEffect(ConfigurationSection section) {
         PlantAreaEffect effect = new PlantAreaEffect();
         if (section.isConfigurationSection("color")) {
             ConfigurationSection colorSection = section.getConfigurationSection("color");
@@ -1335,10 +1334,32 @@ public class ConfigurationManager {
         if (section.isInt("reapplication-delay")) {
             effect.setReapplicationDelay(section.getInt("reapplication-delay"));
         }
-        // add chance + delay and store in effect storage
-        addChanceAndDelayToEffect(section, effect);
-        effectStorage.addEffect(effect);
-        return true;
+        return effect;
+    }
+
+    PlantDurabilityEffect createDurabilityEffect(ConfigurationSection section) {
+        PlantDurabilityEffect effect = new PlantDurabilityEffect();
+        if (!section.isInt("damage-amount")) {
+            main.getLogger().warning("Durability effect not added; no damage-amount provided in section: " + section.getCurrentPath());
+            return null;
+        }
+        effect.setAmount(section.getInt("damage-amount"));
+        return effect;
+    }
+
+    PlantChatEffect createChatEffect(ConfigurationSection section) {
+        PlantChatEffect effect = new PlantChatEffect();
+        if (section.isString("from-player")) {
+            effect.setFromPlayer(section.getString("from-player"));
+        }
+        if (section.isString("to-player")) {
+            effect.setToPlayer(section.getString("to-player"));
+        }
+        if (effect.getFromPlayer().isEmpty() && effect.getToPlayer().isEmpty()) {
+            main.getLogger().warning("Chat effect not added; from-player and to-player messages both not set in section: " + section.getCurrentPath());
+            return null;
+        }
+        return effect;
     }
 
     void addChanceAndDelayToEffect(ConfigurationSection section, PlantEffect effect) {

@@ -43,9 +43,6 @@ public class PlantPotionEffect extends PlantEffect {
         player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, ambient, particles, icon));
     }
 
-    @Override
-    void performEffectAction(Block block) { }
-
     public PotionEffectType getPotionEffectType() {
         return potionEffectType;
     }

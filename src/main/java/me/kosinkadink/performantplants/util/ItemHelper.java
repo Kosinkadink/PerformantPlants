@@ -44,7 +44,7 @@ public class ItemHelper {
         boolean destroyed = false;
         if (itemMeta instanceof Damageable) {
             Damageable damageable = (Damageable) itemMeta;
-            damageable.setDamage(damageable.getDamage() + amount);
+            damageable.setDamage(Math.max(0, damageable.getDamage() + amount));
             if (damageable.getDamage() >= stack.getType().getMaxDurability()) {
                 destroyed = true;
             }

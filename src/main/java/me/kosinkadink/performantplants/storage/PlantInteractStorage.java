@@ -22,8 +22,7 @@ public class PlantInteractStorage {
         PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
             // if no match interact and less exclusive properties should be checked, check them
-            if (matchInteract == null &&
-                    (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments())) {
+            if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
                 if (plantInteract.isMatchMaterial()) {
                     if (PlantItemBuilder.isPlantName(itemStack) ||
                             itemStack.getType() != plantInteract.getItemStack().getType()) {
