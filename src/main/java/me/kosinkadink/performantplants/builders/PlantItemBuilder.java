@@ -26,12 +26,24 @@ public class PlantItemBuilder extends ItemBuilder {
         ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta != null) {
             // add prefix/postfix if not already present
-            if (!name.startsWith(prefix) || !name.endsWith(postfix)) {
+            if (!isPlantName(name)) {
                 itemMeta.setDisplayName(prefix + name + postfix);
                 item.setItemMeta(itemMeta);
             }
         }
         return this;
+    }
+
+    public static boolean isPlantName(ItemStack itemStack) {
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta != null) {
+            return isPlantName(itemMeta.getDisplayName());
+        }
+        return false;
+    }
+
+    public static boolean isPlantName(String name) {
+        return name.startsWith(prefix) && name.endsWith(postfix);
     }
 
 }

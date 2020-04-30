@@ -16,6 +16,10 @@ public class PlantInteract {
     private boolean onlyEffectsOnChance = true;
     private double chance = 100.0;
 
+    private boolean matchMaterial = false;
+    private boolean matchEnchantments = false;
+    private boolean matchEnchantmentLevel = false;
+
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
@@ -128,4 +132,27 @@ public class PlantInteract {
         return ThreadLocalRandom.current().nextDouble() <= chance / 100.0;
     }
 
+    public boolean isMatchMaterial() {
+        return matchMaterial;
+    }
+
+    public void setMatchMaterial(boolean matchMaterial) {
+        this.matchMaterial = matchMaterial;
+    }
+
+    public boolean isMatchEnchantments() {
+        return matchEnchantments;
+    }
+
+    public void setMatchEnchantments(boolean matchEnchantments) {
+        this.matchEnchantments = matchEnchantments;
+    }
+
+    public boolean isMatchEnchantmentLevel() {
+        return matchEnchantmentLevel;
+    }
+
+    public void setMatchEnchantmentLevel(boolean matchEnchantmentLevel) {
+        this.matchEnchantmentLevel = matchEnchantmentLevel;
+    }
 }

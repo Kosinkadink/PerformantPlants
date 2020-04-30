@@ -1,6 +1,8 @@
 package me.kosinkadink.performantplants.storage;
 
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -17,10 +19,35 @@ public class PlantInteractStorage {
     }
 
     public PlantInteract getPlantInteract(ItemStack itemStack) {
+        PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
-            if (itemStack.isSimilar(plantInteract.getItemStack())) {
-                return plantInteract;
+            // if no match interact and less exclusive properties should be checked, check them
+            if (matchInteract == null &&
+                    (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments())) {
+                if (plantInteract.isMatchMaterial()) {
+                    if (PlantItemBuilder.isPlantName(itemStack) ||
+                            itemStack.getType() != plantInteract.getItemStack().getType()) {
+                        continue;
+                    }
+                }
+                if (plantInteract.isMatchEnchantments()) {
+                    if (!ItemHelper.checkContainsEnchantments(plantInteract.getItemStack(), itemStack,
+                            plantInteract.isMatchEnchantmentLevel())) {
+                        continue;
+                    }
+                }
+                // set match interact to this one
+                matchInteract = plantInteract;
+                break;
+            } else {
+                if (itemStack.isSimilar(plantInteract.getItemStack())) {
+                    return plantInteract;
+                }
             }
+        }
+        // if cached interact not null, use it
+        if (matchInteract != null) {
+            return matchInteract;
         }
         if (defaultInteract != null) {
             return defaultInteract;

@@ -622,20 +622,28 @@ public class ConfigurationManager {
             List<String> enchantmentStrings = section.getStringList("enchantments");
             for (String enchantmentString : enchantmentStrings) {
                 String[] splitString = enchantmentString.split(":");
-                if (splitString.length != 2) {
+                if (splitString.length > 2 || splitString.length == 0) {
                     main.getLogger().warning("Enchantment string was invalid in item section: " + section.getCurrentPath());
                     continue;
                 }
-                String enchantmentName = splitString[0];
-                int level;
-                try {
-                    level = Math.max(1, Integer.parseInt(splitString[1]));
-                } catch (NumberFormatException e) {
-                    main.getLogger().warning("Enchantment level was not an integer in item section: " + section.getCurrentPath());
-                    continue;
+                String enchantmentName = splitString[0].toLowerCase();
+                int level = 1;
+                // set custom level, if present
+                if (splitString.length == 2) {
+                    try {
+                        level = Math.max(1, Integer.parseInt(splitString[1]));
+                    } catch (NumberFormatException e) {
+                        main.getLogger().warning("Enchantment level was not an integer in item section: " + section.getCurrentPath());
+                        continue;
+                    }
                 }
                 // get enchantment
-                Enchantment enchantment = EnchantmentWrapper.getByKey(NamespacedKey.minecraft(enchantmentName));
+                Enchantment enchantment;
+                try {
+                    enchantment = EnchantmentWrapper.getByKey(NamespacedKey.minecraft(enchantmentName));
+                } catch (IllegalArgumentException e) {
+                    enchantment = null;
+                }
                 if (enchantment == null) {
                     main.getLogger().warning(String.format("Enchantment '%s' not recognized in item section: %s",
                             enchantmentName, section.getCurrentPath()));
@@ -821,6 +829,18 @@ public class ConfigurationManager {
         // set go to stage, if present
         if (section.isString("go-to-stage")) {
             plantInteract.setGoToStage(section.getString("go-to-stage"));
+        }
+        // set match type only, if present
+        if (section.isBoolean("match-material")) {
+            plantInteract.setMatchMaterial(section.getBoolean("match-material"));
+        }
+        // set match enchantments only, if present
+        if (section.isBoolean("match-enchantments")) {
+            plantInteract.setMatchEnchantments(section.getBoolean("match-enchantments"));
+        }
+        // set match enchantment level, if present
+        if (section.isBoolean("match-enchantment-level")) {
+            plantInteract.setMatchEnchantmentLevel(section.getBoolean("match-enchantment-level"));
         }
         // set chance of stage advancement, if present
         if (section.isDouble("chance") || section.isInt("chance")) {
