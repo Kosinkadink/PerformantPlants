@@ -17,6 +17,7 @@ import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.entity.EntityType;
@@ -81,15 +82,15 @@ public class ConfigurationManager {
             plantsDir.mkdir();
         }
         // get all plant files from plantsPath
-        File[] plantFiles = plantsDir.listFiles();
-        if (plantFiles == null || plantFiles.length == 0) {
+        Collection<File> plantFiles = FileUtils.listFiles(plantsDir, new String[] {"yml"}, true);
+        if (plantFiles.isEmpty()) {
             // if plantFiles is null or of length zero, add default plants?
             // TODO: add default plants
             return;
         }
         // otherwise read all of files
         for (File file : plantFiles) {
-            main.getLogger().info("Loading plant config from file: " + file.getName());
+            main.getLogger().info("Loading plant config from file: " + file.getPath());
             loadPlantConfig(file);
         }
         // now that all configs are loaded in, create plants from loaded configs

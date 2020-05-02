@@ -84,10 +84,10 @@ public class Plant {
         if (itemStack == null) {
             return null;
         }
-        if (itemStack.isSimilar(plantItem.getItemStack())) {
+        if (plantItem != null && itemStack.isSimilar(plantItem.getItemStack())) {
             return plantItem;
         }
-        if (itemStack.isSimilar(plantSeedItem.getItemStack())) {
+        if (plantSeedItem != null && itemStack.isSimilar(plantSeedItem.getItemStack())) {
             return plantSeedItem;
         }
         for (PlantItem good : goods.values()) {
