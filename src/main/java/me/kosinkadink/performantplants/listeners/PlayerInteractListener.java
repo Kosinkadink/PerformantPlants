@@ -86,12 +86,12 @@ public class PlayerInteractListener implements Listener {
             if (itemStack.getType() == Material.AIR) {
                 return;
             }
-            main.getLogger().info("Reviewing PlayerInteractEvent for Off Hand");
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlayerInteractEvent for Off Hand");
         }
         else {
             // interacting with main hand
             itemStack = player.getInventory().getItemInMainHand();
-            main.getLogger().info("Reviewing PlayerInteractEvent for Main Hand");
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlayerInteractEvent for Main Hand");
         }
         Block block = event.getClickedBlock();
         // check if block is farmland; if so, got trampled
@@ -146,11 +146,11 @@ public class PlayerInteractListener implements Listener {
                         block != null) {
                     // if block is inventory holder and player is sneaking, open block's inventory
                     if (block.getType() == Material.CAMPFIRE) {
-                        main.getLogger().info("Right clicked on campfire holding a plant item");
+                        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Right clicked on campfire holding a plant item");
                         return;
                     }
                     if (BlockHelper.isInteractable(block) && !player.isSneaking()) {
-                        main.getLogger().info("Prevented block from being placed on interactable block");
+                        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented block from being placed on interactable block");
                         return;
                     }
                     // check if item is consumable or player is sneaking
@@ -177,10 +177,10 @@ public class PlayerInteractListener implements Listener {
                         );
                     }
                 }
-                main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
+                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
             }
             else {
-                main.getLogger().info("Plant was NULL, doing nothing");
+                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Plant was NULL, doing nothing");
             }
         }
     }

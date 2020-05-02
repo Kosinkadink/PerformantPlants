@@ -52,7 +52,7 @@ public class PlantChunkStorage {
         // remove block from removal set
         removeBlockFromRemoval(block);
         // TODO: remove this commented out line
-//        main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "
+//        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "
 //                + getWorldName()
 //        );
     }
@@ -69,7 +69,7 @@ public class PlantChunkStorage {
             addBlockForRemoval(block);
             // remove metadata from block
             MetadataHelper.removePlantBlockMetadata(main, block.getBlock());
-            main.getLogger().info("Removed PlantBlock: " + block.toString()+ " from world: "
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removed PlantBlock: " + block.toString()+ " from world: "
                     + getWorldName()
             );
             // if no more plant blocks in plantChunk, remove plantChunk
@@ -106,12 +106,12 @@ public class PlantChunkStorage {
             chunk.load(main);
         }
         plantChunks.put(chunk.getLocation(), chunk);
-        //main.getLogger().info("Added PlantChunk: " + chunk.toString());
+        //if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Added PlantChunk: " + chunk.toString());
     }
 
     public void removePlantChunk(PlantChunk chunk) {
         plantChunks.remove(chunk.getLocation());
-        main.getLogger().info("Removed PlantChunk: " + chunk.toString());
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removed PlantChunk: " + chunk.toString());
     }
 
     void addBlockForRemoval(PlantBlock block) {

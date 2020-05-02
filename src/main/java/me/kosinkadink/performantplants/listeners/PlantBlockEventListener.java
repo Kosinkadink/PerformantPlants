@@ -41,7 +41,7 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
             if (block.isEmpty()) {
                 // check if empty block has plant metadata
@@ -86,7 +86,7 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
             destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
@@ -116,7 +116,7 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
             if (!event.getPlantBlock().checkGrowthRequirements(main)) {
@@ -141,7 +141,7 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
             // get item in main hand
             EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
@@ -221,7 +221,7 @@ public class PlantBlockEventListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        main.getLogger().info("Reviewing PlantConsumeEvent for item: " + event.getPlantItem().getId());
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantConsumeEvent for item: " + event.getPlantItem().getId());
         PlantConsumable plantConsumable = event.getPlantItem().getConsumable();
         // see if requires missing food to use consumable
         if (plantConsumable.isMissingFood()) {
@@ -253,7 +253,7 @@ public class PlantBlockEventListener implements Listener {
                     matches = otherStack.isSimilar(requirement.getItemStack());
                 }
                 if (!matches) {
-                    main.getLogger().info("Required item was NOT found in other hand");
+                    if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Required item was NOT found in other hand");
                     event.setCancelled(true);
                     return;
                 }
@@ -267,7 +267,7 @@ public class PlantBlockEventListener implements Listener {
                     matches = event.getPlayer().getInventory().containsAtLeast(requirement.getItemStack(), requirement.getItemStack().getAmount());
                 }
                 if (!matches) {
-                    main.getLogger().info("Required item did NOT exist in inventory");
+                    if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Required item did NOT exist in inventory");
                     event.setCancelled(true);
                     return;
                 }

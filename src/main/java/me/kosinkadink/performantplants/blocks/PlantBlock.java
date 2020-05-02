@@ -320,7 +320,7 @@ public class PlantBlock implements Droppable {
     public void goToPreviousStageGracefully(Main main, int growthStageIndex) {
         // check if proposed growth stage is valid; if not, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
-            main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
                     + growthStageIndex);
             return;
         }
@@ -333,7 +333,7 @@ public class PlantBlock implements Droppable {
             return;
         }
         // if trying to go forward a stage,
-        main.getLogger().info("Changing stage to " + growthStageIndex + " from " + stageIndex + " for block " + toString());
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Changing stage to " + growthStageIndex + " from " + stageIndex + " for block " + toString());
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
         stageIndex = growthStageIndex;
@@ -347,7 +347,7 @@ public class PlantBlock implements Droppable {
     }
 
     public boolean goToNextStage(Main main) {
-        main.getLogger().info("goToNextStage fired for block: " + toString());
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("goToNextStage fired for block: " + toString());
         // perform growth without advancement
         boolean canGrow = performGrowth(main, false);
         // if couldn't grow, do nothing
@@ -357,13 +357,13 @@ public class PlantBlock implements Droppable {
         // otherwise, pause task
         pauseTask();
         // advance to next stage (or finish growing, if applicable)
-        main.getLogger().info("goToNextStage advancing stage for block: " + toString());
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("goToNextStage advancing stage for block: " + toString());
         advanceStage(main, true, true);
         return true;
     }
 
     public boolean goToStageForcefully(Main main, int growthStageIndex) {
-        main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
         // pause task
         pauseTask();
         // check that growthsStageIndex is valid
@@ -393,7 +393,7 @@ public class PlantBlock implements Droppable {
         }
         // otherwise, advance to next stage
         grows = true;
-        main.getLogger().info(String.format("goToStageForcefully advancing stage (from %d to %d for block: %s)",previousStageIndex, stageIndex, toString()));
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("goToStageForcefully advancing stage (from %d to %d for block: %s)",previousStageIndex, stageIndex, toString()));
         advanceStage(main, true);
         return true;
     }
@@ -517,10 +517,10 @@ public class PlantBlock implements Droppable {
             }
             // queue up new task
             growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
-            main.getLogger().info("Growth Task queued up for " + toString()
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Growth Task queued up for " + toString()
                     + " in " + duration + " ticks; at stage " + stageIndex);
         } else {
-            main.getLogger().info("Plant can't grow any further for block type '"
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Plant can't grow any further for block type '"
                     + plant.getId() + "' at stage: " + stageIndex);
             // stop growth if failure to grow caused by checkpoint
             if (growthCheckpoint) {
@@ -544,7 +544,7 @@ public class PlantBlock implements Droppable {
         }
         // check that space is available for blocks that are required to be placed
         if (!checkSpaceRequirements(main)) {
-            main.getLogger().info("No space to grow for " + toString());
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("No space to grow for " + toString());
             return false;
         }
         return true;

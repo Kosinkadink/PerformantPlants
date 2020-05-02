@@ -9,7 +9,7 @@ public class ConfigSettings {
         // do nothing
     }
 
-    public boolean getDebug() {
+    public boolean isDebug() {
         return debug;
     }
 

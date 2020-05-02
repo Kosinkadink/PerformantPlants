@@ -18,9 +18,9 @@ public class PlantStatsResetPlayerCommand extends PPCommand {
     private HashMap<String, Method> statMethodMap = new HashMap<>();
 
     public PlantStatsResetPlayerCommand(Main mainClass) {
-        super(new String[] { "stats", "resetall" },
+        super(new String[] { "stats", "resetplayer" },
                 "Resets specific stat for specific players.",
-                "/pp stats resetall <stat> <player>",
+                "/pp stats resetplayer <stat> <player>",
                 "performantplants.stats.resetplayer",
                 2,
                 2);

@@ -43,6 +43,8 @@ public class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
+        configManager.getConfigSettings().setDebug(true); // enable debug mode to get extra logging on shutdown
+        databaseManager.cancelTask(); // cancel queued up save task, to prevent possible double-run
         databaseManager.saveDatabases(); // save all plant blocks
     }
 

@@ -121,11 +121,11 @@ public class DatabaseManager {
     //region Save Data
 
     public void saveDatabases() {
-        main.getLogger().info("Saving plants into databases...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Saving plants into databases...");
         for (Map.Entry<String, File> entry : databaseFiles.entrySet()) {
             saveDatabase(entry.getValue(), entry.getKey());
         }
-        main.getLogger().info("Saved plants into databases");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Saved plants into databases");
         // save statistics db
         if (statisticsDatabaseFile != null) {
             saveStatisticsDatabase(statisticsDatabaseFile);
@@ -151,7 +151,7 @@ public class DatabaseManager {
         // get plantChunkStorage for current world
         PlantChunkStorage plantChunkStorage = main.getPlantManager().getPlantChunkStorage(worldName);
         // remove any blocks set for removal
-        main.getLogger().info("Removing blocks from db for world: " + worldName + "...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing blocks from db for world: " + worldName + "...");
         ArrayList<BlockLocation> blocksToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
@@ -181,9 +181,9 @@ public class DatabaseManager {
             plantChunkStorage.removeBlockFromRemoval(blockLocation);
         }
         blocksToRemoveCache.clear();
-        main.getLogger().info("Done removing blocks from db for world: " + worldName);
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing blocks from db for world: " + worldName);
         // add/update all blocks for each chunk
-        main.getLogger().info("Updating blocks in db for world: " + worldName + "...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating blocks in db for world: " + worldName + "...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
@@ -222,7 +222,7 @@ public class DatabaseManager {
             main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        main.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
         return true;
     }
 
@@ -245,7 +245,7 @@ public class DatabaseManager {
         //////////////////////////////////////////
         // PLANTS SOLD
         // remove any plantsSold set for removal
-        main.getLogger().info("Removing plantsSold from db for world...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing plantsSold from db for world...");
         ArrayList<StatisticsAmount> plantsSoldToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
@@ -272,9 +272,9 @@ public class DatabaseManager {
         for (StatisticsAmount plantsSold : plantsSoldToRemoveCache) {
             main.getStatisticsManager().removeStatisticsAmountFromRemoval(plantsSold);
         }
-        main.getLogger().info("Done removing plantsSold from db");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing plantsSold from db");
         // add/update all plantsSold entries
-        main.getLogger().info("Updating plantsSold in db...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating plantsSold in db...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
@@ -294,13 +294,13 @@ public class DatabaseManager {
             main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        main.getLogger().info("Done updating plantsSold in db");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating plantsSold in db");
         //////////////////////////////////////////
 
         //////////////////////////////////////////
         // PLANT TAGS
         // remove any tag items set for removal
-        main.getLogger().info("Removing plantTags from db for world...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing plantTags from db for world...");
         ArrayList<StatisticsTagItem> plantTagsToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
@@ -327,9 +327,9 @@ public class DatabaseManager {
         for (StatisticsTagItem tagItem : plantTagsToRemoveCache) {
             main.getStatisticsManager().removeStatisticTagFromRemoval(tagItem);
         }
-        main.getLogger().info("Done removing plantTags from db");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing plantTags from db");
         // add/update all plantTags entries
-        main.getLogger().info("Updating plantTags in db...");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating plantTags in db...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
@@ -349,7 +349,7 @@ public class DatabaseManager {
             main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        main.getLogger().info("Done updating plantTags in db");
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating plantTags in db");
         //////////////////////////////////////////
         return true;
     }
