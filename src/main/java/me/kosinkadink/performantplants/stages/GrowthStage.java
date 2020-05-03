@@ -20,6 +20,7 @@ public class GrowthStage implements Droppable {
     private int dropLimit = 0;
     private ArrayList<Drop> drops = new ArrayList<>();
     private PlantInteract onExecute;
+    private PlantInteract onFail;
 
     public GrowthStage(String id) {
         this.id = id;
@@ -104,8 +105,15 @@ public class GrowthStage implements Droppable {
         return onExecute;
     }
 
-    public void setOnExecute(PlantInteract plantInteract) {
-        onExecute = plantInteract;
+    public void setOnExecute(PlantInteract onExecute) {
+        this.onExecute = onExecute;
     }
 
+    public PlantInteract getOnFail() {
+        return onFail;
+    }
+
+    public void setOnFail(PlantInteract onFail) {
+        this.onFail = onFail;
+    }
 }

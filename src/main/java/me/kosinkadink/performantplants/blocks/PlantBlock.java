@@ -472,6 +472,13 @@ public class PlantBlock implements Droppable {
             }
             executedStage = true;
         }
+        if (!canGrow) {
+            PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
+            if (onFail != null) {
+                DropHelper.performDrops(onFail.getDropStorage(), getBlock());
+                onFail.getEffectStorage().performEffects(getBlock());
+            }
+        }
         if (advance) {
             advanceStage(main, canGrow);
         }
@@ -484,6 +491,18 @@ public class PlantBlock implements Droppable {
         boolean forcedToGrow = !grows && interacted;
         if (forcedToGrow) {
             grows = true;
+        }
+        // if failed to grow, go to stage if set
+        if (!canGrow) {
+            PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
+            if (onFail != null) {
+                if (onFail.getGoToStage() != null) {
+                    if (plant.getStageStorage().isValidStage(onFail.getGoToStage())) {
+                        goToStageForcefully(main, plant.getStageStorage().getGrowthStageIndex(onFail.getGoToStage()));
+                        return;
+                    }
+                }
+            }
         }
         PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
         if (onExecute != null) {

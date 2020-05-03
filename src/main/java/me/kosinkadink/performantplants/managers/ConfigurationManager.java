@@ -273,6 +273,17 @@ public class ConfigurationManager {
                                 }
                                 growthStage.setOnExecute(onExecute);
                             }
+                            // set on-fail, if present
+                            if (stageConfig.isConfigurationSection("on-fail")) {
+                                ConfigurationSection onFailSection = stageConfig.getConfigurationSection("on-fail");
+                                // load interaction from default path
+                                PlantInteract onFail = loadPlantInteract(onFailSection);
+                                if (onFail == null) {
+                                    main.getLogger().warning(String.format("Stage %s's on-fail could not be loaded from section: %s", stageId, onFailSection.getCurrentPath()));
+                                    return;
+                                }
+                                growthStage.setOnFail(onFail);
+                            }
                             // set blocks for growth
                             if (!stageConfig.isConfigurationSection("blocks")) {
                                 main.getLogger().warning(String.format("No blocks provided for growth stage %s in plant %s: ", stageId, plantId));
