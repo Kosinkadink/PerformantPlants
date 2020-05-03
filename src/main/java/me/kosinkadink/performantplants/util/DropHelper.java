@@ -4,11 +4,18 @@ import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.plants.Drop;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 
 public class DropHelper {
+
+    public static void emulatePlayerDrop(Player player, ItemStack itemToDrop) {
+        Item droppedItem = player.getWorld().dropItem(player.getEyeLocation().add(0,-0.2,0), itemToDrop);
+        droppedItem.setVelocity(player.getEyeLocation().getDirection().normalize().multiply(0.3));
+    }
 
     public static void performDrops(Droppable droppable, Location location) {
         if (location == null) {

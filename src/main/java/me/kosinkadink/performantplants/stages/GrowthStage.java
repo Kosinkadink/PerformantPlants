@@ -49,12 +49,12 @@ public class GrowthStage implements Droppable {
         return blocks;
     }
 
-    public void setMinGrowthTime(int time) {
-        minGrowthTime = TimeHelper.secondsToTicks(time);
+    public void setMinGrowthTime(long time) {
+        minGrowthTime = time;
     }
 
-    public void setMaxGrowthTime(int time) {
-        maxGrowthTime = TimeHelper.secondsToTicks(time);
+    public void setMaxGrowthTime(long time) {
+        maxGrowthTime = time;
     }
 
     public boolean hasValidGrowthTimeSet() {

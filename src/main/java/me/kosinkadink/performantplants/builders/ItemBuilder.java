@@ -1,12 +1,14 @@
 package me.kosinkadink.performantplants.builders;
 
 import me.kosinkadink.performantplants.util.ReflectionHelper;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 
 import java.util.List;
@@ -91,6 +93,26 @@ public class ItemBuilder {
         if (itemMeta instanceof PotionMeta) {
             PotionMeta potionMeta = (PotionMeta) itemMeta;
             potionMeta.addCustomEffect(potionEffect, false);
+            item.setItemMeta(potionMeta);
+        }
+        return this;
+    }
+
+    public ItemBuilder potionColor(Color color) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta instanceof PotionMeta) {
+            PotionMeta potionMeta = (PotionMeta) itemMeta;
+            potionMeta.setColor(color);
+            item.setItemMeta(potionMeta);
+        }
+        return this;
+    }
+
+    public ItemBuilder basePotionData(PotionData potionData) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta instanceof PotionMeta) {
+            PotionMeta potionMeta = (PotionMeta) itemMeta;
+            potionMeta.setBasePotionData(potionData);
             item.setItemMeta(potionMeta);
         }
         return this;

@@ -11,7 +11,7 @@ public class PlantConsumable {
     private boolean missingFood = false;
     private boolean normalEat = true;
     private int addDamage = 0;
-    private ItemStack itemToAdd;
+    private ArrayList<ItemStack> itemsToGive = new ArrayList<>();
     private ArrayList<RequiredItem> requiredItems = new ArrayList<>();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
 
@@ -49,8 +49,12 @@ public class PlantConsumable {
         this.addDamage = addDamage;
     }
 
-    public ItemStack getItemToAdd() {
-        return itemToAdd;
+    public void addItemToGive(ItemStack itemToAdd) {
+        itemsToGive.add(itemToAdd);
+    }
+
+    public ArrayList<ItemStack> getItemsToGive() {
+        return itemsToGive;
     }
 
     public void addRequiredItem(RequiredItem requiredItem) {
@@ -59,10 +63,6 @@ public class PlantConsumable {
 
     public ArrayList<RequiredItem> getRequiredItems() {
         return requiredItems;
-    }
-
-    public void setItemToAdd(ItemStack itemToAdd) {
-        this.itemToAdd = itemToAdd;
     }
 
     public PlantEffectStorage getEffectStorage() {

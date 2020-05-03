@@ -2,13 +2,17 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.events.PlantConsumeEvent;
 import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
 import me.kosinkadink.performantplants.events.PlantInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.util.BlockHelper;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -34,7 +38,7 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         if (event.getBlockAgainst().getType() == Material.CAMPFIRE) {
-            if (main.getPlantTypeManager().getPlantByItemStack(event.getItemInHand()) != null) {
+            if (PlantItemBuilder.isPlantName(event.getItemInHand())) {
                 event.setCancelled(true);
             }
         }
@@ -79,6 +83,7 @@ public class PlayerInteractListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack itemStack;
+        ItemStack otherStack;
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
             // interacting with offhand
             itemStack = player.getInventory().getItemInOffHand();
@@ -86,11 +91,13 @@ public class PlayerInteractListener implements Listener {
             if (itemStack.getType() == Material.AIR) {
                 return;
             }
+            otherStack = player.getInventory().getItemInMainHand();
             if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlayerInteractEvent for Off Hand");
         }
         else {
             // interacting with main hand
             itemStack = player.getInventory().getItemInMainHand();
+            otherStack = player.getInventory().getItemInOffHand();
             if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlayerInteractEvent for Main Hand");
         }
         Block block = event.getClickedBlock();
@@ -180,6 +187,29 @@ public class PlayerInteractListener implements Listener {
                 if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
             }
             else {
+                // check if item in other hand is consumable
+                if (!otherStack.getType().isAir()) {
+                    PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
+                    if (otherItem != null && otherItem.getConsumable() != null) {
+                        PlantConsumable otherConsumable = otherItem.getConsumable();
+                        for (RequiredItem requiredItem : otherConsumable.getRequiredItems()) {
+                            if (!requiredItem.isInHand()) {
+                                continue;
+                            }
+                            // see if item in current hand is the required item
+                            if (ItemHelper.checkIfMatches(requiredItem.getItemStack(), itemStack)) {
+                                event.setCancelled(true);
+                                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented required block for consumable to perform its own action");
+                                if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
+                                    main.getServer().getPluginManager().callEvent(
+                                            new PlantConsumeEvent(player, otherItem, EquipmentSlot.OFF_HAND)
+                                    );
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
                 if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Plant was NULL, doing nothing");
             }
         }

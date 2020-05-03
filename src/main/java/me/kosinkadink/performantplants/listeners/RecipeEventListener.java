@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,7 +26,7 @@ public class RecipeEventListener implements Listener {
         if (!main.getRecipeManager().isRecipe(event.getRecipe())) {
             for (ItemStack ingredient : event.getInventory().getMatrix()) {
                 // if plant item is used, set result to air
-                if (main.getPlantTypeManager().getPlantByItemStack(ingredient) != null) {
+                if (PlantItemBuilder.isPlantName(ingredient)) {
                     event.getInventory().setResult(new ItemStack(Material.AIR));
                     return;
                 }
@@ -36,9 +36,8 @@ public class RecipeEventListener implements Listener {
 
     @EventHandler
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
-        Plant plant = main.getPlantTypeManager().getPlantByItemStack(event.getSource());
         // check if a smelting recipe was registered for item stack
-        if (plant != null) {
+        if (PlantItemBuilder.isPlantName(event.getSource())) {
             switch (event.getBlock().getType()) {
                 case FURNACE:
                     if (!main.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
@@ -69,18 +68,16 @@ public class RecipeEventListener implements Listener {
     @EventHandler
     public void onFurnaceBurn(FurnaceBurnEvent event) {
         // check if a plant item is about to be used as fuel
-        Plant plant = main.getPlantTypeManager().getPlantByItemStack(event.getFuel());
         // cancel if plant
-        if (plant != null) {
+        if (PlantItemBuilder.isPlantName(event.getFuel())) {
             event.setCancelled(true);
             return;
         }
         // check if a plant item is trying to be cooked
         InventoryHolder inventoryHolder = (InventoryHolder) event.getBlock().getState();
         FurnaceInventory furnaceInventory = (FurnaceInventory) inventoryHolder.getInventory();
-        plant = main.getPlantTypeManager().getPlantByItemStack(furnaceInventory.getSmelting());
         // check if a smelting recipe was registered for item stack
-        if (plant != null && !main.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
+        if (PlantItemBuilder.isPlantName(furnaceInventory.getSmelting()) && !main.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
             event.setCancelled(true);
         }
     }

@@ -22,7 +22,10 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -179,8 +182,8 @@ public class ConfigurationManager {
                         main.getLogger().warning("Growth time bounds not set/integer for growing for plant: " + plantId);
                         return;
                     }
-                    plant.setMinGrowthTime(growingConfig.getInt("min-growth-time"));
-                    plant.setMaxGrowthTime(growingConfig.getInt("max-growth-time"));
+                    plant.setMinGrowthTime(growingConfig.getLong("min-growth-time"));
+                    plant.setMaxGrowthTime(growingConfig.getLong("max-growth-time"));
                     // get required blocks, if any
                     if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
                         ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
@@ -195,12 +198,18 @@ public class ConfigurationManager {
                                 main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
                                 return;
                             }
-                            RequiredBlock requiredBlock = new RequiredBlock(
-                                    blockSettings.getXRel(),
-                                    blockSettings.getYRel(),
-                                    blockSettings.getZRel(),
-                                    blockSettings.getMaterial(),
-                                    blockSettings.getBlockDataStrings());
+                            RequiredBlock requiredBlock;
+                            try {
+                                requiredBlock = new RequiredBlock(
+                                        blockSettings.getXRel(),
+                                        blockSettings.getYRel(),
+                                        blockSettings.getZRel(),
+                                        blockSettings.getMaterial(),
+                                        blockSettings.getBlockDataStrings());
+                            } catch (IllegalArgumentException e) {
+                                main.getLogger().warning(String.format("Could not create required block in plant %s due to: %s", plantId, e.getMessage()));
+                                return;
+                            }
                             // set required, if set
                             if (requiredBlockSection.isBoolean("required")) {
                                 requiredBlock.setRequired(requiredBlockSection.getBoolean("required"));
@@ -231,8 +240,8 @@ public class ConfigurationManager {
                             GrowthStage growthStage = new GrowthStage(stageId);
                             // set min and max growth times, if present for stage
                             if (stageConfig.isInt("min-growth-time") && stageConfig.isInt("max-growth-time")) {
-                                int stageMinGrowthTime = stageConfig.getInt("min-growth-time");
-                                int stageMaxGrowthTime = stageConfig.getInt("max-growth-time");
+                                long stageMinGrowthTime = stageConfig.getLong("min-growth-time");
+                                long stageMaxGrowthTime = stageConfig.getLong("max-growth-time");
                                 growthStage.setMinGrowthTime(stageMinGrowthTime);
                                 growthStage.setMaxGrowthTime(stageMaxGrowthTime);
                             }
@@ -281,15 +290,21 @@ public class ConfigurationManager {
                                     main.getLogger().warning("blockSettings for growth block returned null for plant: " + plantId);
                                     return;
                                 }
-                                GrowthStageBlock growthStageBlock = new GrowthStageBlock(
-                                        blockName,
-                                        blockSettings.getXRel(),
-                                        blockSettings.getYRel(),
-                                        blockSettings.getZRel(),
-                                        blockSettings.getMaterial(),
-                                        blockSettings.getBlockDataStrings(),
-                                        blockSettings.getSkullTexture()
-                                );
+                                GrowthStageBlock growthStageBlock;
+                                try {
+                                    growthStageBlock = new GrowthStageBlock(
+                                            blockName,
+                                            blockSettings.getXRel(),
+                                            blockSettings.getYRel(),
+                                            blockSettings.getZRel(),
+                                            blockSettings.getMaterial(),
+                                            blockSettings.getBlockDataStrings(),
+                                            blockSettings.getSkullTexture()
+                                    );
+                                } catch (IllegalArgumentException e) {
+                                    main.getLogger().warning(String.format("Could not create growth stage block in plant %s due to: %s", plantId, e.getMessage()));
+                                    return;
+                                }
                                 // set drop limit, if present
                                 if (blockConfig.isInt("drop-limit")) {
                                     growthStageBlock.setDropLimit(blockConfig.getInt("drop-limit"));
@@ -653,6 +668,60 @@ public class ConfigurationManager {
                 finalItemSettings.addEnchantmentLevel(new EnchantmentLevel(enchantment, level));
             }
             // get potion effects -> PotionEffectType:Duration:Amplifier
+            List<String> potionStrings = section.getStringList("potion-effects");
+            for (String potionString : potionStrings) {
+                String[] splitString = potionString.split(":");
+                if (splitString.length > 3 || splitString.length < 2) {
+                    main.getLogger().warning("Potion string was invalid in item section: " + section.getCurrentPath());
+                    continue;
+                }
+                String potionName = splitString[0].toUpperCase();
+                // get potion name
+                PotionEffectType potionEffectType = PotionEffectType.getByName(potionName);
+                if (potionEffectType == null) {
+                    main.getLogger().warning(String.format("Potion '%s' not recognized in item section: %s",
+                            potionName, section.getCurrentPath()));
+                    continue;
+                }
+                // get duration
+                int duration;
+                try {
+                    duration = Math.max(1, Integer.parseInt(splitString[1]));
+                } catch (NumberFormatException e) {
+                    main.getLogger().warning("Potion duration was not an integer in item section: " + section.getCurrentPath());
+                    continue;
+                }
+                int amplifier = 0;
+                if (splitString.length == 3) {
+                    try {
+                        amplifier = Math.max(0, Integer.parseInt(splitString[2])-1);
+                    } catch (NumberFormatException e) {
+                        main.getLogger().warning("Potion amplifier was not an integer in item section: " + section.getCurrentPath());
+                        continue;
+                    }
+                }
+                finalItemSettings.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier));
+            }
+            // get potion color, if present
+            if (section.isConfigurationSection("potion-color")) {
+                ConfigurationSection colorSection = section.getConfigurationSection("potion-color");
+                if (colorSection != null) {
+                    Color potionColor = createColor(colorSection);
+                    if (potionColor != null) {
+                        finalItemSettings.setPotionColor(potionColor);
+                    }
+                }
+            }
+            // get base potion data, if present
+            if (section.isConfigurationSection("potion-data")) {
+                ConfigurationSection potionDataSection = section.getConfigurationSection("potion-data");
+                if (potionDataSection != null) {
+                    PotionData potionData = createPotionData(potionDataSection);
+                    if (potionData != null) {
+                        finalItemSettings.setPotionData(potionData);
+                    }
+                }
+            }
             return finalItemSettings;
         }
         return null;
@@ -901,16 +970,19 @@ public class ConfigurationManager {
             consumable.setAddDamage(consumableSection.getInt("add-damage"));
         }
         // set give item, if present
-        if (consumableSection.isConfigurationSection("give-item")) {
-            ConfigurationSection itemSection = consumableSection.getConfigurationSection("add-item");
-            ItemSettings itemSettings = loadItemConfig(itemSection, true);
-            if (itemSettings == null) {
-                main.getLogger().warning(String.format("Problem getting add-item in consumable section %s;" +
-                                "will continue to load, but this item will not be consumable (fix config)",
-                        itemSection.getCurrentPath()));
-                return null;
+        if (consumableSection.isConfigurationSection("give-items")) {
+            ConfigurationSection itemsSection = consumableSection.getConfigurationSection("give-items");
+            for (String placeholder : itemsSection.getKeys(false)) {
+                ConfigurationSection itemSection = itemsSection.getConfigurationSection(placeholder);
+                ItemSettings itemSettings = loadItemConfig(itemSection, true);
+                if (itemSettings == null) {
+                    main.getLogger().warning(String.format("Problem getting give-items in consumable section %s;" +
+                                    "will continue to load, but this item will not be consumable (fix config)",
+                            itemSection.getCurrentPath()));
+                    return null;
+                }
+                consumable.addItemToGive(itemSettings.generateItemStack());
             }
-            consumable.setItemToAdd(itemSettings.generateItemStack());
         }
         // set required items, if present
         if (consumableSection.isConfigurationSection("required-items")) {
@@ -953,6 +1025,50 @@ public class ConfigurationManager {
         addEffectsToEffectStorage(consumableSection, consumable.getEffectStorage());
         // return consumable
         return consumable;
+    }
+
+    Color createColor(ConfigurationSection section) {
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        if (section.isInt("r")) {
+            r = Math.min(255, Math.max(0, section.getInt("r")));
+        }
+        if (section.isInt("g")) {
+            g = Math.min(255, Math.max(0, section.getInt("g")));
+        }
+        if (section.isInt("b")) {
+            b = Math.min(255, Math.max(0, section.getInt("b")));
+        }
+        return Color.fromRGB(r,g,b);
+    }
+
+    PotionData createPotionData(ConfigurationSection section) {
+        PotionType potionType;
+        boolean extended = false;
+        boolean upgraded = false;
+        if (section.isString("type")) {
+            String name = section.getString("type");
+            try {
+                potionType = PotionType.valueOf(name);
+            } catch (IllegalArgumentException e) {
+                main.getLogger().warning(String.format("PotionType '%s' not recognized in item section: %s",
+                        name, section.getCurrentPath()));
+                return null;
+            }
+        } else {
+            main.getLogger().warning("PotionType not set in item section: " + section.getCurrentPath());
+            return null;
+        }
+        // get extended, if present
+        if (section.isBoolean("extended")) {
+            extended = section.getBoolean("extended");
+        }
+        // get upgraded, if present
+        if (section.isBoolean("upgraded")) {
+            upgraded = section.getBoolean("upgraded");
+        }
+        return new PotionData(potionType, extended, upgraded);
     }
 
     boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable) {
@@ -1073,6 +1189,9 @@ public class ConfigurationManager {
                 break;
             case "chat":
                 effect = createChatEffect(section);
+                break;
+            case "explosion":
+                effect = createExplosionEffect(section);
                 break;
             default:
                 break;
@@ -1291,19 +1410,7 @@ public class ConfigurationManager {
         if (section.isConfigurationSection("color")) {
             ConfigurationSection colorSection = section.getConfigurationSection("color");
             if (colorSection != null) {
-                int r = 0;
-                int g = 0;
-                int b = 0;
-                if (colorSection.isInt("r")) {
-                    r = Math.min(255, Math.max(0, colorSection.getInt("r")));
-                }
-                if (colorSection.isInt("g")) {
-                    g = Math.min(255, Math.max(0, colorSection.getInt("g")));
-                }
-                if (colorSection.isInt("b")) {
-                    b = Math.min(255, Math.max(0, colorSection.getInt("b")));
-                }
-                effect.setColor(Color.fromRGB(r,g,b));
+                effect.setColor(createColor(colorSection));
             }
         }
         if (section.isInt("duration")) {
@@ -1359,6 +1466,20 @@ public class ConfigurationManager {
         if (effect.getFromPlayer().isEmpty() && effect.getToPlayer().isEmpty()) {
             main.getLogger().warning("Chat effect not added; from-player and to-player messages both not set in section: " + section.getCurrentPath());
             return null;
+        }
+        return effect;
+    }
+
+    PlantExplosionEffect createExplosionEffect(ConfigurationSection section) {
+        PlantExplosionEffect effect = new PlantExplosionEffect();
+        if (section.isInt("power") || section.isDouble("power")) {
+            effect.setPower((float) section.getDouble("power"));
+        }
+        if (section.isBoolean("fire")) {
+            effect.setFire(section.getBoolean("fire"));
+        }
+        if (section.isBoolean("break-blocks")) {
+            effect.setBreakBlocks(section.getBoolean("break-blocks"));
         }
         return effect;
     }

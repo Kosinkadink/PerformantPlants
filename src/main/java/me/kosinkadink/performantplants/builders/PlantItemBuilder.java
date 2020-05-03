@@ -35,14 +35,20 @@ public class PlantItemBuilder extends ItemBuilder {
     }
 
     public static boolean isPlantName(ItemStack itemStack) {
+        if (itemStack == null) {
+            return false;
+        }
         ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta != null) {
+        if (itemMeta != null && itemMeta.hasDisplayName()) {
             return isPlantName(itemMeta.getDisplayName());
         }
         return false;
     }
 
     public static boolean isPlantName(String name) {
+        if (name == null) {
+            return false;
+        }
         return name.startsWith(prefix) && name.endsWith(postfix);
     }
 

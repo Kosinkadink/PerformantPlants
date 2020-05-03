@@ -246,12 +246,7 @@ public class PlantBlockEventListener implements Listener {
             if (requirement.isInHand()) {
                 boolean matches;
                 // if Damageable, match types and amounts only
-                if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
-                    matches = otherStack.getType() == requirement.getItemStack().getType() &&
-                                otherStack.getAmount() >= requirement.getItemStack().getAmount();
-                } else {
-                    matches = otherStack.isSimilar(requirement.getItemStack());
-                }
+                matches = ItemHelper.checkIfMatches(requirement.getItemStack(), otherStack);
                 if (!matches) {
                     if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Required item was NOT found in other hand");
                     event.setCancelled(true);
@@ -274,14 +269,11 @@ public class PlantBlockEventListener implements Listener {
             }
         }
         // do actions stored in item's PlantConsumable
-        if (plantConsumable.getItemToAdd() != null) {
+        for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {
             // check that the items could be added
-            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(plantConsumable.getItemToAdd());
-            if (!remaining.isEmpty()) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("Could not consume item; not enough room in inventory to receive items");
-                event.getPlayer().getInventory().removeItem(remaining.get(0));
-                return;
+            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(itemToGive);
+            for (ItemStack itemToAdd : remaining.values()) {
+                DropHelper.emulatePlayerDrop(event.getPlayer(), itemToAdd);
             }
         }
         // decrement item, if set
@@ -390,32 +382,20 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockExplode(BlockExplodeEvent event) {
-        // if block that is to explode is Plant, cancel it (plant shouldn't explode)
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-        }
-        // otherwise, check if exploded blocks were Plants, and if so destroy them
-        else {
-            for (Block block : event.blockList()) {
-                if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                    destroyPlantBlock(block, false);
-                }
+        // check if exploded blocks were Plants, and if so destroy them
+        for (Block block : event.blockList()) {
+            if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                destroyPlantBlock(block, false);
             }
         }
     }
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
-        // if block that is to explode is Plant, cancel it (plant shouldn't explode)
-        if (MetadataHelper.hasPlantBlockMetadata(event.getLocation().getBlock())) {
-            event.setCancelled(true);
-        }
-        // otherwise, check if exploded blocks were Plants, and if so destroy them
-        else {
-            for (Block block : event.blockList()) {
-                if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                    destroyPlantBlock(block, false);
-                }
+        // check if exploded blocks were Plants, and if so destroy them
+        for (Block block : event.blockList()) {
+            if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                destroyPlantBlock(block, false);
             }
         }
     }

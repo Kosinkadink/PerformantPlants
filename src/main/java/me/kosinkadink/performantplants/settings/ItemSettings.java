@@ -3,8 +3,10 @@ package me.kosinkadink.performantplants.settings;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 
 import java.util.ArrayList;
@@ -19,6 +21,8 @@ public class ItemSettings {
     private int amount = 1;
     private List<EnchantmentLevel> enchantments = new ArrayList<>();
     private List<PotionEffect> potionEffects = new ArrayList<>();
+    private Color potionColor;
+    private PotionData potionData;
     private int damage = 0;
     private boolean unbreakable = false;
 
@@ -114,6 +118,22 @@ public class ItemSettings {
         potionEffects.add(potionEffect);
     }
 
+    public Color getPotionColor() {
+        return potionColor;
+    }
+
+    public void setPotionColor(Color potionColor) {
+        this.potionColor = potionColor;
+    }
+
+    public PotionData getPotionData() {
+        return potionData;
+    }
+
+    public void setPotionData(PotionData potionData) {
+        this.potionData = potionData;
+    }
+
     public ItemStack getItemStack() {
         return itemStack;
     }
@@ -140,6 +160,14 @@ public class ItemSettings {
         // add all potion effects
         for (PotionEffect potionEffect : potionEffects) {
             builder.addPotionEffect(potionEffect);
+        }
+        // add potion color, if set
+        if (getPotionColor() != null) {
+            builder.potionColor(getPotionColor());
+        }
+        // add potion data, if set
+        if (getPotionData() != null) {
+            builder.basePotionData(getPotionData());
         }
         return builder.build();
     }

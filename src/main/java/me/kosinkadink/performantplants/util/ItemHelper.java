@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
+import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -21,6 +22,15 @@ public class ItemHelper {
         ItemMeta itemMeta = stack.getItemMeta();
         if (itemMeta != null) {
             itemMeta.setDisplayName(displayName);
+        }
+    }
+
+    public static boolean checkIfMatches(ItemStack base, ItemStack checked) {
+        if (base.getItemMeta() instanceof Damageable && !PlantItemBuilder.isPlantName(checked)) {
+            return checked.getType() == base.getType() &&
+                    checked.getAmount() >= base.getAmount();
+        } else {
+            return checked.isSimilar(base);
         }
     }
 
