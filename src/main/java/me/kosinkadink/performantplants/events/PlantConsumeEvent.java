@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.events;
 
-import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.plants.PlantConsumable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -13,12 +13,12 @@ public class PlantConsumeEvent extends Event implements Cancellable {
     private boolean isCancelled;
 
     private Player player;
-    private PlantItem plantItem;
+    private PlantConsumable consumable;
     private EquipmentSlot hand;
 
-    public PlantConsumeEvent(Player player, PlantItem plantItem, EquipmentSlot hand) {
+    public PlantConsumeEvent(Player player, PlantConsumable consumable, EquipmentSlot hand) {
         this.player = player;
-        this.plantItem = plantItem;
+        this.consumable = consumable;
         this.hand = hand;
     }
 
@@ -26,8 +26,8 @@ public class PlantConsumeEvent extends Event implements Cancellable {
         return player;
     }
 
-    public PlantItem getPlantItem() {
-        return plantItem;
+    public PlantConsumable getConsumable() {
+        return consumable;
     }
 
     public EquipmentSlot getHand() {

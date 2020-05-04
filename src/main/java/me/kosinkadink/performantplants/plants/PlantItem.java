@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import org.bukkit.inventory.ItemStack;
 
 public class PlantItem {
@@ -8,7 +9,7 @@ public class PlantItem {
     private ItemStack itemStack;
     private double buyPrice;
     private double sellPrice;
-    private PlantConsumable consumable;
+    private PlantConsumableStorage consumable;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -56,11 +57,11 @@ public class PlantItem {
         return consumable != null;
     }
 
-    public PlantConsumable getConsumable() {
+    public PlantConsumableStorage getConsumableStorage() {
         return consumable;
     }
 
-    public void setConsumable(PlantConsumable consumable) {
+    public void setConsumableStorage(PlantConsumableStorage consumable) {
         this.consumable = consumable;
     }
 

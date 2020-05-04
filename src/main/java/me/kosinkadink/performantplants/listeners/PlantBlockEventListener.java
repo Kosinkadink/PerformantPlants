@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
+import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
@@ -99,10 +100,13 @@ public class PlantBlockEventListener implements Listener {
                 if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
                     plantInteract.getEffectStorage().performEffects(event.getBlock());
                 }
-                PlantConsumable consumable = plantInteract.getConsumable();
+                PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
                 // do consumable actions
-                if (consumable != null) {
-                    consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+                if (consumableStorage != null) {
+                    PlantConsumable consumable = consumableStorage.getConsumable(event.getPlayer(), EquipmentSlot.HAND);
+                    if (consumable != null) {
+                        consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+                    }
                 }
             }
         }
@@ -158,14 +162,13 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            PlantConsumable consumable = plantInteract.getConsumable();
-            // if consumable exists, check that food bar is not full when missing food required
-            if (consumable != null) {
-                if (consumable.isMissingFood()) {
-                    if (event.getPlayer().getFoodLevel() >= 20) {
-                        event.setCancelled(true);
-                        return;
-                    }
+            PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
+            PlantConsumable consumable = null;
+            if (consumableStorage != null) {
+                consumable = consumableStorage.getConsumable(event.getPlayer(), event.getHand());
+                if (consumable == null) {
+                    event.setCancelled(true);
+                    return;
                 }
             }
             // see if randomly generated chance is okay
@@ -221,16 +224,13 @@ public class PlantBlockEventListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantConsumeEvent for item: " + event.getPlantItem().getId());
-        PlantConsumable plantConsumable = event.getPlantItem().getConsumable();
-        // see if requires missing food to use consumable
-        if (plantConsumable.isMissingFood()) {
-            if (event.getPlayer().getFoodLevel() >= 20) {
-                event.setCancelled(true);
-                return;
-            }
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantConsumeEvent for item");
+        PlantConsumable plantConsumable = event.getConsumable();
+        if (plantConsumable == null) {
+            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Consumable not found for current inventory status");
+            event.setCancelled(true);
+            return;
         }
-        // get relevant item stacks (call hand and other hand)
         ItemStack callStack;
         ItemStack otherStack;
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -239,34 +239,6 @@ public class PlantBlockEventListener implements Listener {
         } else {
             callStack = event.getPlayer().getInventory().getItemInMainHand();
             otherStack = event.getPlayer().getInventory().getItemInOffHand();
-        }
-        // check requirements
-        for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
-            // if in hand required, check that other hand contains item
-            if (requirement.isInHand()) {
-                boolean matches;
-                // if Damageable, match types and amounts only
-                matches = ItemHelper.checkIfMatches(requirement.getItemStack(), otherStack);
-                if (!matches) {
-                    if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Required item was NOT found in other hand");
-                    event.setCancelled(true);
-                    return;
-                }
-            } // else check that item exists somewhere in player's inventory
-            else {
-                boolean matches;
-                // if Damageable, match types and amounts only
-                if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
-                    matches = event.getPlayer().getInventory().contains(requirement.getItemStack().getType(), requirement.getItemStack().getAmount());
-                } else {
-                    matches = event.getPlayer().getInventory().containsAtLeast(requirement.getItemStack(), requirement.getItemStack().getAmount());
-                }
-                if (!matches) {
-                    if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Required item did NOT exist in inventory");
-                    event.setCancelled(true);
-                    return;
-                }
-            }
         }
         // do actions stored in item's PlantConsumable
         for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {

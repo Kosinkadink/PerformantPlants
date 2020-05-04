@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import org.bukkit.inventory.ItemStack;
 
@@ -23,7 +24,7 @@ public class PlantInteract {
     private ItemStack itemStack;
     private DropStorage dropStorage = new DropStorage();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
-    private PlantConsumable consumable;
+    private PlantConsumableStorage consumable;
 
     public PlantInteract() { }
 
@@ -47,11 +48,11 @@ public class PlantInteract {
         this.effectStorage = effectStorage;
     }
 
-    public PlantConsumable getConsumable() {
+    public PlantConsumableStorage getConsumableStorage() {
         return consumable;
     }
 
-    public void setConsumable(PlantConsumable consumable) {
+    public void setConsumableStorage(PlantConsumableStorage consumable) {
         this.consumable = consumable;
     }
 

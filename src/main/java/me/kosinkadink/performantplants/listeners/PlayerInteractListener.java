@@ -14,6 +14,7 @@ import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
+import me.kosinkadink.performantplants.util.PlayerHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -50,16 +51,19 @@ public class PlayerInteractListener implements Listener {
         if (plantItem != null) {
             // create PlantConsumeEvent if is consumable by default consume
             event.setCancelled(true);
-            if (plantItem.getConsumable() != null && plantItem.getConsumable().isNormalEat()) {
+            if (plantItem.getConsumableStorage() != null) {
                 EquipmentSlot hand;
                 if (event.getItem().isSimilar(event.getPlayer().getInventory().getItemInOffHand())) {
                     hand = EquipmentSlot.OFF_HAND;
                 } else {
                     hand = EquipmentSlot.HAND;
                 }
-                main.getServer().getPluginManager().callEvent(
-                        new PlantConsumeEvent(event.getPlayer(), plantItem, hand)
-                );
+                PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(event.getPlayer(), hand);
+                if (consumable != null && consumable.isNormalEat()) {
+                    main.getServer().getPluginManager().callEvent(
+                            new PlantConsumeEvent(event.getPlayer(), consumable, hand)
+                    );
+                }
             }
         }
     }
@@ -177,36 +181,42 @@ public class PlayerInteractListener implements Listener {
                 // check if plant item can be consumed
                 plantItem = plant.getItemByItemStack(itemStack);
                 if (plantItem.isConsumable()) {
-                    if (!plantItem.getItemStack().getType().isEdible() || !plantItem.getConsumable().isNormalEat()) {
-                        event.setCancelled(true);
-                        main.getServer().getPluginManager().callEvent(
-                                new PlantConsumeEvent(player, plantItem, event.getHand())
-                        );
+                    // if in offhand and main hand is consumable, don't do anything
+                    boolean performConsumeForThisHand = true;
+                    if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                        PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
+                        if (otherItem != null && otherItem.isConsumable()) {
+                            performConsumeForThisHand = false;
+                        }
+                    }
+                    if (performConsumeForThisHand) {
+                        PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(player, event.getHand());
+                        if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat())) {
+                            event.setCancelled(true);
+                            main.getServer().getPluginManager().callEvent(
+                                    new PlantConsumeEvent(player, consumable, event.getHand())
+                            );
+                        }
                     }
                 }
                 if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
             }
             else {
                 // check if item in other hand is consumable
-                if (!otherStack.getType().isAir()) {
+                if (!otherStack.getType().isAir() && !PlantItemBuilder.isPlantName(itemStack) && !itemStack.getType().isEdible()) {
                     PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
-                    if (otherItem != null && otherItem.getConsumable() != null) {
-                        PlantConsumable otherConsumable = otherItem.getConsumable();
-                        for (RequiredItem requiredItem : otherConsumable.getRequiredItems()) {
-                            if (!requiredItem.isInHand()) {
-                                continue;
+                    if (otherItem != null && otherItem.isConsumable()) {
+                        PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(player,
+                                PlayerHelper.oppositeHand(event.getHand()));
+                        if (otherConsumable != null) {
+                            event.setCancelled(true);
+                            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented required block for consumable to perform its own action");
+                            if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
+                                main.getServer().getPluginManager().callEvent(
+                                        new PlantConsumeEvent(player, otherConsumable, EquipmentSlot.OFF_HAND)
+                                );
                             }
-                            // see if item in current hand is the required item
-                            if (ItemHelper.checkIfMatches(requiredItem.getItemStack(), itemStack)) {
-                                event.setCancelled(true);
-                                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented required block for consumable to perform its own action");
-                                if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
-                                    main.getServer().getPluginManager().callEvent(
-                                            new PlantConsumeEvent(player, otherItem, EquipmentSlot.OFF_HAND)
-                                    );
-                                }
-                                return;
-                            }
+                            return;
                         }
                     }
                 }
