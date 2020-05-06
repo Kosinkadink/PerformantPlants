@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -12,35 +12,35 @@ public class VanillaDropManager {
 
     private Main main;
 
-    private ConcurrentHashMap<Material, DropStorage> blockDropMap = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<EntityType, DropStorage> entityDropMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Material, PlantInteractStorage> blockDropInteractMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<EntityType, PlantInteractStorage> entityDropInteractMap = new ConcurrentHashMap<>();
 
     public VanillaDropManager(Main main) {
         this.main = main;
     }
 
-    public DropStorage getDropStorage(Block block) {
-        return blockDropMap.get(block.getType());
+    public PlantInteractStorage getInteract(Block block) {
+        return blockDropInteractMap.get(block.getType());
     }
 
-    public DropStorage getDropStorage(EntityType type) {
-        return entityDropMap.get(type);
+    public PlantInteractStorage getInteract(EntityType type) {
+        return entityDropInteractMap.get(type);
     }
 
-    public void addDropStorage(Material material, DropStorage storage) {
-        blockDropMap.put(material, storage);
+    public void addInteract(Material material, PlantInteractStorage storage) {
+        blockDropInteractMap.put(material, storage);
     }
 
-    public void addDropStorage(EntityType type, DropStorage storage) {
-        entityDropMap.put(type, storage);
+    public void addInteract(EntityType type, PlantInteractStorage storage) {
+        entityDropInteractMap.put(type, storage);
     }
 
-    public void removeDropStorage(Material material) {
-        blockDropMap.remove(material);
+    public void removeInteract(Material material) {
+        blockDropInteractMap.remove(material);
     }
 
-    public void removeDropStorage(EntityType type) {
-        entityDropMap.remove(type);
+    public void removeInteract(EntityType type) {
+        entityDropInteractMap.remove(type);
     }
 
 }

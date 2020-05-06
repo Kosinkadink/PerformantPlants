@@ -509,11 +509,19 @@ public class ConfigurationManager {
             main.getLogger().warning(String.format("Vanilla block drop not added; material '%s' not recognized", name));
             return;
         }
-        // set drops
-        DropStorage storage = new DropStorage();
-        addDropsToDroppable(section, storage);
+        // set interact
+        ConfigurationSection onDropSection = section.getConfigurationSection("on-drop");
+        if (onDropSection == null) {
+            main.getLogger().warning("Vanilla block drop not added; no on-drop section found in section: " + section.getCurrentPath());
+            return;
+        }
+        PlantInteractStorage storage = loadPlantInteractStorage(onDropSection);
+        if (storage == null) {
+            main.getLogger().warning("Vanilla block drop not added; issue reading contents of on-drop section");
+        }
         // add to vanilla drop manager
-        main.getVanillaDropManager().addDropStorage(material, storage);
+        main.getVanillaDropManager().addInteract(material, storage);
+        main.getLogger().info("Added vanilla drop behavior for block: " + material.toString());
     }
 
     void addEntityDrop(ConfigurationSection section) {
@@ -536,11 +544,19 @@ public class ConfigurationManager {
             main.getLogger().warning(String.format("Vanilla entity drop not added; entity '%s' is not alive", name));
             return;
         }
-        // set drops
-        DropStorage storage = new DropStorage();
-        addDropsToDroppable(section, storage);
+        // set interact
+        ConfigurationSection onDropSection = section.getConfigurationSection("on-drop");
+        if (onDropSection == null) {
+            main.getLogger().warning("Vanilla entity drop not added; no on-drop section found in section: " + section.getCurrentPath());
+            return;
+        }
+        PlantInteractStorage storage = loadPlantInteractStorage(onDropSection);
+        if (storage == null) {
+            main.getLogger().warning("Vanilla entity drop not added; issue reading contents of on-drop section");
+        }
         // add to vanilla drop manager
-        main.getVanillaDropManager().addDropStorage(entityType, storage);
+        main.getVanillaDropManager().addInteract(entityType, storage);
+        main.getLogger().info("Added vanilla drop behavior for entity: " + entityType.getKey().getKey().toUpperCase());
     }
 
     ItemSettings loadItemConfig(ConfigurationSection section, boolean allowLink) {

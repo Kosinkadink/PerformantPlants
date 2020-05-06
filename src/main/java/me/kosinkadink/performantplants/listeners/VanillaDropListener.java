@@ -1,15 +1,22 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.builders.ItemBuilder;
+import me.kosinkadink.performantplants.plants.PlantConsumable;
+import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 public class VanillaDropListener implements Listener {
 
@@ -21,9 +28,29 @@ public class VanillaDropListener implements Listener {
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
-        DropStorage storage = main.getVanillaDropManager().getDropStorage(event.getEntityType());
+        PlantInteractStorage storage = main.getVanillaDropManager().getInteract(event.getEntityType());
         if (storage != null) {
-            DropHelper.performDrops(storage, event.getEntity().getLocation());
+            Player player = event.getEntity().getKiller();
+            ItemStack heldItem;
+            if (player == null) {
+                heldItem = new ItemBuilder(Material.AIR).build();
+            } else {
+                heldItem = player.getInventory().getItemInMainHand();
+            }
+            PlantInteract interact = storage.getPlantInteract(heldItem);
+            if (interact != null) {
+                // perform drops
+                DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation());
+                // perform effects
+                interact.getEffectStorage().performEffects(event.getEntity().getLocation().getBlock());
+                // perform consumable, if killer is not null
+                if (player != null && interact.getConsumableStorage() != null ) {
+                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(player, EquipmentSlot.HAND);
+                    if (consumable != null) {
+                        consumable.getEffectStorage().performEffects(player, player.getLocation());
+                    }
+                }
+            }
         }
     }
 
@@ -39,11 +66,23 @@ public class VanillaDropListener implements Listener {
         }
         Block block = event.getBlock();
         // otherwise, check if have custom drops
-        DropStorage storage = main.getVanillaDropManager().getDropStorage(block);
+        PlantInteractStorage storage = main.getVanillaDropManager().getInteract(block);
         if (storage != null) {
-            // drop them if they were set to be dropped
-            if (!event.getBlock().getDrops(event.getPlayer().getInventory().getItemInMainHand()).isEmpty()) {
-                DropHelper.performDrops(storage, block);
+            Player player = event.getPlayer();
+            ItemStack heldItem = player.getInventory().getItemInMainHand();
+            PlantInteract interact = storage.getPlantInteract(heldItem);
+            if (interact != null) {
+                // perform drops
+                DropHelper.performDrops(interact.getDropStorage(), block);
+                // perform effects
+                interact.getEffectStorage().performEffects(block);
+                // perform consumable, if killer is not null
+                if (interact.getConsumableStorage() != null ) {
+                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(player, EquipmentSlot.HAND);
+                    if (consumable != null) {
+                        consumable.getEffectStorage().performEffects(player, player.getLocation());
+                    }
+                }
             }
         }
     }
