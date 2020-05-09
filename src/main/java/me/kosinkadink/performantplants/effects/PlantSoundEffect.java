@@ -14,6 +14,8 @@ public class PlantSoundEffect extends PlantEffect {
     private double offsetX = 0;
     private double offsetY = 0;
     private double offsetZ = 0;
+    private double multiplier = 0.0;
+    private boolean ignoreDirectionY = false;
     private boolean eyeLocation = true;
     private boolean clientSide = true;
 
@@ -28,6 +30,11 @@ public class PlantSoundEffect extends PlantEffect {
             spawnLocation = player.getLocation();
         }
         spawnLocation.add(offsetX, offsetY, offsetZ);
+        if (ignoreDirectionY) {
+            spawnLocation.add(player.getLocation().getDirection().setY(0).normalize().multiply(multiplier));
+        } else {
+            spawnLocation.add(player.getLocation().getDirection().normalize().multiply(multiplier));
+        }
         if (clientSide) {
             player.playSound(spawnLocation, sound, volume, pitch);
         } else {
@@ -90,6 +97,22 @@ public class PlantSoundEffect extends PlantEffect {
         this.offsetZ = offsetZ;
     }
 
+    public double getMultiplier() {
+        return multiplier;
+    }
+
+    public void setMultiplier(double multiplier) {
+        this.multiplier = multiplier;
+    }
+
+    public boolean isIgnoreDirectionY() {
+        return ignoreDirectionY;
+    }
+
+    public void setIgnoreDirectionY(boolean ignoreDirectionY) {
+        this.ignoreDirectionY = ignoreDirectionY;
+    }
+
     public boolean isEyeLocation() {
         return eyeLocation;
     }
@@ -105,5 +128,4 @@ public class PlantSoundEffect extends PlantEffect {
     public void setClientSide(boolean clientSide) {
         this.clientSide = clientSide;
     }
-
 }

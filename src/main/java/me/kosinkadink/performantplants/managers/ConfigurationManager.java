@@ -1313,6 +1313,14 @@ public class ConfigurationManager {
         if (section.isInt("offset-z") || section.isDouble("offset-z")) {
             effect.setOffsetZ(section.getDouble("offset-z"));
         }
+        // set multiplier, if present
+        if (section.isInt("multiplier") || section.isDouble("multiplier")) {
+            effect.setMultiplier(section.getDouble("multiplier"));
+        }
+        // set if should ignore y component of facing direction
+        if (section.isBoolean("ignore-direction-y")) {
+            effect.setIgnoreDirectionY(section.getBoolean("ignore-direction-y"));
+        }
         // set if should be eye location, if present
         if (section.isBoolean("eye-location")) {
             effect.setEyeLocation(section.getBoolean("eye-location"));
