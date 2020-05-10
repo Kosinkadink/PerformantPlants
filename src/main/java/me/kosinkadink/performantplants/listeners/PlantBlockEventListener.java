@@ -14,6 +14,7 @@ import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -300,6 +301,32 @@ public class PlantBlockEventListener implements Listener {
     public void onBlockGrow(BlockGrowEvent event) {
         if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
+            return;
+        }
+        // check what new state of block is supposed to be
+        Material blockMaterial = event.getNewState().getType();
+        if (blockMaterial == Material.CACTUS || blockMaterial == Material.SUGAR_CANE) {
+            // if sugarcane or cactus, check if block underneath is a plant
+            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock().getRelative(BlockFace.DOWN))) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        if (blockMaterial == Material.PUMPKIN || blockMaterial == Material.MELON) {
+            // if pumpkin or melon, check if any stem blocks around are plants
+            ArrayList<Block> blocksToCheck = new ArrayList<>();
+            blocksToCheck.add(event.getBlock().getRelative(BlockFace.NORTH));
+            blocksToCheck.add(event.getBlock().getRelative(BlockFace.EAST));
+            blocksToCheck.add(event.getBlock().getRelative(BlockFace.SOUTH));
+            blocksToCheck.add(event.getBlock().getRelative(BlockFace.WEST));
+            for (Block block : blocksToCheck) {
+                if (block.getType() == Material.PUMPKIN_STEM || block.getType() == Material.MELON_STEM) {
+                    if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -312,7 +339,7 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockSpread(BlockSpreadEvent event) {
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock()) || MetadataHelper.hasPlantBlockMetadata(event.getSource())) {
             event.setCancelled(true);
         }
     }
