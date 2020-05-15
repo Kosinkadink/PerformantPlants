@@ -1240,6 +1240,9 @@ public class ConfigurationManager {
             case "explosion":
                 effect = createExplosionEffect(section);
                 break;
+            case "command":
+                effect = createCommandEffect(section);
+                break;
             default:
                 break;
         }
@@ -1484,7 +1487,6 @@ public class ConfigurationManager {
                         name, section.getCurrentPath()));
             }
         }
-        //effect.setParticle();
         if (section.isInt("radius") || section.isDouble("radius")) {
             effect.setRadius((float) section.getDouble("radius"));
         }
@@ -1535,6 +1537,20 @@ public class ConfigurationManager {
         }
         if (section.isBoolean("break-blocks")) {
             effect.setBreakBlocks(section.getBoolean("break-blocks"));
+        }
+        return effect;
+    }
+
+    PlantCommandEffect createCommandEffect(ConfigurationSection section) {
+        PlantCommandEffect effect = new PlantCommandEffect();
+        String command = section.getString("command");
+        if (command == null || command.isEmpty()) {
+            main.getLogger().warning("Command effect not added; command string not present or empty in section: " + section.getCurrentPath());
+            return null;
+        }
+        effect.setCommand(command);
+        if (section.isBoolean("console")) {
+            effect.setConsole(section.getBoolean("console"));
         }
         return effect;
     }
