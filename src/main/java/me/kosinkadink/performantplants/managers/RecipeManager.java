@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.plants.PlantRecipe;
 import org.bukkit.inventory.*;
 
 import java.util.HashMap;
@@ -9,8 +10,8 @@ public class RecipeManager {
 
     private Main main;
 
-    private HashMap<String, ShapedRecipe> shapedRecipeMap = new HashMap<>();
-    private HashMap<String, ShapelessRecipe> shapelessRecipeMap = new HashMap<>();
+    private HashMap<String, PlantRecipe> shapedRecipeMap = new HashMap<>();
+    private HashMap<String, PlantRecipe> shapelessRecipeMap = new HashMap<>();
     private HashMap<String, FurnaceRecipe> furnaceRecipeMap = new HashMap<>();
     private HashMap<String, BlastingRecipe> blastingRecipeMap = new HashMap<>();
     private HashMap<String, SmokingRecipe> smokingRecipeMap = new HashMap<>();
@@ -75,22 +76,23 @@ public class RecipeManager {
         return false;
     }
 
-    public Recipe getRecipe(String key) {
-        Recipe returned = shapedRecipeMap.get(key);
-        if (returned == null) {
-            returned = shapelessRecipeMap.get(key);
+    public PlantRecipe getRecipe(Recipe recipe) {
+        PlantRecipe returned = null;
+        if (recipe instanceof ShapedRecipe) {
+            returned = shapedRecipeMap.get(((ShapedRecipe) recipe).getKey().getKey());
+        } else if (recipe instanceof ShapelessRecipe) {
+            returned = shapelessRecipeMap.get(((ShapelessRecipe) recipe).getKey().getKey());
         }
         return returned;
-
     }
 
     public void addRecipe(Recipe recipe) {
         if (recipe instanceof ShapedRecipe) {
             ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
-            shapedRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
+            shapedRecipeMap.put(convertedRecipe.getKey().getKey(), new PlantRecipe(convertedRecipe));
         } else if (recipe instanceof ShapelessRecipe) {
             ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
-            shapelessRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
+            shapelessRecipeMap.put(convertedRecipe.getKey().getKey(), new PlantRecipe(convertedRecipe));
         } else if (recipe instanceof FurnaceRecipe) {
             FurnaceRecipe convertedRecipe = (FurnaceRecipe) recipe;
             furnaceRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
@@ -106,6 +108,20 @@ public class RecipeManager {
         } else if (recipe instanceof StonecuttingRecipe) {
             StonecuttingRecipe convertedRecipe = (StonecuttingRecipe) recipe;
             stonecuttingRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
+        }
+    }
+
+    public void addRecipe(PlantRecipe plantRecipe) {
+        if (plantRecipe.getRecipe() == null) {
+            return;
+        }
+        Recipe recipe = plantRecipe.getRecipe();
+        if (recipe instanceof ShapedRecipe) {
+            ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
+            shapedRecipeMap.put(convertedRecipe.getKey().getKey(), plantRecipe);
+        } else if (recipe instanceof ShapelessRecipe) {
+            ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
+            shapelessRecipeMap.put(convertedRecipe.getKey().getKey(), plantRecipe);
         }
     }
 

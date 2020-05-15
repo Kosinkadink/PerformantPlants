@@ -1,16 +1,22 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
+import me.kosinkadink.performantplants.plants.PlantConsumable;
+import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.plants.PlantRecipe;
+import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
+import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.inventory.FurnaceInventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 
 public class RecipeEventListener implements Listener {
 
@@ -29,6 +35,47 @@ public class RecipeEventListener implements Listener {
                 if (PlantItemBuilder.isPlantName(ingredient)) {
                     event.getInventory().setResult(new ItemStack(Material.AIR));
                     return;
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCraftItem(CraftItemEvent event) {
+        if (!event.isCancelled()) {
+            PlantRecipe plantRecipe = main.getRecipeManager().getRecipe(event.getRecipe());
+            if (plantRecipe == null) {
+                return;
+            }
+            PlantInteractStorage storage = plantRecipe.getStorage();
+            if (storage != null) {
+                PlantInteract interact = storage.getPlantInteract(event.getWhoClicked().getInventory().getItemInMainHand());
+                if (interact != null) {
+                    if (plantRecipe.isIgnoreResult()) {
+                        event.setCurrentItem(new ItemBuilder(Material.AIR).build());
+                        // removing current item causes ingredients not to be consumed
+                        // so consume them manually
+                        for (ItemStack itemStack : event.getInventory().getMatrix()) {
+                            if (itemStack != null && itemStack.getType() != Material.AIR) {
+                                itemStack.setAmount(itemStack.getAmount()-1);
+                            }
+                        }
+                    }
+                    // perform effects on block
+                    try {
+                        interact.getEffectStorage().performEffects(event.getInventory().getLocation().getBlock());
+                    } catch (NullPointerException e) {
+                        // do nothing, just catch
+                    }
+                    // perform effects on player, if any
+                    PlantConsumableStorage consumableStorage = interact.getConsumableStorage();
+                    if (consumableStorage != null) {
+                        Player player = (Player) event.getWhoClicked();
+                        PlantConsumable consumable = consumableStorage.getConsumable(player, EquipmentSlot.HAND);
+                        if (consumable != null) {
+                            consumable.getEffectStorage().performEffects(player, player.getLocation());
+                        }
+                    }
                 }
             }
         }

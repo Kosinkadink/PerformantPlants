@@ -1576,6 +1576,18 @@ public class ConfigurationManager {
             main.getLogger().warning("Type not set for crafting recipe at: " + section.getCurrentPath());
             return;
         }
+        // load PlantInteractStorage, if present
+        PlantInteractStorage storage = null;
+        ConfigurationSection storageSection = section.getConfigurationSection("on-craft");
+        if (storageSection != null) {
+            storage = loadPlantInteractStorage(storageSection);
+        }
+        boolean ignoreResultPresent = false;
+        boolean ignoreResult = false;
+        if (section.isBoolean("ignore-result")) {
+            ignoreResultPresent = true;
+            ignoreResult = section.getBoolean("ignore-result");
+        }
         // get shaped recipe
         if (type.equalsIgnoreCase("shaped")) {
             // get result
@@ -1625,7 +1637,11 @@ public class ConfigurationManager {
                 // otherwise add recipe to server
                 main.getServer().addRecipe(recipe);
                 // add recipe to recipe manager
-                main.getRecipeManager().addRecipe(recipe);
+                PlantRecipe plantRecipe = new PlantRecipe(recipe, storage);
+                if (ignoreResultPresent) {
+                    plantRecipe.setIgnoreResult(ignoreResult);
+                }
+                main.getRecipeManager().addRecipe(plantRecipe);
                 main.getLogger().info("Registered shaped crafting recipe: " + recipeName);
             } catch (Exception e) {
                 main.getLogger().warning(String.format("Failed to add shaped crafting recipe at %s due to exception: %s",
@@ -1672,7 +1688,11 @@ public class ConfigurationManager {
                 // otherwise add recipe to server
                 main.getServer().addRecipe(recipe);
                 // add recipe to recipe manager
-                main.getRecipeManager().addRecipe(recipe);
+                PlantRecipe plantRecipe = new PlantRecipe(recipe, storage);
+                if (ignoreResultPresent) {
+                    plantRecipe.setIgnoreResult(ignoreResult);
+                }
+                main.getRecipeManager().addRecipe(plantRecipe);
                 main.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
             } catch (Exception e) {
                 main.getLogger().warning(String.format("Failed to add shapeless crafting recipe at %s due to exception: %s",
