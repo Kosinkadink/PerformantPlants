@@ -1,6 +1,8 @@
 package me.kosinkadink.performantplants.scripting;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.util.PlaceholderHelper;
+import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -12,6 +14,7 @@ public class ScriptResult extends ScriptBlock {
 
     private Object value;
     private String variableName = null;
+    private boolean hasPlaceholder = false;
 
     public ScriptResult(Object value) {
         if (value instanceof Integer) {
@@ -40,6 +43,10 @@ public class ScriptResult extends ScriptBlock {
 
     public String getVariableName() {
         return variableName;
+    }
+
+    public void setHasPlaceholder(boolean value) {
+        hasPlaceholder = value;
     }
 
     public String getStringValue() {
@@ -145,12 +152,16 @@ public class ScriptResult extends ScriptBlock {
 
     protected ScriptResult loadVariable(PlantBlock plantBlock, Player player) {
         if (!isVariable()) {
+            // if has placeholder and is string, return evaluated string
+            if (hasPlaceholder && type == ScriptType.STRING) {
+                return new ScriptResult(PlaceholderHelper.setVariablesAndPlaceholders(
+                        plantBlock, player, this.getStringValue()));
+            }
             return this;
         }
         if (plantBlock == null || plantBlock.getPlantData() == null) {
             return null;
         }
-        // TODO: load general variables and placeholder values (check if surrounded by $ or %)
         PlantData data = plantBlock.getPlantData();
         JSONObject json = data.getData();
         return new ScriptResult(json.get(variableName));

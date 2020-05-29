@@ -1,6 +1,9 @@
-package me.kosinkadink.performantplants.scripting;
+package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.PlantData;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

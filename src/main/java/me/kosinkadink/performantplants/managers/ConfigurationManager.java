@@ -29,6 +29,7 @@ import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
+import me.kosinkadink.performantplants.util.ScriptHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
@@ -2120,6 +2121,7 @@ public class ConfigurationManager {
     }
 
     ScriptResult createPlantScriptResult(ConfigurationSection section, PlantData data) {
+        ScriptResult scriptResult = null;
         if (section.isString("variable")) {
             // get variable from data
             String variableName = section.getString("variable");
@@ -2138,16 +2140,22 @@ public class ConfigurationManager {
                 return null;
             }
             // return ScriptResult containing variable name + type
-            return new ScriptResult(variableName, type);
+            scriptResult = new ScriptResult(variableName, type);
         } else if (section.isSet("value")) {
             // try to return ScriptResult containing value
             try {
-                return new ScriptResult(section.get("value"));
+                scriptResult = new ScriptResult(section.get("value"));
             } catch (IllegalArgumentException e) {
                 main.getLogger().warning(String.format("Value could not be parsed into recognized type; this " +
                         "PlantScript will not be loaded until this is fixed in section: %s", section.getCurrentPath()));
                 return null;
             }
+        }
+        if (scriptResult != null) {
+            if (section.isBoolean("is-placeholder")) {
+                scriptResult.setHasPlaceholder(section.getBoolean("is-placeholder"));
+            }
+            return scriptResult;
         }
         main.getLogger().warning(String.format("No variable section or value provided; this PlantScript will not be " +
                 "loaded until this is fixed in section: %s", section.getCurrentPath()));

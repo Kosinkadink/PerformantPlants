@@ -1,14 +1,12 @@
 package me.kosinkadink.performantplants.scripting;
 
+import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-
-import java.util.HashMap;
 
 public class PlantData {
 
     JSONObject data;
-    //HashMap<String, ScriptType> typeHashMap = new HashMap<>();
 
     public PlantData(JSONObject data) {
         this.data = data;
@@ -39,10 +37,6 @@ public class PlantData {
     public JSONObject getData() {
         return data;
     }
-
-//    public void addVariableType(String variableName, ScriptType scriptType) {
-//        typeHashMap.put(variableName, scriptType);
-//    }
 
     public PlantData clone() {
         JSONObject clone = (JSONObject) JSONValue.parse(createJsonString());
