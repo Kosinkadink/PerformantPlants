@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.storage;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.effects.PlantEffect;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -30,11 +31,11 @@ public class PlantEffectStorage {
         return effects;
     }
 
-    public void performEffects(Player player, Location location) {
+    public void performEffects(Player player, PlantBlock plantBlock) {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(player, location);
+            boolean triggered = effect.performEffect(player, plantBlock);
             // add to count if triggered
             if (triggered) {
                 effectCount++;
@@ -46,11 +47,11 @@ public class PlantEffectStorage {
         }
     }
 
-    public void performEffects(Block block) {
+    public void performEffects(Block block, PlantBlock plantBlock) {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(block);
+            boolean triggered = effect.performEffect(block, plantBlock);
             // add to count if triggered
             if (triggered) {
                 effectCount++;

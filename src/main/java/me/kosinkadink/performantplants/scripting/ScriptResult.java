@@ -1,0 +1,168 @@
+package me.kosinkadink.performantplants.scripting;
+
+import me.kosinkadink.performantplants.blocks.PlantBlock;
+import org.bukkit.entity.Player;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+public class ScriptResult extends ScriptBlock {
+
+    public static final ScriptResult TRUE = new ScriptResult(true);
+    public static final ScriptResult FALSE = new ScriptResult(false);
+
+    private Object value;
+    private String variableName = null;
+
+    public ScriptResult(Object value) {
+        if (value instanceof Integer) {
+            this.value = new Long((Integer) value);
+        } else {
+            this.value = value;
+        }
+        this.type = ScriptHelper.getType(this.value);
+        if (this.type == null) {
+            throw new IllegalArgumentException("Value type not recognized");
+        }
+    }
+
+    public ScriptResult(String variableName, ScriptType type) {
+        this.variableName = variableName;
+        this.type = type;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public boolean isVariable() {
+        return variableName != null && !variableName.isEmpty();
+    }
+
+    public String getVariableName() {
+        return variableName;
+    }
+
+    public String getStringValue() {
+        switch (type) {
+            case STRING:
+                return (String) value;
+            case LONG:
+                return ((Long) value).toString();
+            case DOUBLE:
+                return ((Double) value).toString();
+            case BOOLEAN:
+                return ((Boolean) value).toString();
+            default:
+                return "";
+        }
+    }
+
+    public Boolean getBooleanValue() {
+        switch (type) {
+            case BOOLEAN:
+                return (Boolean) value;
+            case LONG:
+                return ((Long) value) != 0;
+            case DOUBLE:
+                return ((Double) value) != 0.0;
+            case STRING:
+                return !((String) value).isEmpty();
+            default:
+                return false;
+        }
+    }
+
+    public Long getLongValue() {
+        switch (type) {
+            case LONG:
+                return (Long) value;
+            case DOUBLE:
+                return ((Double) value).longValue();
+            case BOOLEAN:
+                return (Boolean) value ? 1L : 0L;
+            case STRING:
+                Long conversion = Long.getLong((String) value);
+                if (conversion == null) {
+                    conversion = 0L;
+                }
+                return conversion;
+            default:
+                return 0L;
+        }
+    }
+
+    public Double getDoubleValue() {
+        switch (type) {
+            case LONG:
+                return ((Long) value).doubleValue();
+            case DOUBLE:
+                return (Double) value;
+            case BOOLEAN:
+                return (Boolean) value ? 1.0 : 0.0;
+            case STRING:
+                try {
+                    return Double.parseDouble((String) value);
+                } catch (NullPointerException | NumberFormatException e) {
+                    return 0.0;
+                }
+            default:
+                return 0.0;
+        }
+    }
+
+    public JSONObject getObjectValue() {
+        if (type == ScriptType.OBJECT) {
+            return (JSONObject) value;
+        }
+        return null;
+    }
+
+    public JSONArray getArrayValue() {
+        if (type == ScriptType.ARRAY) {
+            return (JSONArray) value;
+        }
+        return null;
+    }
+
+    public Object getNullValue() {
+        return null;
+    }
+
+    public static ScriptResult getDefaultOfType(ScriptType defaultType) {
+        switch (defaultType) {
+            case BOOLEAN:
+                return FALSE;
+            case STRING:
+                return new ScriptResult("");
+            case LONG:
+                return new ScriptResult(0L);
+            case DOUBLE:
+                return new ScriptResult(0.0);
+            default:
+                return new ScriptResult(null);
+        }
+    }
+
+    protected ScriptResult loadVariable(PlantBlock plantBlock, Player player) {
+        if (!isVariable()) {
+            return this;
+        }
+        if (plantBlock == null || plantBlock.getPlantData() == null) {
+            return null;
+        }
+        // TODO: load general variables and placeholder values (check if surrounded by $ or %)
+        PlantData data = plantBlock.getPlantData();
+        JSONObject json = data.getData();
+        return new ScriptResult(json.get(variableName));
+    }
+
+    @Override
+    public ScriptResult loadValue(PlantBlock plantBlock, Player player) {
+        return loadVariable(plantBlock, player);
+    }
+
+    @Override
+    public boolean containsVariable() {
+        return isVariable();
+    }
+}

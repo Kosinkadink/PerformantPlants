@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.RandomHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -12,15 +13,15 @@ public abstract class PlantEffect {
     protected double chance = 100.0;
     protected int delay = 0;
 
-    public boolean performEffect(Player player, Location location) {
+    public boolean performEffect(Player player, PlantBlock plantBlock) {
         if (RandomHelper.generateChancePercentage(chance)) {
             if (delay == 0) {
-                performEffectAction(player, location);
+                performEffectAction(player, plantBlock);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffectAction(player, location),
+                            () -> performEffectAction(player, plantBlock),
                             delay
                     );
                 } else {
@@ -33,15 +34,15 @@ public abstract class PlantEffect {
         return false;
     }
 
-    public boolean performEffect(Block block) {
+    public boolean performEffect(Block block, PlantBlock plantBlock) {
         if (RandomHelper.generateChancePercentage(chance)) {
             if (delay == 0) {
-                performEffectAction(block);
+                performEffectAction(block, plantBlock);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffectAction(block),
+                            () -> performEffectAction(block, plantBlock),
                             delay
                     );
                 } else {
@@ -54,9 +55,9 @@ public abstract class PlantEffect {
         return false;
     }
 
-    void performEffectAction(Player player, Location location) { }
+    void performEffectAction(Player player, PlantBlock plantBlock) { }
 
-    void performEffectAction(Block block) { }
+    void performEffectAction(Block block, PlantBlock plantBlock) { }
 
     public double getChance() {
         return chance;

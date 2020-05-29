@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import org.bukkit.inventory.ItemStack;
 

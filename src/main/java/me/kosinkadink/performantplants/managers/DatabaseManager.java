@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.statistics.StatisticsTagItem;
 import me.kosinkadink.performantplants.storage.PlantChunkStorage;
@@ -87,6 +88,11 @@ public class DatabaseManager {
         if (!success) {
             return false;
         }
+        // Load plant data from data table
+        success = addDataFromDatabase(conn, worldName, url);
+        if (!success) {
+            return false;
+        }
 
         // all done now
         main.getLogger().info("Successfully loaded plant db at url: " + url);
@@ -148,6 +154,7 @@ public class DatabaseManager {
         createTablePlantBlocks(conn);
         createTableParents(conn);
         createTableGuardians(conn);
+        createTableData(conn);
         // get plantChunkStorage for current world
         PlantChunkStorage plantChunkStorage = main.getPlantManager().getPlantChunkStorage(worldName);
         // remove any blocks set for removal
@@ -164,6 +171,7 @@ public class DatabaseManager {
             boolean success = removeBlockLocationFromTablePlantBlocks(conn, blockLocation);
             removeBlockLocationFromTableParents(conn, blockLocation);
             removeBlockLocationFromTableGuardians(conn, blockLocation);
+            removeBlockLocationFromTableData(conn, blockLocation);
             // if deleted from db, remove from plantChunkStorage
             if (success) {
                 blocksToRemoveCache.add(blockLocation);
@@ -207,6 +215,10 @@ public class DatabaseManager {
                 // if block has guardian, add it to guardians table
                 if (entry.getValue().hasGuardian()) {
                     insertPlantBlockIntoTableGuardians(conn, entry.getValue());
+                }
+                // if block has data, add it to data table
+                if (entry.getValue().hasPlantData()) {
+                    insertPlantBlockIntoTableData(conn, entry.getValue());
                 }
             }
             // check if unloaded now, clear loaded since save
@@ -439,6 +451,72 @@ public class DatabaseManager {
             return false;
         }
         //main.getLogger().info("Removed BlockLocation from plantblocks: " + blockLocation.toString());
+        return true;
+    }
+
+    //endregion
+
+    //region Data Table
+
+    boolean createTableData(Connection conn) {
+        // Create table if doesn't already exist
+        String sql = "CREATE TABLE IF NOT EXISTS data (\n"
+                + "    x INTEGER,\n"
+                + "    y INTEGER,\n"
+                + "    z INTEGER,\n"
+                + "    json_data TEXT,\n"
+                + "    PRIMARY KEY (x,y,z)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            main.getLogger().severe(
+                    "Exception occurred creating table 'data'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertPlantBlockIntoTableData(Connection conn, PlantBlock block) {
+        String sql = "REPLACE INTO data(x, y, z, json_data)\n"
+                + "VALUES(?,?,?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setInt(   1,block.getLocation().getX());
+            pstmt.setInt(   2,block.getLocation().getY());
+            pstmt.setInt(   3,block.getLocation().getZ());
+            pstmt.setString(4,block.getPlantData().createJsonString());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
+            return false;
+        }
+        //main.getLogger().info("Stored PlantBlock in data in db: " + block.toString());
+        return true;
+    }
+
+    boolean removeBlockLocationFromTableData(Connection conn, BlockLocation blockLocation) {
+        String sql = "DELETE FROM data\n"
+                + "    WHERE x = ?"
+                + "    AND y = ?"
+                + "    and z = ?;";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setInt(1,blockLocation.getX());
+            pstmt.setInt(2,blockLocation.getY());
+            pstmt.setInt(3,blockLocation.getZ());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning(
+                    "Could not remove BlockLocation from data: " + blockLocation.toString() + "; " + e.toString()
+            );
+            return false;
+        }
+        //main.getLogger().info("Removed BlockLocation from data: " + blockLocation.toString());
         return true;
     }
 
@@ -767,6 +845,79 @@ public class DatabaseManager {
     }
 
     //endregion
+
+    //region Add Data
+
+    boolean addDataFromDatabase(Connection conn, String worldName, String url) {
+        // Create table if doesn't already exsit
+        createTableData(conn);
+        // create list of blocks to remove, if data is no longer necessary to be kept in db
+        ArrayList<BlockLocation> blockLocationsToRemove = new ArrayList<>();
+        // Get and load all plant data stored in db
+        String sql = "SELECT x, y, z, json_data FROM data;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                // create parent from database row
+                BlockLocation toRemove = addDataFromResultSet(rs, worldName);
+                if (toRemove != null) {
+                    blockLocationsToRemove.add(toRemove);
+                }
+            }
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
+            return false;
+        }
+        // remove locations to be removed
+        if (!blockLocationsToRemove.isEmpty()) {
+            // =========== TRANSACTION START
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("BEGIN;");
+            } catch (SQLException e) {
+                main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            }
+            for (BlockLocation blockLocation : blockLocationsToRemove) {
+                removeBlockLocationFromTableData(conn, blockLocation);
+            }
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("COMMIT;");
+            } catch (SQLException e) {
+                main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            }
+            // =========== TRANSACTION END
+        }
+        return true;
+    }
+
+    BlockLocation addDataFromResultSet(ResultSet rs, String worldName) {
+        try {
+            // create blockLocation from db entry
+            BlockLocation blockLocation = new BlockLocation(
+                    rs.getInt("x"),
+                    rs.getInt("y"),
+                    rs.getInt("z"),
+                    worldName);
+            // get plant data
+            PlantData plantData = new PlantData(rs.getString("json_data"));
+            // get plant block at location
+            PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
+            // update data, if plantBlock has initial data
+            if (plantBlock.hasPlantData()) {
+                plantBlock.getPlantData().updateData(plantData);
+                return null;
+            }
+            // otherwise, plant no longer uses data and it should be deleted from db
+            return blockLocation;
+        } catch (SQLException e) {
+            main.getLogger().warning("SQLException occurred trying to load data; " + e.toString());
+        }
+        return null;
+    }
+
+    //end region
 
     //region Add Parents
 

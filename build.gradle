@@ -8,6 +8,10 @@ plugins {
 group 'me.kosinkadink'
 version '0.1.0'
 
+test {
+    useJUnitPlatform()
+}
+
 repositories {
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots' }
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
@@ -22,6 +26,15 @@ dependencies {
     compileOnly "org.spigotmc:spigot:1.15.2-R0.1-SNAPSHOT"
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
     compileOnly "me.clip:placeholderapi:2.10.5"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.3.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.3.1"
+    testCompileOnly "org.mockito:mockito-core:3.3.3"
+    testCompile "com.googlecode.json-simple:json-simple:1.1.1"
+    testCompile "org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT"
+    testCompile "org.spigotmc:spigot:1.15.2-R0.1-SNAPSHOT"
+
+    //compileOnly "com.fasterxml.jackson.core:jackson-core:2.11.0"
 }
 
 

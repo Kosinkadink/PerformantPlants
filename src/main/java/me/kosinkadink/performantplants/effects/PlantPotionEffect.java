@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -39,7 +40,7 @@ public class PlantPotionEffect extends PlantEffect {
     }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         player.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier, ambient, particles, icon));
     }
 

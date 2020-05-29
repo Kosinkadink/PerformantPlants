@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import org.bukkit.Location;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.entity.Player;
 
 public class PlantFeedEffect extends PlantEffect {
@@ -16,7 +16,7 @@ public class PlantFeedEffect extends PlantEffect {
     }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + foodAmount));
         float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + saturationAmount));
         player.setFoodLevel(newFoodLevel);

@@ -1,8 +1,11 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,6 +19,7 @@ public class PlantInteract {
     private boolean breakBlock = false;
     private boolean onlyEffectsOnChance = true;
     private double chance = 100.0;
+    private ScriptBlock chanceScriptBlock;
 
     private boolean matchMaterial = false;
     private boolean matchEnchantments = false;
@@ -25,6 +29,7 @@ public class PlantInteract {
     private DropStorage dropStorage = new DropStorage();
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
     private PlantConsumableStorage consumable;
+    private ScriptBlock scriptBlock;
 
     public PlantInteract() { }
 
@@ -133,6 +138,13 @@ public class PlantInteract {
         return ThreadLocalRandom.current().nextDouble() <= chance / 100.0;
     }
 
+    public boolean generateChanceScriptBlock(PlantBlock plantBlock, Player player) {
+        if (chanceScriptBlock != null) {
+            return chanceScriptBlock.loadValue(plantBlock, player).getBooleanValue();
+        }
+        return true;
+    }
+
     public boolean isMatchMaterial() {
         return matchMaterial;
     }
@@ -155,5 +167,17 @@ public class PlantInteract {
 
     public void setMatchEnchantmentLevel(boolean matchEnchantmentLevel) {
         this.matchEnchantmentLevel = matchEnchantmentLevel;
+    }
+
+    public ScriptBlock getScriptBlock() {
+        return scriptBlock;
+    }
+
+    public void setScriptBlock(ScriptBlock scriptBlock) {
+        this.scriptBlock = scriptBlock;
+    }
+
+    public void setChanceScriptBlock(ScriptBlock chanceScriptBlock) {
+        this.chanceScriptBlock = chanceScriptBlock;
     }
 }

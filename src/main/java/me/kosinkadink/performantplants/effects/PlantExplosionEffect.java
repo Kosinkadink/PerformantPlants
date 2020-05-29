@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.BlockHelper;
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
@@ -14,12 +14,12 @@ public class PlantExplosionEffect extends PlantEffect {
     public PlantExplosionEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         player.getWorld().createExplosion(player.getLocation(), power, fire, breakBlocks);
     }
 
     @Override
-    void performEffectAction(Block block) {
+    void performEffectAction(Block block, PlantBlock plantBlock) {
         block.getWorld().createExplosion(BlockHelper.getCenter(block), power, fire, breakBlocks);
     }
 

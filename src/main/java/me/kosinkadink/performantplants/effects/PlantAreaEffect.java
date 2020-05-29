@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.BlockHelper;
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.AreaEffectCloud;
@@ -49,12 +48,12 @@ public class PlantAreaEffect extends PlantEffect {
     public PlantAreaEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         player.getWorld().spawn(player.getLocation(), AreaEffectCloud.class, consumer);
     }
 
     @Override
-    void performEffectAction(Block block) {
+    void performEffectAction(Block block, PlantBlock plantBlock) {
         block.getWorld().spawn(BlockHelper.getCenter(block), AreaEffectCloud.class, consumer);
     }
 

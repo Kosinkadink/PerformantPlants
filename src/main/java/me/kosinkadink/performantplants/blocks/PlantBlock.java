@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.DropHelper;
@@ -37,12 +38,14 @@ public class PlantBlock implements Droppable {
     private UUID playerUUID;
     private UUID plantUUID;
     private ArrayList<Drop> drops = new ArrayList<>();
+    private PlantData plantData = null;
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
         location = blockLocation;
         this.plant = plant;
         this.grows = grows;
         this.plantUUID = UUID.randomUUID();
+        initializePlantData();
     }
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows, UUID plantUUID) {
@@ -50,6 +53,7 @@ public class PlantBlock implements Droppable {
         this.plant = plant;
         this.grows = grows;
         this.plantUUID = plantUUID;
+        initializePlantData();
     }
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID, boolean grows) {
@@ -60,6 +64,12 @@ public class PlantBlock implements Droppable {
     public PlantBlock(BlockLocation blockLocation, Plant plant, UUID playerUUID, boolean grows, UUID plantUUID) {
         this(blockLocation, plant, grows, plantUUID);
         this.playerUUID = playerUUID;
+    }
+
+    void initializePlantData() {
+        if (plant != null && plant.hasPlantData()) {
+            plantData = plant.getPlantData().clone();
+        }
     }
 
     public BlockLocation getLocation() {
@@ -283,6 +293,18 @@ public class PlantBlock implements Droppable {
         this.blockYaw = blockYaw;
     }
 
+    public boolean hasPlantData() {
+        return plantData != null;
+    }
+
+    public PlantData getPlantData() {
+        return plantData;
+    }
+
+    public void setPlantData(PlantData plantData) {
+        this.plantData = plantData;
+    }
+
     //region Task Control
 
     public void startTask(Main main) {
@@ -467,7 +489,10 @@ public class PlantBlock implements Droppable {
                 if (onExecute != null) {
                     DropHelper.performDrops(onExecute.getDropStorage(), getBlock());
                     // perform any effects set
-                    onExecute.getEffectStorage().performEffects(getBlock());
+                    onExecute.getEffectStorage().performEffects(getBlock(), this);
+                    if (onExecute.getScriptBlock() != null) {
+                        onExecute.getScriptBlock().loadValue(this);
+                    }
                 }
             }
             executedStage = true;
@@ -476,7 +501,10 @@ public class PlantBlock implements Droppable {
             PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
             if (onFail != null) {
                 DropHelper.performDrops(onFail.getDropStorage(), getBlock());
-                onFail.getEffectStorage().performEffects(getBlock());
+                onFail.getEffectStorage().performEffects(getBlock(), this);
+                if (onFail.getScriptBlock() != null) {
+                    onFail.getScriptBlock().loadValue(this);
+                }
             }
         }
         if (advance) {
@@ -666,6 +694,13 @@ public class PlantBlock implements Droppable {
     }
 
     //endregion
+
+    public static PlantBlock wrapBlock(Block block) {
+        if (block == null) {
+            return null;
+        }
+        return new PlantBlock(new BlockLocation(block), Plant.wrappedPlant, false);
+    }
 
     @Override
     public String toString() {

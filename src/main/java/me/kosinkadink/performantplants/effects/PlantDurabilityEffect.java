@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.ItemHelper;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class PlantDurabilityEffect extends PlantEffect {
@@ -11,7 +11,7 @@ public class PlantDurabilityEffect extends PlantEffect {
     public PlantDurabilityEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         ItemHelper.updateDamage(player.getInventory().getItemInMainHand(), amount);
     }
 

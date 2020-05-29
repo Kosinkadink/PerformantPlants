@@ -99,15 +99,19 @@ public class PlantBlockEventListener implements Listener {
                 boolean chanceSuccess = plantInteract.generateChance();
                 // do break actions for block
                 if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
-                    plantInteract.getEffectStorage().performEffects(event.getBlock());
+                    plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
                 }
                 PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
                 // do consumable actions
                 if (consumableStorage != null) {
                     PlantConsumable consumable = consumableStorage.getConsumable(event.getPlayer(), EquipmentSlot.HAND);
                     if (consumable != null) {
-                        consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+                        consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
                     }
+                }
+                // perform script block, if present
+                if (plantInteract.getScriptBlock() != null) {
+                    plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
                 }
             }
         }
@@ -209,11 +213,15 @@ public class PlantBlockEventListener implements Listener {
             }
             // do interact actions for block
             if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
-                plantInteract.getEffectStorage().performEffects(event.getBlock());
+                plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
             }
             // do consumable actions
             if (consumable != null) {
-                consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+                consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+            }
+            // perform script block, if present
+            if (plantInteract.getScriptBlock() != null) {
+                plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
             }
         }
     }
@@ -292,7 +300,7 @@ public class PlantBlockEventListener implements Listener {
             }
         }
         // perform effects
-        plantConsumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlayer().getEyeLocation());
+        plantConsumable.getEffectStorage().performEffects(event.getPlayer(), null);
     }
 
     // region Block Creation

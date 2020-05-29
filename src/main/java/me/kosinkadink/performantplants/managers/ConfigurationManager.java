@@ -7,6 +7,21 @@ import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
+import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
+import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
+import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
+import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToString;
+import me.kosinkadink.performantplants.scripting.operations.compare.*;
+import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationFunction;
+import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
+import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationContains;
+import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationLength;
+import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationSetValue;
+import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationAnd;
+import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationNot;
+import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationOr;
+import me.kosinkadink.performantplants.scripting.operations.math.*;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
@@ -27,6 +42,7 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -226,6 +242,11 @@ public class ConfigurationManager {
                             plant.addRequiredBlockToGrow(requiredBlock);
                         }
                     }
+                    // load plant data, if present
+                    PlantData plantData = createPlantData(growingConfig);
+                    if (plantData != null) {
+                        plant.setPlantData(plantData);
+                    }
                     // get growth stages; since seed is present, growth stages are REQUIRED
                     if (!growingConfig.isSet("stages") && growingConfig.isConfigurationSection("stages")) {
                         main.getLogger().warning("No stages are configured for plant while seed is present: " + plantId);
@@ -267,7 +288,7 @@ public class ConfigurationManager {
                             if (stageConfig.isConfigurationSection("on-execute")) {
                                 ConfigurationSection onExecuteSection = stageConfig.getConfigurationSection("on-execute");
                                 // load interaction from default path
-                                PlantInteract onExecute = loadPlantInteract(onExecuteSection);
+                                PlantInteract onExecute = loadPlantInteract(onExecuteSection, plant.getPlantData());
                                 if (onExecute == null) {
                                     main.getLogger().warning(String.format("Stage %s's on-execute could not be loaded from section: %s", stageId, onExecuteSection.getCurrentPath()));
                                     return;
@@ -278,7 +299,7 @@ public class ConfigurationManager {
                             if (stageConfig.isConfigurationSection("on-fail")) {
                                 ConfigurationSection onFailSection = stageConfig.getConfigurationSection("on-fail");
                                 // load interaction from default path
-                                PlantInteract onFail = loadPlantInteract(onFailSection);
+                                PlantInteract onFail = loadPlantInteract(onFailSection, plant.getPlantData());
                                 if (onFail == null) {
                                     main.getLogger().warning(String.format("Stage %s's on-fail could not be loaded from section: %s", stageId, onFailSection.getCurrentPath()));
                                     return;
@@ -371,7 +392,7 @@ public class ConfigurationManager {
                                 // set interact behavior, if present
                                 if (blockConfig.isConfigurationSection("on-interact")) {
                                     ConfigurationSection onInteractSection = blockConfig.getConfigurationSection("on-interact");
-                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onInteractSection);
+                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onInteractSection, plant.getPlantData());
                                     if (plantInteractStorage == null) {
                                         main.getLogger().warning("Could not load on-interact section: " + onInteractSection.getCurrentPath());
                                         return;
@@ -382,7 +403,7 @@ public class ConfigurationManager {
                                 // set break behavior, if present
                                 if (blockConfig.isConfigurationSection("on-break")) {
                                     ConfigurationSection onBreakSection = blockConfig.getConfigurationSection("on-break");
-                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onBreakSection);
+                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onBreakSection, plant.getPlantData());
                                     if (plantInteractStorage == null) {
                                         main.getLogger().warning("Could not load on-break section: " + onBreakSection.getCurrentPath());
                                         return;
@@ -860,12 +881,16 @@ public class ConfigurationManager {
     }
 
     PlantInteractStorage loadPlantInteractStorage(ConfigurationSection section) {
+        return loadPlantInteractStorage(section, null);
+    }
+
+    PlantInteractStorage loadPlantInteractStorage(ConfigurationSection section, PlantData data) {
         PlantInteractStorage plantInteractStorage = new PlantInteractStorage();
         // add default interaction, if present
         if (section.isConfigurationSection("default")) {
             ConfigurationSection defaultInteractSection = section.getConfigurationSection("default");
             // load interaction from default path
-            PlantInteract plantInteract = loadPlantInteract(defaultInteractSection);
+            PlantInteract plantInteract = loadPlantInteract(defaultInteractSection, data);
             if (plantInteract == null) {
                 main.getLogger().warning("Default PlantInteract could not be loaded from section: " + defaultInteractSection.getCurrentPath());
                 return null;
@@ -890,7 +915,7 @@ public class ConfigurationManager {
                 if (itemInteractSettings == null) {
                     return null;
                 }
-                PlantInteract plantInteract = loadPlantInteract(itemInteractSection);
+                PlantInteract plantInteract = loadPlantInteract(itemInteractSection, data);
                 if (plantInteract == null) {
                     main.getLogger().warning("Item PlantInteract could not be loaded from section: " + itemInteractSection.getCurrentPath());
                     return null;
@@ -904,6 +929,10 @@ public class ConfigurationManager {
     }
 
     PlantInteract loadPlantInteract(ConfigurationSection section) {
+        return loadPlantInteract(section, null);
+    }
+
+    PlantInteract loadPlantInteract(ConfigurationSection section, PlantData data) {
         if (section == null) {
             return null;
         }
@@ -968,6 +997,11 @@ public class ConfigurationManager {
         PlantConsumableStorage consumable = loadPlantConsumableStorage(section);
         if (consumable != null) {
             plantInteract.setConsumableStorage(consumable);
+        }
+        // add script block, if present
+        ScriptBlock scriptBlock = loadPlantScript(section, data);
+        if (scriptBlock != null) {
+            plantInteract.setScriptBlock(scriptBlock);
         }
         return plantInteract;
     }
@@ -1861,6 +1895,556 @@ public class ConfigurationManager {
         // add recipe to recipe manager
         main.getRecipeManager().addRecipe(recipe);
         main.getLogger().info("Registered stonecutting recipe: " + recipeName);
+    }
+
+    //endregion
+
+    //region Plant Script
+
+    PlantData createPlantData(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        JSONObject data = new JSONObject();
+        if (section.isConfigurationSection("plant-data")) {
+            ConfigurationSection plantDataSection = section.getConfigurationSection("plant-data");
+            for (String variableName : plantDataSection.getKeys(false)) {
+                // check that variable names don't use any reserved or restricted names
+                if (variableName.isEmpty()) {
+                    main.getLogger().warning("Variables names cannot be empty; no varialbes will be initialized " +
+                            "until this is fixed in section: " + plantDataSection.getCurrentPath());
+                    return null;
+                }
+                if (variableName.startsWith("_")) {
+                    main.getLogger().warning(String.format("Variable name '%s' cannot begin with '_'; reserved for " +
+                            "general block values. No variables will be initialized until this is fixed in section: %s",
+                            variableName, plantDataSection.getCurrentPath()));
+                    return null;
+                }
+                if (Character.isDigit(variableName.charAt(0))) {
+                    main.getLogger().warning(String.format("Variable name '%s' cannot begin with a digit; no " +
+                            "variables will be initialized until this is fixed in section: %s",
+                            variableName, plantDataSection.getCurrentPath()));
+                    return null;
+                }
+                // get variable info
+                ConfigurationSection variableSection = plantDataSection.getConfigurationSection(variableName);
+                if (variableSection == null) {
+                    continue;
+                }
+                ScriptType type;
+                // get variable type
+                if (variableSection.isString("type")) {
+                    type = ScriptType.fromString(variableSection.getString("type"));
+                    if (type == null) {
+                        main.getLogger().warning(String.format("Variable type '%s' not recognized; no variables will " +
+                                "be initialized until this is fixed in section: %s",
+                                variableSection.getString("type"),
+                                variableSection.getCurrentPath()));
+                        return null;
+                    }
+                    switch(type) {
+                        case BOOLEAN:
+                            data.put(variableName, variableSection.getBoolean("value", false));
+                            break;
+                        case LONG:
+                            data.put(variableName, variableSection.getLong("value", 0L));
+                            break;
+                        case DOUBLE:
+                            data.put(variableName, variableSection.getDouble("value",
+                                    (double) variableSection.getLong("value", 0L)));
+                            break;
+                        case STRING:
+                            data.put(variableName, variableSection.getString("value", ""));
+                            break;
+                        default:
+                            main.getLogger().warning(String.format("Variable type %s is not supported right now;" +
+                                            "no variables will be initialized until this is fixed in section: %s",
+                                    type,
+                                    variableSection.getCurrentPath()));
+                            return null;
+                    }
+                    // plantData.addVariableType(variableName, type);
+                } else {
+                    main.getLogger().warning(String.format("No type defined for variable '%s'; no variables will be " +
+                            "initialized until this is fixed in section: %s",
+                            variableName,
+                            variableSection.getCurrentPath()));
+                    return null;
+                }
+            }
+            if (data.isEmpty()) {
+                main.getLogger().warning("No variables were loaded, so no plant data will be created in section " +
+                        section.getConfigurationSection("plant-data").getCurrentPath());
+                return null;
+            }
+            return new PlantData(data);
+        }
+        return null;
+    }
+
+    ScriptBlock loadPlantScript(ConfigurationSection section, PlantData data) {
+        if (section == null) {
+            return null;
+        }
+        if (section.isConfigurationSection("plant-script")) {
+            return createPlantScript(section.getConfigurationSection("plant-script"), data);
+        }
+        return null;
+    }
+
+    ScriptBlock createPlantScript(ConfigurationSection section, PlantData data) {
+        // get plant script
+        if (section == null) {
+            return null;
+        }
+        for (String blockName : section.getKeys(false)) {
+            ConfigurationSection blockSection = section.getConfigurationSection(blockName);
+            if (blockSection == null) {
+                if (blockName.toLowerCase().equals("variable") || blockName.toLowerCase().equals("value")) {
+                    blockSection = section;
+                } else {
+                    break;
+                }
+            }
+            switch (blockName.toLowerCase()) {
+                // constant/variable
+                case "value":
+                case "variable":
+                case "result":
+                    return createPlantScriptResult(blockSection, data);
+                // math
+                case "+":
+                case "add":
+                    return createScriptOperationAdd(blockSection, data);
+                case "+=":
+                case "addto":
+                    return createScriptOperationAddTo(blockSection, data);
+                case "-":
+                case "subtract":
+                    return createScriptOperationSubtract(blockSection, data);
+                case "-=":
+                case "subtractfrom":
+                    return createScriptOperationSubtractFrom(blockSection, data);
+                case "*":
+                case "multiply":
+                    return createScriptOperationMultiply(blockSection, data);
+                case "*=":
+                case "multiplyby":
+                    return createScriptOperationMultiplyBy(blockSection, data);
+                case "/":
+                case "divide":
+                    return createScriptOperationDivide(blockSection, data);
+                case "/=":
+                case "divideby":
+                    return createScriptOperationDivideBy(blockSection, data);
+                case "%":
+                case "modulus":
+                    return createScriptOperationModulus(blockSection, data);
+                case "%=":
+                case "modulusof":
+                    return createScriptOperationModulusOf(blockSection, data);
+                case "**":
+                case "power":
+                    return createScriptOperationPower(blockSection, data);
+                case "**=":
+                case "powerof":
+                    return createScriptOperationPowerOf(blockSection, data);
+                // logic
+                case "&&":
+                case "and":
+                    return createScriptOperationAnd(blockSection, data);
+                case "||":
+                case "or":
+                    return createScriptOperationOr(blockSection, data);
+                case "!":
+                case "not":
+                    return createScriptOperationNot(blockSection, data);
+                // compare
+                case "==":
+                case "equal":
+                    return createScriptOperationEqual(blockSection, data);
+                case "!=":
+                case "notequal":
+                    return createScriptOperationNotEqual(blockSection, data);
+                case ">":
+                case "greaterthan":
+                    return createScriptOperationGreaterThan(blockSection, data);
+                case ">=":
+                case "greaterthanorequalto":
+                    return createScriptOperationGreaterThanOrEqualTo(blockSection, data);
+                case "<":
+                case "lessthan":
+                    return createScriptOperationLessThan(blockSection, data);
+                case "<=":
+                case "lessthanorequalto":
+                    return createScriptOperationLessThanOrEqualTo(blockSection, data);
+                // cast
+                case "(boolean)":
+                case "toboolean":
+                    return createScriptOperationToBoolean(blockSection, data);
+                case "(double)":
+                case "todouble":
+                    return createScriptOperationToDouble(blockSection, data);
+                case "(long)":
+                case "tolong":
+                    return createScriptOperationToLong(blockSection, data);
+                case "(string)":
+                case "tostring":
+                    return createScriptOperationToString(blockSection, data);
+                // functions
+                case "contains":
+                    return createScriptOperationContains(blockSection, data);
+                case "length":
+                    return createScriptOperationLength(blockSection, data);
+                case "=":
+                case "setvalue":
+                    return createScriptOperationSetValue(blockSection, data);
+                // flow
+                case "if":
+                    return createScriptOperationIf(blockSection, data);
+                case "func":
+                case "function":
+                    return createScriptOperationFunction(blockSection, data);
+                // not recognized
+                default:
+                    main.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
+                            "PlantScript will not be loaded until this is fixed in blockSection: %s",
+                            blockName, blockSection.getCurrentPath()));
+                    return null;
+            }
+        }
+        main.getLogger().warning(String.format("No PlantScript block defined in section: %s",
+                section.getCurrentPath()));
+        return null;
+    }
+
+    ScriptResult createPlantScriptResult(ConfigurationSection section, PlantData data) {
+        if (section.isString("variable")) {
+            // get variable from data
+            String variableName = section.getString("variable");
+            // if no plant data present or data does not contain variable name, return null
+            if (data == null || !data.getData().containsKey(variableName)) {
+                main.getLogger().warning(String.format("Variable '%s' not found, so this PlantScript will not be " +
+                        "loaded until that is fixed in section: %s", variableName, section.getCurrentPath()));
+                return null;
+            }
+            // get type from returned object
+            ScriptType type = ScriptHelper.getType(data.getData().get(variableName));
+            if (type == null) {
+                main.getLogger().warning(String.format("Variable '%s' is stored with unrecognized type; something " +
+                        "really went wrong so this PlantScript will not be loaded until this is fixed in section: %s",
+                        variableName, section.getCurrentPath()));
+                return null;
+            }
+            // return ScriptResult containing variable name + type
+            return new ScriptResult(variableName, type);
+        } else if (section.isSet("value")) {
+            // try to return ScriptResult containing value
+            try {
+                return new ScriptResult(section.get("value"));
+            } catch (IllegalArgumentException e) {
+                main.getLogger().warning(String.format("Value could not be parsed into recognized type; this " +
+                        "PlantScript will not be loaded until this is fixed in section: %s", section.getCurrentPath()));
+                return null;
+            }
+        }
+        main.getLogger().warning(String.format("No variable section or value provided; this PlantScript will not be " +
+                "loaded until this is fixed in section: %s", section.getCurrentPath()));
+        return null;
+    }
+
+    // types - helpful
+    ScriptBlock createScriptOperationUnary(ConfigurationSection section, PlantData data) {
+        ConfigurationSection inputSection = section.getConfigurationSection("input");
+        if (inputSection == null) {
+            main.getLogger().warning("Input operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        return createPlantScript(inputSection, data);
+    }
+
+    ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, PlantData data) {
+        ConfigurationSection leftSection = section.getConfigurationSection("left");
+        ConfigurationSection rightSection = section.getConfigurationSection("right");
+        if (leftSection == null || rightSection == null) {
+            main.getLogger().warning("Left or right operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock left = createPlantScript(leftSection, data);
+        if (left == null) {
+            return null;
+        }
+        ScriptBlock right = createPlantScript(rightSection, data);
+        if (right == null) {
+            return null;
+        }
+        ArrayList<ScriptBlock> arrayList = new ArrayList<>();
+        arrayList.add(left);
+        arrayList.add(right);
+        return arrayList;
+    }
+
+    // math
+    ScriptOperation createScriptOperationAdd(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationAdd(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationAddTo(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationAddTo(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationSubtract(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationSubtract(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationSubtractFrom(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationSubtractFrom(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationMultiply(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationMultiply(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationMultiplyBy(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationMultiplyBy(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationDivide(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationDivide(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationDivideBy(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationDivideBy(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationModulus(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationModulus(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationModulusOf(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationModulusOf(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationPower(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationPower(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationPowerOf(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationPowerOf(operands.get(0), operands.get(1));
+    }
+    
+    //logic
+    ScriptOperation createScriptOperationAnd(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationAnd(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationOr(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationOr(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationNot(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationNot(operand);
+    }
+    
+    //compare
+    ScriptOperation createScriptOperationEqual(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationEqual(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationNotEqual(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationNotEqual(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationGreaterThan(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationGreaterThan(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationGreaterThanOrEqualTo(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationGreaterThanOrEqualTo(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationLessThan(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationLessThan(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationLessThanOrEqualTo(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationLessThanOrEqualTo(operands.get(0), operands.get(1));
+    }
+
+    // cast
+    ScriptOperation createScriptOperationToBoolean(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationToBoolean(operand);
+    }
+    ScriptOperation createScriptOperationToDouble(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationToDouble(operand);
+    }
+    ScriptOperation createScriptOperationToLong(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationToLong(operand);
+    }
+    ScriptOperation createScriptOperationToString(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationToString(operand);
+    }
+
+    // functions
+    ScriptOperation createScriptOperationContains(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationContains(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationLength(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationLength(operand);
+    }
+    ScriptOperation createScriptOperationSetValue(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationSetValue(operands.get(0), operands.get(1));
+    }
+
+    //flow
+    ScriptOperation createScriptOperationIf(ConfigurationSection section, PlantData data) {
+        ConfigurationSection conditionSection = section.getConfigurationSection("condition");
+        ConfigurationSection ifTrueSection = section.getConfigurationSection("ifTrue");
+        ConfigurationSection ifFalseSection = section.getConfigurationSection("ifFalse");
+        if (conditionSection == null || ifTrueSection == null) {
+            main.getLogger().warning("Condition or ifTrue operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock condition = createPlantScript(conditionSection, data);
+        if (condition == null) {
+            return null;
+        }
+        ScriptBlock ifTrue = createPlantScript(ifTrueSection, data);
+        if (ifTrue == null) {
+            return null;
+        }
+        if (ifFalseSection == null) {
+            return new ScriptOperationIf(condition, ifTrue);
+        }
+        ScriptBlock ifFalse = createPlantScript(ifFalseSection, data);
+        if (ifFalse == null) {
+            return null;
+        }
+        return new ScriptOperationIf(condition, ifTrue, ifFalse);
+    }
+    ScriptOperation createScriptOperationFunction(ConfigurationSection section, PlantData data) {
+        int index = 0;
+        ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
+        for (String placeholder : section.getKeys(false)) {
+            ConfigurationSection placeholderSection = section.getConfigurationSection(placeholder);
+            if (placeholderSection == null) {
+                main.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
+                        "Function in section: %s", placeholder, section));
+                return null;
+            }
+            ScriptBlock scriptBlock = createPlantScript(placeholderSection, data);
+            if (scriptBlock == null) {
+                return null;
+            }
+            scriptBlocks[index] = scriptBlock;
+            index++;
+        }
+        if (scriptBlocks.length == 0) {
+            main.getLogger().warning("No subsections found to generate PlantScript Function in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationFunction(scriptBlocks);
+    }
+
+    //action
+    ScriptOperation createScriptOperationInteract(ConfigurationSection section, PlantData data) {
+        return null;
     }
 
     //endregion

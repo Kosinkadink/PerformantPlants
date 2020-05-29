@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.TextHelper;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class PlantChatEffect extends PlantEffect {
@@ -12,7 +12,7 @@ public class PlantChatEffect extends PlantEffect {
     public PlantChatEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         if (!fromPlayer.isEmpty()) {
             player.chat(TextHelper.translateAlternateColorCodes(fromPlayer));
         }

@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
@@ -9,6 +10,7 @@ import me.kosinkadink.performantplants.plants.PlantRecipe;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -62,8 +64,10 @@ public class RecipeEventListener implements Listener {
                         }
                     }
                     // perform effects on block
+                    Block block = null;
                     try {
-                        interact.getEffectStorage().performEffects(event.getInventory().getLocation().getBlock());
+                        block = event.getInventory().getLocation().getBlock();
+                        interact.getEffectStorage().performEffects(block, PlantBlock.wrapBlock(block));
                     } catch (NullPointerException e) {
                         // do nothing, just catch
                     }
@@ -73,7 +77,7 @@ public class RecipeEventListener implements Listener {
                         Player player = (Player) event.getWhoClicked();
                         PlantConsumable consumable = consumableStorage.getConsumable(player, EquipmentSlot.HAND);
                         if (consumable != null) {
-                            consumable.getEffectStorage().performEffects(player, player.getLocation());
+                            consumable.getEffectStorage().performEffects(player, PlantBlock.wrapBlock(block));
                         }
                     }
                 }

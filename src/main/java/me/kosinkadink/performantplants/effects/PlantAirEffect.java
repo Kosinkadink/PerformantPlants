@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import org.bukkit.Location;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.entity.Player;
 
 public class PlantAirEffect extends PlantEffect {
@@ -10,7 +10,7 @@ public class PlantAirEffect extends PlantEffect {
     public PlantAirEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         player.setRemainingAir(
                 Math.min(player.getMaximumAir(),
                         Math.max(0, player.getRemainingAir() + amount))

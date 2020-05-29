@@ -1,8 +1,8 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
@@ -13,12 +13,12 @@ public class PlantDropEffect extends PlantEffect {
     public PlantDropEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         DropHelper.performDrops(dropStorage, player.getLocation());
     }
 
     @Override
-    void performEffectAction(Block block) {
+    void performEffectAction(Block block, PlantBlock plantBlock) {
         DropHelper.performDrops(dropStorage, block);
     }
 

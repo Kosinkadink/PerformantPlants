@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -25,7 +26,7 @@ public class PlantParticleEffect extends PlantEffect {
     public PlantParticleEffect() { }
 
     @Override
-    void performEffectAction(Player player, Location location) {
+    void performEffectAction(Player player, PlantBlock plantBlock) {
         Location spawnLocation;
         if (eyeLocation) {
             spawnLocation = player.getEyeLocation();
@@ -64,7 +65,7 @@ public class PlantParticleEffect extends PlantEffect {
     }
 
     @Override
-    void performEffectAction(Block block) {
+    void performEffectAction(Block block, PlantBlock plantBlock) {
         Location spawnLocation = BlockHelper.getCenter(block);
         // add offset
         spawnLocation.add(offsetX, offsetY, offsetZ);

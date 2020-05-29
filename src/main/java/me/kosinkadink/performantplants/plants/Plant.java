@@ -2,11 +2,13 @@ package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
+import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ public class Plant {
     private PlantItem plantSeedItem;
     private HashMap<String, PlantItem> goods = new HashMap<>();
     private StageStorage stageStorage = new StageStorage();
+    private PlantData plantData;
     // growth requirements
     private boolean waterRequired = false;
     private boolean lavaRequired = false;
@@ -98,6 +101,14 @@ public class Plant {
         return null;
     }
 
+    public PlantData getPlantData() {
+        return plantData;
+    }
+
+    public void setPlantData(PlantData plantData) {
+        this.plantData = plantData;
+    }
+
     //region Growth Stage Actions
 
     public StageStorage getStageStorage() {
@@ -125,6 +136,10 @@ public class Plant {
     }
 
     //endregion
+
+    public boolean hasPlantData() {
+        return plantData != null;
+    }
 
     public boolean hasSeed() {
         return plantSeedItem != null;
@@ -235,5 +250,7 @@ public class Plant {
         }
         return true;
     }
+
+    public static Plant wrappedPlant = new Plant("_wrappedPlant", new PlantItem(new ItemStack(Material.AIR)));
 
 }
