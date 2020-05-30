@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationInteract;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
@@ -22,6 +23,10 @@ import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperatio
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationNot;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationOr;
 import me.kosinkadink.performantplants.scripting.operations.math.*;
+import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationChance;
+import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationChoice;
+import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomDouble;
+import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomLong;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
@@ -2107,6 +2112,18 @@ public class ConfigurationManager {
                 case "func":
                 case "function":
                     return createScriptOperationFunction(blockSection, data);
+                // action
+                case "interact":
+                    return createScriptOperationInteract(blockSection, data);
+                // random
+                case "chance":
+                    return createScriptOperationChance(blockSection, data);
+                case "choice":
+                    return createScriptOperationChoice(blockSection, data);
+                case "randomdouble":
+                    return createScriptOperationRandomDouble(blockSection, data);
+                case "randomlong":
+                    return createScriptOperationRandomLong(blockSection, data);
                 // not recognized
                 default:
                     main.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
@@ -2452,7 +2469,64 @@ public class ConfigurationManager {
 
     //action
     ScriptOperation createScriptOperationInteract(ConfigurationSection section, PlantData data) {
-        return null;
+        PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(section, data);
+        if (plantInteractStorage == null) {
+            main.getLogger().warning("Could not load interact section to generate PlantScript Interact in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        boolean useMainHand = true;
+        if (section.isBoolean("use-main-hand")) {
+            useMainHand = section.getBoolean("use-main-hand");
+        }
+        return new ScriptOperationInteract(plantInteractStorage, useMainHand);
+    }
+
+    //random
+    ScriptOperation createScriptOperationChance(ConfigurationSection section, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationChance(operand);
+    }
+    ScriptOperation createScriptOperationChoice(ConfigurationSection section, PlantData data) {
+        int index = 0;
+        ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
+        for (String placeholder : section.getKeys(false)) {
+            ConfigurationSection placeholderSection = section.getConfigurationSection(placeholder);
+            if (placeholderSection == null) {
+                main.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
+                        "Function in section: %s", placeholder, section));
+                return null;
+            }
+            ScriptBlock scriptBlock = createPlantScript(placeholderSection, data);
+            if (scriptBlock == null) {
+                return null;
+            }
+            scriptBlocks[index] = scriptBlock;
+            index++;
+        }
+        if (scriptBlocks.length == 0) {
+            main.getLogger().warning("No subsections found to generate PlantScript Choice in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationChoice(scriptBlocks);
+    }
+    ScriptOperation createScriptOperationRandomDouble(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationRandomDouble(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationRandomLong(ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationRandomLong(operands.get(0), operands.get(1));
     }
 
     //endregion

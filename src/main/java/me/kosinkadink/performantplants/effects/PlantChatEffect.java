@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.effects;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.entity.Player;
 
@@ -14,10 +15,12 @@ public class PlantChatEffect extends PlantEffect {
     @Override
     void performEffectAction(Player player, PlantBlock plantBlock) {
         if (!fromPlayer.isEmpty()) {
-            player.chat(TextHelper.translateAlternateColorCodes(fromPlayer));
+            String formatted = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, fromPlayer);
+            player.chat(TextHelper.translateAlternateColorCodes(formatted));
         }
         if (!toPlayer.isEmpty()) {
-            player.sendMessage(TextHelper.translateAlternateColorCodes(toPlayer));
+            String formatted = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, toPlayer);
+            player.sendMessage(TextHelper.translateAlternateColorCodes(formatted));
         }
     }
 

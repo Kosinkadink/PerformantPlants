@@ -15,12 +15,23 @@ import org.bukkit.inventory.ItemStack;
 public class ScriptOperationInteract extends ScriptOperation {
 
     private final PlantInteractStorage storage;
-    private final EquipmentSlot hand;
+    private final boolean useMainHand;
+    private EquipmentSlot hand;
 
-    public ScriptOperationInteract(PlantInteractStorage storage, EquipmentSlot hand) {
+    public ScriptOperationInteract(PlantInteractStorage storage, boolean useMainhand) {
         super();
         this.storage = storage;
-        this.hand = hand;
+        this.useMainHand = useMainhand;
+        setHand();
+
+    }
+
+    private void setHand() {
+        if (useMainHand) {
+            hand = EquipmentSlot.HAND;
+        } else {
+            hand = EquipmentSlot.OFF_HAND;
+        }
     }
 
     @Override
@@ -42,6 +53,11 @@ public class ScriptOperationInteract extends ScriptOperation {
             }
         }
         return ScriptResult.TRUE;
+    }
+
+    @Override
+    public boolean containsVariable() {
+        return true;
     }
 
     @Override
