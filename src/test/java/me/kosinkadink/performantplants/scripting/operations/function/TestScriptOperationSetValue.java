@@ -1,4 +1,4 @@
-package me.kosinkadink.performantplants.scripting.operations.functions;
+package me.kosinkadink.performantplants.scripting.operations.function;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;

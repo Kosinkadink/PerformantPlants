@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting.operations.logic;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
@@ -26,6 +27,11 @@ public class ScriptOperationNot extends ScriptOperationUnary {
     @Override
     protected void validateInputs() {
 
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.LOGIC;
     }
 
 }

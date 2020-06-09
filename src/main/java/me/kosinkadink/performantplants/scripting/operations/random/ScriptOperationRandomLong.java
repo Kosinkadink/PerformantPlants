@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting.operations.random;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
@@ -41,4 +42,15 @@ public class ScriptOperationRandomLong extends ScriptOperationBinary {
             throw new IllegalArgumentException("RandomLong operation only supports ScriptType LONG");
         }
     }
+
+    @Override
+    public boolean shouldOptimize() {
+        return false;
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.RANDOM;
+    }
+
 }

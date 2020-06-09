@@ -1,10 +1,7 @@
-package me.kosinkadink.performantplants.scripting.operations.functions;
+package me.kosinkadink.performantplants.scripting.operations.function;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.entity.Player;
 
 public class ScriptOperationSetValue extends ScriptOperation {
@@ -57,6 +54,11 @@ public class ScriptOperationSetValue extends ScriptOperation {
     @Override
     protected void setType() {
         type = getLeft().getType();
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.FUNCTION;
     }
 
 }

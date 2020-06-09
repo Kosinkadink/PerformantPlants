@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.random;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.RandomHelper;
 import org.bukkit.entity.Player;
 
@@ -82,4 +79,15 @@ public class ScriptOperationChoice extends ScriptOperation {
             }
         }
     }
+
+    @Override
+    public boolean shouldOptimize() {
+        return false;
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.RANDOM;
+    }
+
 }

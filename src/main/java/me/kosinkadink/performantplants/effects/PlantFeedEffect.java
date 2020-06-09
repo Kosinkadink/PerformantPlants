@@ -1,41 +1,46 @@
 package me.kosinkadink.performantplants.effects;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.entity.Player;
 
 public class PlantFeedEffect extends PlantEffect {
 
-    private int foodAmount = 0;
-    private float saturationAmount = 0;
+    private ScriptBlock foodAmount = ScriptResult.ZERO;
+    private ScriptBlock saturationAmount = ScriptResult.ZERO;
 
     public PlantFeedEffect() { }
 
-    public PlantFeedEffect(int foodAmount, float saturationAmount) {
-        this.foodAmount = foodAmount;
-        this.saturationAmount = saturationAmount;
-    }
-
     @Override
     void performEffectAction(Player player, PlantBlock plantBlock) {
-        int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + foodAmount));
-        float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + saturationAmount));
+        int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + getFoodAmountValue(player, plantBlock)));
+        float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + getSaturationAmountValue(player, plantBlock)));
         player.setFoodLevel(newFoodLevel);
         player.setSaturation(newSaturationLevel);
     }
 
-    public int getFoodAmount() {
+    public ScriptBlock getFoodAmount() {
         return foodAmount;
     }
 
-    public void setFoodAmount(int foodAmount) {
+    public int getFoodAmountValue(Player player, PlantBlock plantBlock) {
+        return foodAmount.loadValue(plantBlock, player).getIntegerValue();
+    }
+
+    public void setFoodAmount(ScriptBlock foodAmount) {
         this.foodAmount = foodAmount;
     }
 
-    public float getSaturationAmount() {
+    public ScriptBlock getSaturationAmount() {
         return saturationAmount;
     }
 
-    public void setSaturationAmount(float saturationAmount) {
+    public float getSaturationAmountValue(Player player, PlantBlock plantBlock) {
+        return saturationAmount.loadValue(plantBlock, player).getFloatValue();
+    }
+
+    public void setSaturationAmount(ScriptBlock saturationAmount) {
         this.saturationAmount = saturationAmount;
     }
 

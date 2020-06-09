@@ -1,6 +1,9 @@
 package me.kosinkadink.performantplants.effects;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -14,114 +17,153 @@ import java.util.ArrayList;
 
 public class PlantAreaEffect extends PlantEffect {
 
-    private ArrayList<PotionEffect> potionEffects = new ArrayList<>();
-    private Color color;
-    private int duration = 200;
-    private int durationOnUse = 0;
-    private Particle particle;
-    private float radius = 1;
-    private float radiusOnUse = 0;
-    private float radiusPerTick = 0;
-    private int reapplicationDelay = 5;
+    private final ArrayList<PotionEffect> potionEffects = new ArrayList<>();
+    private ScriptColor color = new ScriptColor();
+    private ScriptBlock duration = new ScriptResult(200);
+    private ScriptBlock durationOnUse = ScriptResult.ZERO;
+    private ScriptBlock particleName = null;
+    private ScriptBlock radius = new ScriptResult(1.0);
+    private ScriptBlock radiusOnUse = ScriptResult.ZERO;
+    private ScriptBlock radiusPerTick = ScriptResult.ZERO;
+    private ScriptBlock reapplicationDelay = new ScriptResult(5);
 
-    Consumer<AreaEffectCloud> consumer = new Consumer<AreaEffectCloud>() {
-        @Override
-        public void accept(AreaEffectCloud cloud) {
+    private Consumer<AreaEffectCloud> getConsumer(Player player, PlantBlock plantBlock) {
+        return cloud -> {
             for (PotionEffect potionEffect : potionEffects) {
                 cloud.addCustomEffect(potionEffect, false);
             }
             if (color != null) {
-                cloud.setColor(color);
+                cloud.setColor(getColorValue(player, plantBlock));
             }
+            Particle particle = getParticleValue(player, plantBlock);
             if (particle != null) {
                 cloud.setParticle(particle);
             }
-            cloud.setDuration(duration);
-            cloud.setDurationOnUse(durationOnUse);
-            cloud.setRadius(radius);
-            cloud.setRadiusOnUse(radiusOnUse);
-            cloud.setRadiusPerTick(radiusPerTick);
-            cloud.setReapplicationDelay(reapplicationDelay);
-        }
-    };
+            cloud.setDuration(getDurationValue(player, plantBlock));
+            cloud.setDurationOnUse(getDurationOnUseValue(player, plantBlock));
+            cloud.setRadius(getRadiusValue(player, plantBlock));
+            cloud.setRadiusOnUse(getRadiusOnUseValue(player, plantBlock));
+            cloud.setRadiusPerTick(getRadiusPerTickValue(player, plantBlock));
+            cloud.setReapplicationDelay(getReapplicationDelayValue(player, plantBlock));
+        };
+    }
 
     public PlantAreaEffect() { }
 
     @Override
     void performEffectAction(Player player, PlantBlock plantBlock) {
-        player.getWorld().spawn(player.getLocation(), AreaEffectCloud.class, consumer);
+        player.getWorld().spawn(player.getLocation(), AreaEffectCloud.class, getConsumer(player, plantBlock));
     }
 
     @Override
     void performEffectAction(Block block, PlantBlock plantBlock) {
-        block.getWorld().spawn(BlockHelper.getCenter(block), AreaEffectCloud.class, consumer);
+        block.getWorld().spawn(BlockHelper.getCenter(block), AreaEffectCloud.class, getConsumer(null, plantBlock));
     }
 
     public void addPotionEffect(PotionEffect potionEffect) {
         potionEffects.add(potionEffect);
     }
 
-    public Color getColor() {
+    public ScriptColor getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public Color getColorValue(Player player, PlantBlock plantBlock) {
+        return color.getColor(player, plantBlock);
+    }
+
+    public void setColor(ScriptColor color) {
         this.color = color;
     }
 
-    public int getDuration() {
+    public ScriptBlock getDuration() {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public int getDurationValue(Player player, PlantBlock plantBlock) {
+        return duration.loadValue(plantBlock, player).getIntegerValue();
+    }
+
+    public void setDuration(ScriptBlock duration) {
         this.duration = duration;
     }
 
-    public int getDurationOnUse() {
+    public ScriptBlock getDurationOnUse() {
         return durationOnUse;
     }
 
-    public void setDurationOnUse(int durationOnUse) {
+    public int getDurationOnUseValue(Player player, PlantBlock plantBlock) {
+        return durationOnUse.loadValue(plantBlock, player).getIntegerValue();
+    }
+
+    public void setDurationOnUse(ScriptBlock durationOnUse) {
         this.durationOnUse = durationOnUse;
     }
 
-    public Particle getParticle() {
-        return particle;
+    public ScriptBlock getParticleName() {
+        return particleName;
     }
 
-    public void setParticle(Particle particle) {
-        this.particle = particle;
+    public Particle getParticleValue(Player player, PlantBlock plantBlock) {
+        if (particleName == null) {
+            return null;
+        }
+        try {
+            return Particle.valueOf(particleName.loadValue(plantBlock, player).getStringValue().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
-    public float getRadius() {
+    public void setParticleName(ScriptBlock particleName) {
+        this.particleName = particleName;
+    }
+
+    public ScriptBlock getRadius() {
         return radius;
     }
 
-    public void setRadius(float radius) {
+    public float getRadiusValue(Player player, PlantBlock plantBlock) {
+        return radius.loadValue(plantBlock, player).getFloatValue();
+    }
+
+    public void setRadius(ScriptBlock radius) {
         this.radius = radius;
     }
 
-    public float getRadiusOnUse() {
+    public ScriptBlock getRadiusOnUse() {
         return radiusOnUse;
     }
 
-    public void setRadiusOnUse(float radiusOnUse) {
+    public float getRadiusOnUseValue(Player player, PlantBlock plantBlock) {
+        return radiusOnUse.loadValue(plantBlock, player).getFloatValue();
+    }
+
+    public void setRadiusOnUse(ScriptBlock radiusOnUse) {
         this.radiusOnUse = radiusOnUse;
     }
 
-    public float getRadiusPerTick() {
+    public ScriptBlock getRadiusPerTick() {
         return radiusPerTick;
     }
 
-    public void setRadiusPerTick(float radiusPerTick) {
+    public float getRadiusPerTickValue(Player player, PlantBlock plantBlock) {
+        return radiusPerTick.loadValue(plantBlock, player).getFloatValue();
+    }
+
+    public void setRadiusPerTick(ScriptBlock radiusPerTick) {
         this.radiusPerTick = radiusPerTick;
     }
 
-    public int getReapplicationDelay() {
+    public ScriptBlock getReapplicationDelay() {
         return reapplicationDelay;
     }
 
-    public void setReapplicationDelay(int reapplicationDelay) {
+    public int getReapplicationDelayValue(Player player, PlantBlock plantBlock) {
+        return reapplicationDelay.loadValue(plantBlock, player).getIntegerValue();
+    }
+
+    public void setReapplicationDelay(ScriptBlock reapplicationDelay) {
         this.reapplicationDelay = reapplicationDelay;
     }
 }

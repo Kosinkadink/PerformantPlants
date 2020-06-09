@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.compare;
 
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
@@ -20,6 +21,11 @@ public abstract class ScriptOperationCompare extends ScriptOperationBinary {
     @Override
     protected void setType() {
         type = ScriptType.BOOLEAN;
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.COMPARE;
     }
 
 }

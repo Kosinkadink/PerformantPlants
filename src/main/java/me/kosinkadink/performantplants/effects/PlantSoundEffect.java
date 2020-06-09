@@ -1,6 +1,8 @@
 package me.kosinkadink.performantplants.effects;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -9,124 +11,205 @@ import org.bukkit.entity.Player;
 
 public class PlantSoundEffect extends PlantEffect {
 
-    private Sound sound;
-    private float volume = 1;
-    private float pitch = 1;
-    private double offsetX = 0;
-    private double offsetY = 0;
-    private double offsetZ = 0;
-    private double multiplier = 0.0;
-    private boolean ignoreDirectionY = false;
-    private boolean eyeLocation = true;
-    private boolean clientSide = true;
+    private ScriptBlock soundName = new ScriptResult("UI_BUTTON_CLICK");
+    private ScriptBlock volume = new ScriptResult(1.0);
+    private ScriptBlock pitch = new ScriptResult(1.0);
+    private ScriptBlock offsetX = ScriptResult.ZERO;
+    private ScriptBlock offsetY = ScriptResult.ZERO;
+    private ScriptBlock offsetZ = ScriptResult.ZERO;
+    private ScriptBlock multiplier = ScriptResult.ZERO;
+    private ScriptBlock eyeLocation = ScriptResult.TRUE;
+    private ScriptBlock ignoreDirectionY = ScriptResult.FALSE;
+    private ScriptBlock clientSide = ScriptResult.FALSE;
 
     public PlantSoundEffect() { }
 
     @Override
     void performEffectAction(Player player, PlantBlock plantBlock) {
         Location spawnLocation;
-        if (eyeLocation) {
+        // use eye location, if set
+        if (isEyeLocation(player, plantBlock)) {
             spawnLocation = player.getEyeLocation();
         } else {
             spawnLocation = player.getLocation();
         }
-        spawnLocation.add(offsetX, offsetY, offsetZ);
-        if (ignoreDirectionY) {
-            spawnLocation.add(player.getLocation().getDirection().setY(0).normalize().multiply(multiplier));
+        spawnLocation.add(
+                getOffsetXValue(player, plantBlock),
+                getOffsetYValue(player, plantBlock),
+                getOffsetZValue(player, plantBlock)
+        );
+        // ignore direction y with multiplier, if set
+        if (isIgnoreDirectionY(player, plantBlock)) {
+            spawnLocation.add(player.getLocation().getDirection().setY(0).normalize().multiply(
+                    getMultiplierValue(player, plantBlock)
+            ));
         } else {
-            spawnLocation.add(player.getLocation().getDirection().normalize().multiply(multiplier));
+            spawnLocation.add(player.getLocation().getDirection().normalize().multiply(
+                    getMultiplierValue(player, plantBlock)
+            ));
         }
-        if (clientSide) {
-            player.playSound(spawnLocation, sound, volume, pitch);
+        // get particle value
+        Sound sound = getSound(player, plantBlock);
+        if (sound == null) {
+            return;
+        }
+        // do client-side, if set
+        if (isClientSide(player, plantBlock)) {
+            player.playSound(spawnLocation, sound,
+                    getVolumeValue(player, plantBlock),
+                    getPitchValue(player, plantBlock)
+            );
         } else {
-            player.getWorld().playSound(spawnLocation, sound, volume, pitch);
+            player.getWorld().playSound(spawnLocation, sound,
+                    getVolumeValue(player, plantBlock),
+                    getPitchValue(player, plantBlock)
+            );
         }
     }
 
     @Override
     void performEffectAction(Block block, PlantBlock plantBlock) {
         Location spawnLocation = BlockHelper.getCenter(block);
-        spawnLocation.add(offsetX, offsetY, offsetZ);
-        block.getWorld().playSound(spawnLocation, sound, volume, pitch);
+        // add offset
+        spawnLocation.add(
+                getOffsetXValue(null, plantBlock),
+                getOffsetYValue(null, plantBlock),
+                getOffsetZValue(null, plantBlock)
+        );
+        Sound sound = getSound(null, plantBlock);
+        if (sound == null) {
+            return;
+        }
+        block.getWorld().playSound(spawnLocation, sound,
+                getVolumeValue(null, plantBlock),
+                getPitchValue(null, plantBlock)
+        );
     }
 
-    public Sound getSound() {
-        return sound;
+    public ScriptBlock getSoundName() {
+        return soundName;
     }
 
-    public void setSound(Sound sound) {
-        this.sound = sound;
+    public Sound getSound(Player player, PlantBlock plantBlock) {
+        if (soundName == null) {
+            return null;
+        }
+        try {
+            return Sound.valueOf(soundName.loadValue(plantBlock, player).getStringValue().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
-    public float getVolume() {
+    public void setSoundName(ScriptBlock soundName) {
+        this.soundName = soundName;
+    }
+
+    public ScriptBlock getVolume() {
         return volume;
     }
 
-    public void setVolume(float volume) {
-        this.volume = Math.max(0, volume);
+    public float getVolumeValue(Player player, PlantBlock plantBlock) {
+        return Math.max(0, volume.loadValue(plantBlock, player).getFloatValue());
     }
 
-    public float getPitch() {
+    public void setVolume(ScriptBlock volume) {
+        this.volume = volume;
+    }
+
+    public ScriptBlock getPitch() {
         return pitch;
     }
 
-    public void setPitch(float pitch) {
-        this.pitch = Math.max(0.5F,Math.min(2.0F, pitch));
+    public float getPitchValue(Player player, PlantBlock plantBlock) {
+        return Math.max(0.5F,Math.min(2.0F, pitch.loadValue(plantBlock, player).getFloatValue()));
     }
 
-    public double getOffsetX() {
+    public void setPitch(ScriptBlock pitch) {
+        this.pitch = pitch;
+    }
+
+    public ScriptBlock getOffsetX() {
         return offsetX;
     }
 
-    public void setOffsetX(double offsetX) {
+    public double getOffsetXValue(Player player, PlantBlock plantBlock) {
+        return offsetX.loadValue(plantBlock, player).getDoubleValue();
+    }
+
+    public void setOffsetX(ScriptBlock offsetX) {
         this.offsetX = offsetX;
     }
 
-    public double getOffsetY() {
+    public ScriptBlock getOffsetY() {
         return offsetY;
     }
 
-    public void setOffsetY(double offsetY) {
+    public double getOffsetYValue(Player player, PlantBlock plantBlock) {
+        return offsetY.loadValue(plantBlock, player).getDoubleValue();
+    }
+
+    public void setOffsetY(ScriptBlock offsetY) {
         this.offsetY = offsetY;
     }
 
-    public double getOffsetZ() {
+    public ScriptBlock getOffsetZ() {
         return offsetZ;
     }
 
-    public void setOffsetZ(double offsetZ) {
+    public double getOffsetZValue(Player player, PlantBlock plantBlock) {
+        return offsetZ.loadValue(plantBlock, player).getDoubleValue();
+    }
+
+    public void setOffsetZ(ScriptBlock offsetZ) {
         this.offsetZ = offsetZ;
     }
 
-    public double getMultiplier() {
+    public ScriptBlock getMultiplier() {
         return multiplier;
     }
 
-    public void setMultiplier(double multiplier) {
+    public double getMultiplierValue(Player player, PlantBlock plantBlock) {
+        return multiplier.loadValue(plantBlock, player).getDoubleValue();
+    }
+
+    public void setMultiplier(ScriptBlock multiplier) {
         this.multiplier = multiplier;
     }
 
-    public boolean isIgnoreDirectionY() {
-        return ignoreDirectionY;
-    }
-
-    public void setIgnoreDirectionY(boolean ignoreDirectionY) {
-        this.ignoreDirectionY = ignoreDirectionY;
-    }
-
-    public boolean isEyeLocation() {
+    public ScriptBlock getEyeLocation() {
         return eyeLocation;
     }
 
-    public void setEyeLocation(boolean eyeLocation) {
+    public boolean isEyeLocation(Player player, PlantBlock plantBlock) {
+        return eyeLocation.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setEyeLocation(ScriptBlock eyeLocation) {
         this.eyeLocation = eyeLocation;
     }
 
-    public boolean isClientSide() {
+    public ScriptBlock getIgnoreDirectionY() {
+        return ignoreDirectionY;
+    }
+
+    public boolean isIgnoreDirectionY(Player player, PlantBlock plantBlock) {
+        return ignoreDirectionY.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setIgnoreDirectionY(ScriptBlock ignoreDirectionY) {
+        this.ignoreDirectionY = ignoreDirectionY;
+    }
+
+    public ScriptBlock getClientSide() {
         return clientSide;
     }
 
-    public void setClientSide(boolean clientSide) {
+    public boolean isClientSide(Player player, PlantBlock plantBlock) {
+        return clientSide.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setClientSide(ScriptBlock clientSide) {
         this.clientSide = clientSide;
     }
 }

@@ -4,7 +4,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
-import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationSetValue;
+import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationSetValue;
 import org.bukkit.entity.Player;
 
 public class ScriptOperationDivideBy extends ScriptOperationDivide {

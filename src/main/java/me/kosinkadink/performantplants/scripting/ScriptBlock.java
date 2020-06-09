@@ -15,6 +15,14 @@ public abstract class ScriptBlock {
 
     public abstract boolean containsVariable();
 
+    public abstract boolean containsCategories(ScriptCategory... categories);
+
+    public abstract ScriptCategory getCategory();
+
+    public abstract ScriptBlock optimizeSelf();
+
+    public abstract boolean shouldOptimize();
+
     public ScriptType getType() {
         return type;
     }

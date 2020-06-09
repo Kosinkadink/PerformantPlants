@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationChangeStage;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationInteract;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
@@ -16,9 +17,9 @@ import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperation
 import me.kosinkadink.performantplants.scripting.operations.compare.*;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationFunction;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
-import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationContains;
-import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationLength;
-import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationSetValue;
+import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationContains;
+import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationLength;
+import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationSetValue;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationAnd;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationNot;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationOr;
@@ -27,6 +28,7 @@ import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperati
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationChoice;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomDouble;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomLong;
+import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
@@ -167,7 +169,7 @@ public class ConfigurationManager {
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
         // add consumable behavior
-        PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig);
+        PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig, null);
         if (consumable != null) {
             plantItem.setConsumableStorage(consumable);
         }
@@ -443,7 +445,7 @@ public class ConfigurationManager {
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
                     addPricesToPlantItem(goodSection, goodItem);
-                    PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection);
+                    PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection, null);
                     if (goodConsumable != null) {
                         goodItem.setConsumableStorage(goodConsumable);
                     }
@@ -761,7 +763,7 @@ public class ConfigurationManager {
             if (section.isConfigurationSection("potion-color")) {
                 ConfigurationSection colorSection = section.getConfigurationSection("potion-color");
                 if (colorSection != null) {
-                    Color potionColor = createColor(colorSection);
+                    Color potionColor = createColor(colorSection, null).getColor(null, null);
                     if (potionColor != null) {
                         finalItemSettings.setPotionColor(potionColor);
                     }
@@ -998,9 +1000,9 @@ public class ConfigurationManager {
             plantInteract.setDropStorage(dropStorage);
         }
         // add effects, if present
-        addEffectsToEffectStorage(section, plantInteract.getEffectStorage());
+        addEffectsToEffectStorage(section, plantInteract.getEffectStorage(), data);
         // add consumable, if present
-        PlantConsumableStorage consumable = loadPlantConsumableStorage(section);
+        PlantConsumableStorage consumable = loadPlantConsumableStorage(section, data);
         if (consumable != null) {
             plantInteract.setConsumableStorage(consumable);
         }
@@ -1012,7 +1014,7 @@ public class ConfigurationManager {
         return plantInteract;
     }
 
-    PlantConsumableStorage loadPlantConsumableStorage(ConfigurationSection section) {
+    PlantConsumableStorage loadPlantConsumableStorage(ConfigurationSection section, PlantData data) {
         if (section == null) {
             return null;
         }
@@ -1023,7 +1025,7 @@ public class ConfigurationManager {
         PlantConsumableStorage consumableStorage = new PlantConsumableStorage();
         for (String placeholder : consumableStorageSection.getKeys(false)) {
             if (consumableStorageSection.isConfigurationSection(placeholder)) {
-                PlantConsumable consumable = loadPlantConsumable(consumableStorageSection.getConfigurationSection(placeholder));
+                PlantConsumable consumable = loadPlantConsumable(consumableStorageSection.getConfigurationSection(placeholder), data);
                 if (consumable != null) {
                     consumableStorage.addConsumable(consumable);
                 }
@@ -1035,7 +1037,7 @@ public class ConfigurationManager {
         return consumableStorage;
     }
 
-    PlantConsumable loadPlantConsumable(ConfigurationSection section) {
+    PlantConsumable loadPlantConsumable(ConfigurationSection section, PlantData data) {
         if (section == null) {
             return null;
         }
@@ -1109,25 +1111,41 @@ public class ConfigurationManager {
             }
         }
         // add effects, if present
-        addEffectsToEffectStorage(section, consumable.getEffectStorage());
+        addEffectsToEffectStorage(section, consumable.getEffectStorage(), data);
         // return consumable
         return consumable;
     }
 
-    Color createColor(ConfigurationSection section) {
-        int r = 0;
-        int g = 0;
-        int b = 0;
-        if (section.isInt("r")) {
-            r = Math.min(255, Math.max(0, section.getInt("r")));
+    ScriptColor createColor(ConfigurationSection section, PlantData data) {
+        ScriptColor color = new ScriptColor();
+        if (section.isSet("r")) {
+            ScriptBlock red = createPlantScript(section, "r", data);
+            if (red == null || !ScriptHelper.isLong(red)) {
+                main.getLogger().warning(String.format("Color will not have chosen red value and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        color.getRed().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+            }
+            color.setRed(red);
         }
-        if (section.isInt("g")) {
-            g = Math.min(255, Math.max(0, section.getInt("g")));
+        if (section.isSet("g")) {
+            ScriptBlock green = createPlantScript(section, "g", data);
+            if (green == null || !ScriptHelper.isLong(green)) {
+                main.getLogger().warning(String.format("Color will not have chosen green value and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        color.getGreen().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+            }
+            color.setGreen(green);
         }
-        if (section.isInt("b")) {
-            b = Math.min(255, Math.max(0, section.getInt("b")));
+        if (section.isSet("b")) {
+            ScriptBlock blue = createPlantScript(section, "b", data);
+            if (blue == null || !ScriptHelper.isLong(blue)) {
+                main.getLogger().warning(String.format("Color will not have chosen blue value and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        color.getBlue().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+            }
+            color.setBlue(blue);
         }
-        return Color.fromRGB(r,g,b);
+        return color;
     }
 
     PotionData createPotionData(ConfigurationSection section) {
@@ -1217,7 +1235,7 @@ public class ConfigurationManager {
         }
     }
 
-    void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data) {
         if (section == null || effectStorage == null) {
             return;
         }
@@ -1228,7 +1246,7 @@ public class ConfigurationManager {
         for (String placeholder : effectsSection.getKeys(false)) {
             ConfigurationSection effectSection = effectsSection.getConfigurationSection(placeholder);
             if (effectSection != null) {
-                addEffect(effectSection, effectStorage);
+                addEffect(effectSection, effectStorage, data);
             }
         }
         // set effect limit, if present
@@ -1239,7 +1257,7 @@ public class ConfigurationManager {
 
     //region Add Effects
 
-    boolean addEffect(ConfigurationSection section, PlantEffectStorage effectStorage) {
+    boolean addEffect(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data) {
         String type = section.getString("type");
         if (type == null) {
             main.getLogger().warning("Type not set for effect at: " + section.getCurrentPath());
@@ -1248,46 +1266,46 @@ public class ConfigurationManager {
         PlantEffect effect = null;
         switch (type.toLowerCase()) {
             case "feed":
-                effect = createFeedEffect(section);
+                effect = createFeedEffect(section, data);
                 break;
             case "heal":
-                effect = createHealEffect(section);
+                effect = createHealEffect(section, data);
                 break;
             case "sound":
-                effect = createSoundEffect(section);
+                effect = createSoundEffect(section, data);
                 break;
             case "particle":
-                effect = createParticleEffect(section);
+                effect = createParticleEffect(section, data);
                 break;
             case "potion":
-                effect = createPotionEffect(section);
+                effect = createPotionEffect(section, data);
                 break;
             case "drop":
-                effect = createDropEffect(section);
+                effect = createDropEffect(section, data);
                 break;
             case "air":
-                effect = createAirEffect(section);
+                effect = createAirEffect(section, data);
                 break;
             case "area":
-                effect = createAreaEffect(section);
+                effect = createAreaEffect(section, data);
                 break;
             case "durability":
-                effect = createDurabilityEffect(section);
+                effect = createDurabilityEffect(section, data);
                 break;
             case "chat":
-                effect = createChatEffect(section);
+                effect = createChatEffect(section, data);
                 break;
             case "explosion":
-                effect = createExplosionEffect(section);
+                effect = createExplosionEffect(section, data);
                 break;
             case "command":
-                effect = createCommandEffect(section);
+                effect = createCommandEffect(section, data);
                 break;
             default:
                 break;
         }
         if (effect != null) {
-            addChanceAndDelayToEffect(section, effect);
+            addDoIfAndDelayToEffect(section, effect, data);
             effectStorage.addEffect(effect);
             return true;
         }
@@ -1296,194 +1314,392 @@ public class ConfigurationManager {
         return false;
     }
 
-    PlantFeedEffect createFeedEffect(ConfigurationSection section) {
+    PlantFeedEffect createFeedEffect(ConfigurationSection section, PlantData data) {
         PlantFeedEffect effect = new PlantFeedEffect();
         // set food amount, if present
-        if (section.isInt("food-amount")) {
-            effect.setFoodAmount(section.getInt("food-amount"));
+        if (section.isSet("food-amount")) {
+            ScriptBlock foodAmount = createPlantScript(section, "food-amount", data);
+            if (foodAmount == null || !ScriptHelper.isLong(foodAmount)) {
+                main.getLogger().warning(String.format("Feed effect will not have chosen food-amount and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getFoodAmountValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setFoodAmount(foodAmount);
+            }
         }
         // set saturation amount, if present
-        if (section.isDouble("saturate-amount") || section.isInt("saturate-amount")) {
-            effect.setSaturationAmount((float)section.getDouble("saturate-amount"));
+        if (section.isSet("saturate-amount")) {
+            ScriptBlock saturateAmount = createPlantScript(section, "saturate-amount", data);
+            if (saturateAmount == null || !ScriptHelper.isNumeric(saturateAmount)) {
+                main.getLogger().warning(String.format("Feed effect will not have chosen saturate-amount and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getSaturationAmountValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setSaturationAmount(saturateAmount);
+            }
         }
         return effect;
     }
 
-    PlantHealEffect createHealEffect(ConfigurationSection section) {
+    PlantHealEffect createHealEffect(ConfigurationSection section, PlantData data) {
         PlantHealEffect effect = new PlantHealEffect();
         // set heal amount, if set
-        if (section.isDouble("heal-amount") || section.isInt("heal-amount")) {
-            effect.setHealAmount(section.getDouble("heal-amount"));
+        if (section.isSet("heal-amount")) {
+            ScriptBlock healAmount = createPlantScript(section, "heal-amount", data);
+            if (healAmount == null || !ScriptHelper.isNumeric(healAmount)) {
+                main.getLogger().warning(String.format("Heal effect will not have chosen heal-amount and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getHealAmountValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setHealAmount(healAmount);
+            }
         }
         return effect;
     }
 
-    PlantSoundEffect createSoundEffect(ConfigurationSection section) {
+    PlantSoundEffect createSoundEffect(ConfigurationSection section, PlantData data) {
         // set sound
         PlantSoundEffect effect = new PlantSoundEffect();
-        if (!section.isString("sound")) {
+        if (!section.isSet("sound")) {
             main.getLogger().warning("Sound effect not added; sound field not found in section: " + section.getCurrentPath());
             return null;
         }
-        String name = section.getString("sound");
-        if (name == null) {
-            main.getLogger().warning("Sound effect not added; sound field was null in section: " + section.getCurrentPath());
+        ScriptBlock sound = createPlantScript(section, "sound", data);
+        if (sound == null || !ScriptHelper.isString(sound)) {
+            main.getLogger().warning(String.format("Sound effect not added; sound field must be ScriptType STRING in section %s",
+                    section.getCurrentPath()));
             return null;
         }
-        Sound sound;
-        try {
-            sound = Sound.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            main.getLogger().warning(String.format("Sound effect not added; sound '%s' not recognized", name));
-            return null;
-        }
-        effect.setSound(sound);
+        effect.setSoundName(sound);
+        // TODO: check that sound exists if does not include variables
         // set volume, if present
-        if (section.isDouble("volume") || section.isInt("volume")) {
-            effect.setVolume((float)section.getDouble("volume"));
+        if (section.isSet("volume")) {
+            ScriptBlock volume = createPlantScript(section, "volume", data);
+            if (volume == null || !ScriptHelper.isNumeric(volume)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen volume and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getVolumeValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setVolume(volume);
+            }
         }
         // set pitch, if present
-        if (section.isDouble("pitch") || section.isInt("pitch")) {
-            effect.setPitch((float)section.getDouble("pitch"));
+        if (section.isSet("pitch")) {
+            ScriptBlock pitch = createPlantScript(section, "pitch", data);
+            if (pitch == null || !ScriptHelper.isNumeric(pitch)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen pitch and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getPitchValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setPitch(pitch);
+            }
         }
         // set offsets, if present
-        if (section.isInt("offset-x") || section.isDouble("offset-x")) {
-            effect.setOffsetX(section.getDouble("offset-x"));
+        // set offsets, if present
+        if (section.isSet("offset-x")) {
+            ScriptBlock offsetX = createPlantScript(section, "offset-x", data);
+            if (offsetX == null || !ScriptHelper.isNumeric(offsetX)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen offset-x and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetXValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetX(offsetX);
+            }
         }
-        if (section.isInt("offset-y") || section.isDouble("offset-y")) {
-            effect.setOffsetY(section.getDouble("offset-y"));
+        if (section.isSet("offset-y")) {
+            ScriptBlock offsetY = createPlantScript(section, "offset-y", data);
+            if (offsetY == null || !ScriptHelper.isNumeric(offsetY)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen offset-y and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetYValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetY(offsetY);
+            }
         }
-        if (section.isInt("offset-z") || section.isDouble("offset-z")) {
-            effect.setOffsetZ(section.getDouble("offset-z"));
+        if (section.isSet("offset-z")) {
+            ScriptBlock offsetZ = createPlantScript(section, "offset-z", data);
+            if (offsetZ == null || !ScriptHelper.isNumeric(offsetZ)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen offset-z and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetZValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetZ(offsetZ);
+            }
         }
         // set multiplier, if present
-        if (section.isInt("multiplier") || section.isDouble("multiplier")) {
-            effect.setMultiplier(section.getDouble("multiplier"));
-        }
-        // set if should ignore y component of facing direction
-        if (section.isBoolean("ignore-direction-y")) {
-            effect.setIgnoreDirectionY(section.getBoolean("ignore-direction-y"));
+        if (section.isSet("multiplier")) {
+            ScriptBlock multiplier = createPlantScript(section, "multiplier", data);
+            if (multiplier == null || !ScriptHelper.isNumeric(multiplier)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen multiplier and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getMultiplierValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setMultiplier(multiplier);
+            }
         }
         // set if should be eye location, if present
-        if (section.isBoolean("eye-location")) {
-            effect.setEyeLocation(section.getBoolean("eye-location"));
+        if (section.isSet("eye-location")) {
+            ScriptBlock eyeLocation = createPlantScript(section, "eye-location", data);
+            if (eyeLocation == null || !ScriptHelper.isBoolean(eyeLocation)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen eye-location value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isEyeLocation(null, null), section.getCurrentPath()));
+            } else {
+                effect.setEyeLocation(eyeLocation);
+            }
+        }
+        // set if should ignore y component of facing direction
+        if (section.isSet("ignore-direction-y")) {
+            ScriptBlock ignoreDirectionY = createPlantScript(section, "ignore-direction-y", data);
+            if (ignoreDirectionY == null || !ScriptHelper.isBoolean(ignoreDirectionY)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen ignore-direction-y value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isIgnoreDirectionY(null, null), section.getCurrentPath()));
+            } else {
+                effect.setIgnoreDirectionY(ignoreDirectionY);
+            }
         }
         // set client-side, if present
-        if (section.isBoolean("client-side")) {
-            effect.setClientSide(section.getBoolean("client-side"));
+        if (section.isSet("client-side")) {
+            ScriptBlock clientSide = createPlantScript(section, "client-side", data);
+            if (clientSide == null || !ScriptHelper.isBoolean(clientSide)) {
+                main.getLogger().warning(String.format("Sound effect will not have chosen client-side value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isClientSide(null, null), section.getCurrentPath()));
+            } else {
+                effect.setClientSide(clientSide);
+            }
         }
         return effect;
     }
 
-    PlantParticleEffect createParticleEffect(ConfigurationSection section) {
+    PlantParticleEffect createParticleEffect(ConfigurationSection section, PlantData data) {
         // set particle
         PlantParticleEffect effect = new PlantParticleEffect();
-        if (!section.isString("particle")) {
-            main.getLogger().warning("Particle effect not added; particle field not found in section: " + section.getCurrentPath());
+        if (!section.isSet("particle")) {
+            main.getLogger().warning("Particle effect not added; particle was null in section: " + section.getCurrentPath());
             return null;
         }
-        String name = section.getString("particle");
-        if (name == null) {
-            main.getLogger().warning("Particle effect not added; particle field was null in section: " + section.getCurrentPath());
+        ScriptBlock particle = createPlantScript(section, "particle", data);
+        if (particle == null || !ScriptHelper.isString(particle)) {
+            main.getLogger().warning(String.format("Particle effect not added; particle must be ScriptType STRING in section %s",
+                    section.getCurrentPath()));
             return null;
         }
-        Particle particle;
-        try {
-            particle = Particle.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            main.getLogger().warning(String.format("Particle effect not added; particle '%s' not recognized", name));
-            return null;
-        }
-        effect.setParticle(particle);
+        effect.setParticleName(particle);
         // set count, if present
-        if (section.isInt("count")) {
-            effect.setCount(section.getInt("count"));
+        if (section.isSet("count")) {
+            ScriptBlock count = createPlantScript(section, "count", data);
+            if (count == null || !ScriptHelper.isLong(count)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen count and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getCountValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setCount(count);
+            }
         }
         // set offsets, if present
-        if (section.isInt("offset-x") || section.isDouble("offset-x")) {
-            effect.setOffsetX(section.getDouble("offset-x"));
+        if (section.isSet("offset-x")) {
+            ScriptBlock offsetX = createPlantScript(section, "offset-x", data);
+            if (offsetX == null || !ScriptHelper.isNumeric(offsetX)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen offset-x and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetXValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetX(offsetX);
+            }
         }
-        if (section.isInt("offset-y") || section.isDouble("offset-y")) {
-            effect.setOffsetY(section.getDouble("offset-y"));
+        if (section.isSet("offset-y")) {
+            ScriptBlock offsetY = createPlantScript(section, "offset-y", data);
+            if (offsetY == null || !ScriptHelper.isNumeric(offsetY)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen offset-y and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetYValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetY(offsetY);
+            }
         }
-        if (section.isInt("offset-z") || section.isDouble("offset-z")) {
-            effect.setOffsetZ(section.getDouble("offset-z"));
+        if (section.isSet("offset-z")) {
+            ScriptBlock offsetZ = createPlantScript(section, "offset-z", data);
+            if (offsetZ == null || !ScriptHelper.isNumeric(offsetZ)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen offset-z and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getOffsetZValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setOffsetZ(offsetZ);
+            }
         }
         // set data offsets, if present
-        if (section.isInt("data-offset-x") || section.isDouble("data-offset-x")) {
-            effect.setDataOffsetX(section.getDouble("data-offset-x"));
+        if (section.isSet("data-offset-x")) {
+            ScriptBlock dataOffsetX = createPlantScript(section, "data-offset-x", data);
+            if (dataOffsetX == null || !ScriptHelper.isNumeric(dataOffsetX)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen data-offset-x and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getDataOffsetXValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDataOffsetX(dataOffsetX);
+            }
         }
-        if (section.isInt("data-offset-y") || section.isDouble("data-offset-y")) {
-            effect.setDataOffsetY(section.getDouble("data-offset-y"));
+        if (section.isSet("data-offset-y")) {
+            ScriptBlock dataOffsetY = createPlantScript(section, "data-offset-y", data);
+            if (dataOffsetY == null || !ScriptHelper.isNumeric(dataOffsetY)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen data-offset-y and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getDataOffsetYValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDataOffsetY(dataOffsetY);
+            }
         }
-        if (section.isInt("data-offset-z") || section.isDouble("data-offset-z")) {
-            effect.setDataOffsetZ(section.getDouble("data-offset-z"));
+        if (section.isSet("data-offset-z")) {
+            ScriptBlock dataOffsetZ = createPlantScript(section, "data-offset-z", data);
+            if (dataOffsetZ == null || !ScriptHelper.isNumeric(dataOffsetZ)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen data-offset-z and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getDataOffsetZValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDataOffsetZ(dataOffsetZ);
+            }
         }
         // set multiplier, if present
-        if (section.isInt("multiplier") || section.isDouble("multiplier")) {
-            effect.setMultiplier(section.getDouble("multiplier"));
+        if (section.isSet("multiplier")) {
+            ScriptBlock multiplier = createPlantScript(section, "multiplier", data);
+            if (multiplier == null || !ScriptHelper.isNumeric(multiplier)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen multiplier and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getMultiplierValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setMultiplier(multiplier);
+            }
         }
         // set extra, if present
-        if (section.isInt("extra") || section.isDouble("extra")) {
-            effect.setExtra(section.getDouble("extra"));
+        if (section.isSet("extra")) {
+            ScriptBlock extra = createPlantScript(section, "extra", data);
+            if (extra == null || !ScriptHelper.isNumeric(extra)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen extra value and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getExtraValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setExtra(extra);
+            }
         }
         // set if should be eye location, if present
-        if (section.isBoolean("eye-location")) {
-            effect.setEyeLocation(section.getBoolean("eye-location"));
+        if (section.isSet("eye-location")) {
+            ScriptBlock eyeLocation = createPlantScript(section, "eye-location", data);
+            if (eyeLocation == null || !ScriptHelper.isBoolean(eyeLocation)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen eye-location value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isEyeLocation(null, null), section.getCurrentPath()));
+            } else {
+                effect.setEyeLocation(eyeLocation);
+            }
         }
         // set if should ignore y component of facing direction
-        if (section.isBoolean("ignore-direction-y")) {
-            effect.setIgnoreDirectionY(section.getBoolean("ignore-direction-y"));
+        if (section.isSet("ignore-direction-y")) {
+            ScriptBlock ignoreDirectionY = createPlantScript(section, "ignore-direction-y", data);
+            if (ignoreDirectionY == null || !ScriptHelper.isBoolean(ignoreDirectionY)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen ignore-direction-y value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isIgnoreDirectionY(null, null), section.getCurrentPath()));
+            } else {
+                effect.setIgnoreDirectionY(ignoreDirectionY);
+            }
         }
         // set client-side, if present
-        if (section.isBoolean("client-side")) {
-            effect.setClientSide(section.getBoolean("client-side"));
+        if (section.isSet("client-side")) {
+            ScriptBlock clientSide = createPlantScript(section, "client-side", data);
+            if (clientSide == null || !ScriptHelper.isBoolean(clientSide)) {
+                main.getLogger().warning(String.format("Particle effect will not have chosen client-side value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isClientSide(null, null), section.getCurrentPath()));
+            } else {
+                effect.setClientSide(clientSide);
+            }
         }
         return effect;
     }
 
-    PlantPotionEffect createPotionEffect(ConfigurationSection section) {
+    PlantPotionEffect createPotionEffect(ConfigurationSection section, PlantData data) {
         // set potion effect type
         PlantPotionEffect effect = new PlantPotionEffect();
-        if (!section.isString("potion")) {
-            main.getLogger().warning("Potion effect not added; potion field not found in section: " + section.getCurrentPath());
+        if (!section.isSet("potion")) {
+            main.getLogger().warning("Potion effect not added; potion not found in section: " + section.getCurrentPath());
             return null;
         }
-        String potionName = section.getString("potion");
-        if (potionName == null) {
-            main.getLogger().warning("Potion effect not added; potion field was null in section: " + section.getCurrentPath());
+        ScriptBlock potionName = createPlantScript(section, "potion", data);
+        if (potionName == null || !ScriptHelper.isString(potionName)) {
+            main.getLogger().warning(String.format("Potion effect not added; potion must be ScriptType STRING in section %s",
+                    section.getCurrentPath()));
             return null;
         }
-        PotionEffectType potionEffectType = PotionEffectType.getByName(potionName.toUpperCase());
-        if (potionEffectType == null) {
-            main.getLogger().warning(String.format("Potion effect not added; potion '%s' not recognized", potionName));
-            return null;
+        effect.setPotionEffectTypeName(potionName);
+        // if no variables, then check if potion is recognized
+        if (!potionName.containsVariable()) {
+            PotionEffectType potionEffectType = effect.getPotionEffectType(null, null);
+            if (potionEffectType == null) {
+                String potionNameString = potionName.loadValue(null, null).getStringValue();
+                main.getLogger().warning(String.format("Potion effect not added; potion '%s' not recognized", potionNameString));
+                return null;
+            }
         }
-        effect.setPotionEffectType(potionEffectType);
         // set duration, if present
-        if (section.isInt("duration")) {
-            effect.setDuration(section.getInt("duration"));
+        if (section.isSet("duration")) {
+            ScriptBlock duration = createPlantScript(section, "duration", data);
+            if (duration == null || !ScriptHelper.isLong(duration)) {
+                main.getLogger().warning(String.format("Potion effect will not have chosen duration and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getDurationValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDuration(duration);
+            }
         }
         // set amplifier, if present
-        if (section.isInt("amplifier")) {
-            effect.setAmplifier(section.getInt("amplifier")-1);
+        if (section.isSet("amplifier")) {
+            ScriptBlock amplifier = createPlantScript(section, "amplifier", data);
+            if (amplifier == null || !ScriptHelper.isLong(amplifier)) {
+                main.getLogger().warning(String.format("Potion effect will not have chosen amplifier and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getAmplifierValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setAmplifier(amplifier);
+            }
         }
         // set ambient, if present
-        if (section.isBoolean("ambient")) {
-            effect.setAmbient(section.getBoolean("ambient"));
+        if (section.isSet("ambient")) {
+            ScriptBlock ambient = createPlantScript(section, "ambient", data);
+            if (ambient == null || !ScriptHelper.isBoolean(ambient)) {
+                main.getLogger().warning(String.format("Potion effect will not have chosen ambient value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isAmbient(null, null), section.getCurrentPath()));
+            } else {
+                effect.setAmbient(ambient);
+            }
         }
         // set particles, if present
-        if (section.isBoolean("particles")) {
-            effect.setParticles(section.getBoolean("particles"));
+        if (section.isSet("particles")) {
+            ScriptBlock particles = createPlantScript(section, "particles", data);
+            if (particles == null || !ScriptHelper.isBoolean(particles)) {
+                main.getLogger().warning(String.format("Potion effect will not have chosen particles value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isParticles(null, null), section.getCurrentPath()));
+            } else {
+                effect.setParticles(particles);
+            }
         }
         // set icon
-        if (section.isBoolean("icon")) {
-            effect.setIcon(section.getBoolean("icon"));
+        if (section.isSet("icon")) {
+            ScriptBlock icon = createPlantScript(section, "icon", data);
+            if (icon == null || !ScriptHelper.isBoolean(icon)) {
+                main.getLogger().warning(String.format("Potion effect will not have chosen icon value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isIcon(null, null), section.getCurrentPath()));
+            } else {
+                effect.setIcon(icon);
+            }
         }
         return effect;
     }
 
-    PlantDropEffect createDropEffect(ConfigurationSection section) {
+    PlantDropEffect createDropEffect(ConfigurationSection section, PlantData data) {
         PlantDropEffect effect = new PlantDropEffect();
         boolean added = addDropsToDroppable(section, effect.getDropStorage());
         if (!added) {
@@ -1493,116 +1709,216 @@ public class ConfigurationManager {
         return effect;
     }
 
-    PlantAirEffect createAirEffect(ConfigurationSection section) {
+    PlantAirEffect createAirEffect(ConfigurationSection section, PlantData data) {
         PlantAirEffect effect = new PlantAirEffect();
-        if (!section.isInt("amount")) {
+        if (!section.isSet("amount")) {
             main.getLogger().warning("Air effect not added; no amount provided in section: " + section.getCurrentPath());
             return null;
         }
-        effect.setAmount(section.getInt("amount"));
+        ScriptBlock amount = createPlantScript(section, "amount", data);
+        if (amount == null || !ScriptHelper.isLong(amount)) {
+            main.getLogger().warning("Air effect not added; amount must be ScriptType Long in section: " + section.getCurrentPath());
+            return null;
+        }
+        effect.setAmount(amount);
         return effect;
     }
 
-    PlantAreaEffect createAreaEffect(ConfigurationSection section) {
+    PlantAreaEffect createAreaEffect(ConfigurationSection section, PlantData data) {
         PlantAreaEffect effect = new PlantAreaEffect();
         if (section.isConfigurationSection("color")) {
             ConfigurationSection colorSection = section.getConfigurationSection("color");
             if (colorSection != null) {
-                effect.setColor(createColor(colorSection));
+                effect.setColor(createColor(colorSection, data));
             }
         }
-        if (section.isInt("duration")) {
-            effect.setDuration(section.getInt("duration"));
-        }
-        if (section.isInt("duration-on-use")) {
-            effect.setDurationOnUse(section.getInt("duration-on-use"));
-        }
-        if (section.isString("particle")) {
-            String name = section.getString("particle");
-            try {
-                Particle particle = Particle.valueOf(name.toUpperCase());
-                effect.setParticle(particle);
-            } catch (IllegalArgumentException e) {
-                main.getLogger().warning(String.format("Area effect will not have chosen particle '%s'; not recognized in section %s",
-                        name, section.getCurrentPath()));
+        if (section.isSet("duration")) {
+            ScriptBlock duration = createPlantScript(section, "duration", data);
+            if (duration == null || !ScriptHelper.isLong(duration)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen duration and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getDurationValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDuration(duration);
             }
         }
-        if (section.isInt("radius") || section.isDouble("radius")) {
-            effect.setRadius((float) section.getDouble("radius"));
+        if (section.isSet("duration-on-use")) {
+            ScriptBlock durationOnUse = createPlantScript(section, "duration-on-use", data);
+            if (durationOnUse == null || !ScriptHelper.isLong(durationOnUse)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen duration-on-use and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getDurationValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setDurationOnUse(durationOnUse);
+            }
         }
-        if (section.isInt("radius-on-use") || section.isDouble("radius-on-use")) {
-            effect.setRadiusOnUse((float) section.getDouble("radius-on-use"));
+        if (section.isSet("particle")) {
+            ScriptBlock particle = createPlantScript(section, "particle", data);
+            if (particle == null || !ScriptHelper.isString(particle)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen particle; must be ScriptType STRING in section %s",
+                        section.getCurrentPath()));
+            } else {
+                effect.setParticleName(particle);
+            }
         }
-        if (section.isInt("radius-per-tick") || section.isDouble("radius-per-tick")) {
-            effect.setRadiusPerTick((float) section.getDouble("radius-per-tick"));
+        if (section.isSet("radius")) {
+            ScriptBlock radius = createPlantScript(section, "radius", data);
+            if (radius == null || !ScriptHelper.isNumeric(radius)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen radius and instead will be" +
+                        " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getRadiusValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setRadius(radius);
+            }
         }
-        if (section.isInt("reapplication-delay")) {
-            effect.setReapplicationDelay(section.getInt("reapplication-delay"));
+        if (section.isSet("radius-on-use")) {
+            ScriptBlock radiusOnUse = createPlantScript(section, "radius-on-use", data);
+            if (radiusOnUse == null || !ScriptHelper.isNumeric(radiusOnUse)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen radius-on-use and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getRadiusOnUseValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setRadiusOnUse(radiusOnUse);
+            }
+        }
+        if (section.isSet("radius-per-tick")) {
+            ScriptBlock radiusPerTick = createPlantScript(section, "radius-per-tick", data);
+            if (radiusPerTick == null || !ScriptHelper.isNumeric(radiusPerTick)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen radius-per-tick and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getRadiusPerTickValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setRadiusPerTick(radiusPerTick);
+            }
+        }
+        if (section.isSet("reapplication-delay")) {
+            ScriptBlock reapplicationDelay = createPlantScript(section, "reapplication-delay", data);
+            if (reapplicationDelay == null || !ScriptHelper.isLong(reapplicationDelay)) {
+                main.getLogger().warning(String.format("Area effect will not have chosen reapplication-delay and instead will be" +
+                                " %d; must be ScriptType LONG in section: %s",
+                        effect.getReapplicationDelayValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setReapplicationDelay(reapplicationDelay);
+            }
         }
         return effect;
     }
 
-    PlantDurabilityEffect createDurabilityEffect(ConfigurationSection section) {
+    PlantDurabilityEffect createDurabilityEffect(ConfigurationSection section, PlantData data) {
         PlantDurabilityEffect effect = new PlantDurabilityEffect();
-        if (!section.isInt("damage-amount")) {
+        if (!section.isSet("damage-amount")) {
             main.getLogger().warning("Durability effect not added; no damage-amount provided in section: " + section.getCurrentPath());
             return null;
         }
-        effect.setAmount(section.getInt("damage-amount"));
+        ScriptBlock amount = createPlantScript(section, "damage-amount", data);
+        if (amount == null || !ScriptHelper.isLong(amount)) {
+            main.getLogger().warning(String.format("Durability effect not added; must be ScriptType LONG in section: %s",
+                    section.getCurrentPath()));
+            return null;
+        }
+        effect.setAmount(amount);
         return effect;
     }
 
-    PlantChatEffect createChatEffect(ConfigurationSection section) {
+    PlantChatEffect createChatEffect(ConfigurationSection section, PlantData data) {
         PlantChatEffect effect = new PlantChatEffect();
-        if (section.isString("from-player")) {
-            effect.setFromPlayer(section.getString("from-player"));
+        if (section.isSet("from-player")) {
+            ScriptBlock fromPlayer = createPlantScript(section, "from-player", data);
+            if (fromPlayer == null || ScriptHelper.isNull(fromPlayer)) {
+                main.getLogger().warning(String.format("Chat effect will not have chosen from-player message and instead will be" +
+                        " %s; must be neither null nor ScriptType NULL in section: %s",
+                    effect.getFromPlayerValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setFromPlayer(fromPlayer);
+            }
         }
-        if (section.isString("to-player")) {
-            effect.setToPlayer(section.getString("to-player"));
+        if (section.isSet("to-player")) {
+            ScriptBlock toPlayer = createPlantScript(section, "to-player", data);
+            if (toPlayer == null || ScriptHelper.isNull(toPlayer)) {
+                main.getLogger().warning(String.format("Chat effect will not have chosen to-player message and instead will be" +
+                                " %s; must be neither null nor ScriptType NULL in section: %s",
+                        effect.getToPlayerValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setToPlayer(toPlayer);
+            }
         }
-        if (effect.getFromPlayer().isEmpty() && effect.getToPlayer().isEmpty()) {
+        if (effect.getFromPlayer() == ScriptResult.EMPTY && effect.getToPlayer() == ScriptResult.EMPTY) {
             main.getLogger().warning("Chat effect not added; from-player and to-player messages both not set in section: " + section.getCurrentPath());
             return null;
         }
         return effect;
     }
 
-    PlantExplosionEffect createExplosionEffect(ConfigurationSection section) {
+    PlantExplosionEffect createExplosionEffect(ConfigurationSection section, PlantData data) {
         PlantExplosionEffect effect = new PlantExplosionEffect();
-        if (section.isInt("power") || section.isDouble("power")) {
-            effect.setPower((float) section.getDouble("power"));
+        if (section.isSet("power")) {
+            ScriptBlock power = createPlantScript(section, "power", data);
+            if (power == null || !ScriptHelper.isNumeric(power)) {
+                main.getLogger().warning(String.format("Explosion effect will not have chosen power and instead will be" +
+                                " %f; must be ScriptType LONG or DOUBLE in section: %s",
+                        effect.getPowerValue(null, null), section.getCurrentPath()));
+            } else {
+                effect.setPower(power);
+            }
         }
-        if (section.isBoolean("fire")) {
-            effect.setFire(section.getBoolean("fire"));
+        if (section.isSet("fire")) {
+            ScriptBlock fire = createPlantScript(section, "fire", data);
+            if (fire == null || !ScriptHelper.isBoolean(fire)) {
+                main.getLogger().warning(String.format("Explosion effect will not have chosen fire value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isFire(null, null), section.getCurrentPath()));
+            } else {
+                effect.setFire(fire);
+            }
         }
-        if (section.isBoolean("break-blocks")) {
-            effect.setBreakBlocks(section.getBoolean("break-blocks"));
+        if (section.isSet("break-blocks")) {
+            ScriptBlock breakBlocks = createPlantScript(section, "break-blocks", data);
+            if (breakBlocks == null || !ScriptHelper.isBoolean(breakBlocks)) {
+                main.getLogger().warning(String.format("Command effect will not have chosen break-blocks value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        effect.isBreakBlocks(null, null), section.getCurrentPath()));
+            } else {
+                effect.setBreakBlocks(breakBlocks);
+            }
         }
         return effect;
     }
 
-    PlantCommandEffect createCommandEffect(ConfigurationSection section) {
+    PlantCommandEffect createCommandEffect(ConfigurationSection section, PlantData data) {
         PlantCommandEffect effect = new PlantCommandEffect();
-        String command = section.getString("command");
-        if (command == null || command.isEmpty()) {
-            main.getLogger().warning("Command effect not added; command string not present or empty in section: " + section.getCurrentPath());
+        if (!section.isSet("command")) {
+            main.getLogger().warning("Command effect not added; command value not present in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock command = createPlantScript(section, "command", data);
+        if (command == null || !ScriptHelper.isString(command)) {
+            main.getLogger().warning("Command effect not added; command value must be ScriptType STRING in section: " + section.getCurrentPath());
             return null;
         }
         effect.setCommand(command);
-        if (section.isBoolean("console")) {
-            effect.setConsole(section.getBoolean("console"));
+        if (section.isSet("console")) {
+            ScriptBlock console = createPlantScript(section, "console", data);
+            if (console == null || !ScriptHelper.isBoolean(console)) {
+                main.getLogger().warning(String.format("Command effect will not have chosen console value and instead will be" +
+                        " %b; must be ScriptType BOOLEAN in section: %s",
+                    effect.isConsole(null, null), section.getCurrentPath()));
+            } else {
+                effect.setConsole(console);
+            }
         }
         return effect;
     }
 
-    void addChanceAndDelayToEffect(ConfigurationSection section, PlantEffect effect) {
-        // set chance, if present
-        if (section.isDouble("chance") || section.isInt("chance")) {
-            effect.setChance(section.getDouble("chance"));
+    void addDoIfAndDelayToEffect(ConfigurationSection section, PlantEffect effect, PlantData data) {
+        // set do-if, if present
+        if (section.isSet("do-if")) {
+            ScriptBlock doIf = createPlantScript(section, "do-if", data);
+            effect.setDoIf(doIf);
         }
         // set delay, if present
-        if (section.isInt("delay")) {
-            effect.setDelay(section.getInt("delay"));
+        if (section.isSet("delay")) {
+            ScriptBlock delay = createPlantScript(section, "delay", data);
+            effect.setDelay(delay);
         }
     }
 
@@ -1994,12 +2310,37 @@ public class ConfigurationManager {
             return null;
         }
         if (section.isConfigurationSection("plant-script")) {
-            return createPlantScript(section.getConfigurationSection("plant-script"), data);
+            return createPlantScript(section, "plant-script", data);
         }
         return null;
     }
 
-    ScriptBlock createPlantScript(ConfigurationSection section, PlantData data) {
+    ScriptBlock createPlantScript(ConfigurationSection section, String subsectionName, PlantData data) {
+        try {
+            if (section == null) {
+                return null;
+            } else if (section.isBoolean(subsectionName)) {
+                return new ScriptResult(section.getBoolean(subsectionName));
+            } else if (section.isInt(subsectionName)) {
+                return new ScriptResult(section.getInt(subsectionName));
+            } else if (section.isLong(subsectionName)) {
+                return new ScriptResult(section.getLong(subsectionName));
+            } else if (section.isDouble(subsectionName)) {
+                return new ScriptResult(section.getDouble(subsectionName));
+            } else if (section.isString(subsectionName)) {
+                return new ScriptResult(section.getString(subsectionName));
+            } else {
+                return createPlantScriptSpecific(section.getConfigurationSection(subsectionName), data);
+            }
+        } catch (IllegalArgumentException e) {
+            main.getLogger().warning(String.format("IllegalArgumentException loading PlantScript in section '%s' for " +
+                    "subsection '%s': '%s'", section.getCurrentPath(), subsectionName, e.toString()));
+            return null;
+        }
+    }
+
+
+    ScriptBlock createPlantScriptSpecific(ConfigurationSection section, PlantData data) {
         // get plant script
         if (section == null) {
             return null;
@@ -2013,117 +2354,120 @@ public class ConfigurationManager {
                     break;
                 }
             }
+            ScriptBlock returned = null;
             switch (blockName.toLowerCase()) {
                 // constant/variable
                 case "value":
                 case "variable":
                 case "result":
-                    return createPlantScriptResult(blockSection, data);
+                    returned = createPlantScriptResult(blockSection, data); break;
                 // math
                 case "+":
                 case "add":
-                    return createScriptOperationAdd(blockSection, data);
+                    returned = createScriptOperationAdd(blockSection, data); break;
                 case "+=":
                 case "addto":
-                    return createScriptOperationAddTo(blockSection, data);
+                    returned = createScriptOperationAddTo(blockSection, data); break;
                 case "-":
                 case "subtract":
-                    return createScriptOperationSubtract(blockSection, data);
+                    returned = createScriptOperationSubtract(blockSection, data); break;
                 case "-=":
                 case "subtractfrom":
-                    return createScriptOperationSubtractFrom(blockSection, data);
+                    returned = createScriptOperationSubtractFrom(blockSection, data); break;
                 case "*":
                 case "multiply":
-                    return createScriptOperationMultiply(blockSection, data);
+                    returned = createScriptOperationMultiply(blockSection, data); break;
                 case "*=":
                 case "multiplyby":
-                    return createScriptOperationMultiplyBy(blockSection, data);
+                    returned = createScriptOperationMultiplyBy(blockSection, data); break;
                 case "/":
                 case "divide":
-                    return createScriptOperationDivide(blockSection, data);
+                    returned = createScriptOperationDivide(blockSection, data); break;
                 case "/=":
                 case "divideby":
-                    return createScriptOperationDivideBy(blockSection, data);
+                    returned = createScriptOperationDivideBy(blockSection, data); break;
                 case "%":
                 case "modulus":
-                    return createScriptOperationModulus(blockSection, data);
+                    returned = createScriptOperationModulus(blockSection, data); break;
                 case "%=":
                 case "modulusof":
-                    return createScriptOperationModulusOf(blockSection, data);
+                    returned = createScriptOperationModulusOf(blockSection, data); break;
                 case "**":
                 case "power":
-                    return createScriptOperationPower(blockSection, data);
+                    returned = createScriptOperationPower(blockSection, data); break;
                 case "**=":
                 case "powerof":
-                    return createScriptOperationPowerOf(blockSection, data);
+                    returned = createScriptOperationPowerOf(blockSection, data); break;
                 // logic
                 case "&&":
                 case "and":
-                    return createScriptOperationAnd(blockSection, data);
+                    returned = createScriptOperationAnd(blockSection, data); break;
                 case "||":
                 case "or":
-                    return createScriptOperationOr(blockSection, data);
+                    returned = createScriptOperationOr(blockSection, data); break;
                 case "!":
                 case "not":
-                    return createScriptOperationNot(blockSection, data);
+                    returned = createScriptOperationNot(blockSection, data); break;
                 // compare
                 case "==":
                 case "equal":
-                    return createScriptOperationEqual(blockSection, data);
+                    returned = createScriptOperationEqual(blockSection, data); break;
                 case "!=":
                 case "notequal":
-                    return createScriptOperationNotEqual(blockSection, data);
+                    returned = createScriptOperationNotEqual(blockSection, data); break;
                 case ">":
                 case "greaterthan":
-                    return createScriptOperationGreaterThan(blockSection, data);
+                    returned = createScriptOperationGreaterThan(blockSection, data); break;
                 case ">=":
                 case "greaterthanorequalto":
-                    return createScriptOperationGreaterThanOrEqualTo(blockSection, data);
+                    returned = createScriptOperationGreaterThanOrEqualTo(blockSection, data); break;
                 case "<":
                 case "lessthan":
-                    return createScriptOperationLessThan(blockSection, data);
+                    returned = createScriptOperationLessThan(blockSection, data); break;
                 case "<=":
                 case "lessthanorequalto":
-                    return createScriptOperationLessThanOrEqualTo(blockSection, data);
+                    returned = createScriptOperationLessThanOrEqualTo(blockSection, data); break;
                 // cast
                 case "(boolean)":
                 case "toboolean":
-                    return createScriptOperationToBoolean(blockSection, data);
+                    returned = createScriptOperationToBoolean(blockSection, data); break;
                 case "(double)":
                 case "todouble":
-                    return createScriptOperationToDouble(blockSection, data);
+                    returned = createScriptOperationToDouble(blockSection, data); break;
                 case "(long)":
                 case "tolong":
-                    return createScriptOperationToLong(blockSection, data);
+                    returned = createScriptOperationToLong(blockSection, data); break;
                 case "(string)":
                 case "tostring":
-                    return createScriptOperationToString(blockSection, data);
+                    returned = createScriptOperationToString(blockSection, data); break;
                 // functions
                 case "contains":
-                    return createScriptOperationContains(blockSection, data);
+                    returned = createScriptOperationContains(blockSection, data); break;
                 case "length":
-                    return createScriptOperationLength(blockSection, data);
+                    returned = createScriptOperationLength(blockSection, data); break;
                 case "=":
                 case "setvalue":
-                    return createScriptOperationSetValue(blockSection, data);
+                    returned = createScriptOperationSetValue(blockSection, data); break;
                 // flow
                 case "if":
-                    return createScriptOperationIf(blockSection, data);
+                    returned = createScriptOperationIf(blockSection, data); break;
                 case "func":
                 case "function":
-                    return createScriptOperationFunction(blockSection, data);
+                    returned = createScriptOperationFunction(blockSection, data); break;
                 // action
+                case "changestage":
+                    returned = createScriptOperationChangeStage(blockSection, data); break;
                 case "interact":
-                    return createScriptOperationInteract(blockSection, data);
+                    returned = createScriptOperationInteract(blockSection, data); break;
                 // random
                 case "chance":
-                    return createScriptOperationChance(blockSection, data);
+                    returned = createScriptOperationChance(blockSection, data); break;
                 case "choice":
-                    return createScriptOperationChoice(blockSection, data);
+                    returned = createScriptOperationChoice(blockSection, data); break;
                 case "randomdouble":
-                    return createScriptOperationRandomDouble(blockSection, data);
+                    returned = createScriptOperationRandomDouble(blockSection, data); break;
                 case "randomlong":
-                    return createScriptOperationRandomLong(blockSection, data);
+                    returned = createScriptOperationRandomLong(blockSection, data); break;
                 // not recognized
                 default:
                     main.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
@@ -2131,6 +2475,10 @@ public class ConfigurationManager {
                             blockName, blockSection.getCurrentPath()));
                     return null;
             }
+            if (returned != null) {
+                return returned.optimizeSelf();
+            }
+            return null;
         }
         main.getLogger().warning(String.format("No PlantScript block defined in section: %s",
                 section.getCurrentPath()));
@@ -2181,26 +2529,23 @@ public class ConfigurationManager {
 
     // types - helpful
     ScriptBlock createScriptOperationUnary(ConfigurationSection section, PlantData data) {
-        ConfigurationSection inputSection = section.getConfigurationSection("input");
-        if (inputSection == null) {
+        if (!section.isSet("input")) {
             main.getLogger().warning("Input operand missing in section: " + section.getCurrentPath());
             return null;
         }
-        return createPlantScript(inputSection, data);
+        return createPlantScript(section, "input", data);
     }
 
     ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, PlantData data) {
-        ConfigurationSection leftSection = section.getConfigurationSection("left");
-        ConfigurationSection rightSection = section.getConfigurationSection("right");
-        if (leftSection == null || rightSection == null) {
+        if (!section.isSet("left") || !section.isSet("right")) {
             main.getLogger().warning("Left or right operand missing in section: " + section.getCurrentPath());
             return null;
         }
-        ScriptBlock left = createPlantScript(leftSection, data);
+        ScriptBlock left = createPlantScript(section, "left", data);
         if (left == null) {
             return null;
         }
-        ScriptBlock right = createPlantScript(rightSection, data);
+        ScriptBlock right = createPlantScript(section, "right", data);
         if (right == null) {
             return null;
         }
@@ -2418,25 +2763,25 @@ public class ConfigurationManager {
 
     //flow
     ScriptOperation createScriptOperationIf(ConfigurationSection section, PlantData data) {
-        ConfigurationSection conditionSection = section.getConfigurationSection("condition");
-        ConfigurationSection ifTrueSection = section.getConfigurationSection("ifTrue");
-        ConfigurationSection ifFalseSection = section.getConfigurationSection("ifFalse");
-        if (conditionSection == null || ifTrueSection == null) {
-            main.getLogger().warning("Condition or ifTrue operand missing in section: " + section.getCurrentPath());
+        String conditionString = "condition";
+        String ifTrueString = "if-true";
+        String ifFalseString = "if-false";
+        if (!section.isSet(conditionString) || !section.isSet(ifTrueString)) {
+            main.getLogger().warning("Condition or if-true operand missing in section: " + section.getCurrentPath());
             return null;
         }
-        ScriptBlock condition = createPlantScript(conditionSection, data);
+        ScriptBlock condition = createPlantScript(section, conditionString, data);
         if (condition == null) {
             return null;
         }
-        ScriptBlock ifTrue = createPlantScript(ifTrueSection, data);
+        ScriptBlock ifTrue = createPlantScript(section, ifTrueString, data);
         if (ifTrue == null) {
             return null;
         }
-        if (ifFalseSection == null) {
+        if (!section.isSet("if-false")) {
             return new ScriptOperationIf(condition, ifTrue);
         }
-        ScriptBlock ifFalse = createPlantScript(ifFalseSection, data);
+        ScriptBlock ifFalse = createPlantScript(section, ifFalseString, data);
         if (ifFalse == null) {
             return null;
         }
@@ -2446,13 +2791,12 @@ public class ConfigurationManager {
         int index = 0;
         ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
         for (String placeholder : section.getKeys(false)) {
-            ConfigurationSection placeholderSection = section.getConfigurationSection(placeholder);
-            if (placeholderSection == null) {
+            if (!section.isSet(placeholder)) {
                 main.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
                         "Function in section: %s", placeholder, section));
                 return null;
             }
-            ScriptBlock scriptBlock = createPlantScript(placeholderSection, data);
+            ScriptBlock scriptBlock = createPlantScript(section, placeholder, data);
             if (scriptBlock == null) {
                 return null;
             }
@@ -2475,11 +2819,29 @@ public class ConfigurationManager {
                     section.getCurrentPath());
             return null;
         }
-        boolean useMainHand = true;
-        if (section.isBoolean("use-main-hand")) {
-            useMainHand = section.getBoolean("use-main-hand");
+        String useMainHandString = "use-main-hand";
+        ScriptBlock useMainHand = ScriptResult.TRUE;
+        if (section.isSet(useMainHandString)) {
+            useMainHand = createPlantScript(section, useMainHandString, data);
         }
         return new ScriptOperationInteract(plantInteractStorage, useMainHand);
+    }
+    ScriptOperation createScriptOperationChangeStage(ConfigurationSection section, PlantData data) {
+        String stageString = "go-to-stage";
+        String ifNextString = "go-to-next";
+        if (!section.isSet(stageString) && !section.isSet(ifNextString)) {
+            main.getLogger().warning("Go-to-stage and go-to-next both missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock stage = null;
+        ScriptBlock ifNext = null;
+        if (section.isSet(stageString)) {
+            stage = createPlantScript(section, stageString, data);
+        }
+        if (section.isSet(ifNextString)) {
+            ifNext = createPlantScript(section, ifNextString, data);
+        }
+        return new ScriptOperationChangeStage(main, stage, ifNext);
     }
 
     //random
@@ -2494,13 +2856,12 @@ public class ConfigurationManager {
         int index = 0;
         ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
         for (String placeholder : section.getKeys(false)) {
-            ConfigurationSection placeholderSection = section.getConfigurationSection(placeholder);
-            if (placeholderSection == null) {
+            if (!section.isSet(placeholder)) {
                 main.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
                         "Function in section: %s", placeholder, section));
                 return null;
             }
-            ScriptBlock scriptBlock = createPlantScript(placeholderSection, data);
+            ScriptBlock scriptBlock = createPlantScript(section, placeholder, data);
             if (scriptBlock == null) {
                 return null;
             }

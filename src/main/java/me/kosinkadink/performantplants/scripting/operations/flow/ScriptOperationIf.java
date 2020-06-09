@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting.operations.flow;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptOperation;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.entity.Player;
@@ -50,4 +51,10 @@ public class ScriptOperationIf extends ScriptOperation {
             throw new IllegalArgumentException("IfTrue and IfFalse did not have matching ScriptType");
         }
     }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.FLOW;
+    }
+
 }

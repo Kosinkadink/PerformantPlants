@@ -11,10 +11,12 @@ public class ScriptResult extends ScriptBlock {
 
     public static final ScriptResult TRUE = new ScriptResult(true);
     public static final ScriptResult FALSE = new ScriptResult(false);
+    public static final ScriptResult ZERO = new ScriptResult(0);
+    public static final ScriptResult EMPTY = new ScriptResult("");
 
     private Object value;
     private String variableName = null;
-    private boolean hasPlaceholder = false;
+    private boolean hasPlaceholder = true;
 
     public ScriptResult(Object value) {
         if (value instanceof Integer) {
@@ -43,6 +45,10 @@ public class ScriptResult extends ScriptBlock {
 
     public String getVariableName() {
         return variableName;
+    }
+
+    public boolean isHasPlaceholder() {
+        return hasPlaceholder;
     }
 
     public void setHasPlaceholder(boolean value) {
@@ -117,6 +123,14 @@ public class ScriptResult extends ScriptBlock {
         }
     }
 
+    public Integer getIntegerValue() {
+        return getLongValue().intValue();
+    }
+
+    public Float getFloatValue() {
+        return getDoubleValue().floatValue();
+    }
+
     public JSONObject getObjectValue() {
         if (type == ScriptType.OBJECT) {
             return (JSONObject) value;
@@ -153,7 +167,7 @@ public class ScriptResult extends ScriptBlock {
     protected ScriptResult loadVariable(PlantBlock plantBlock, Player player) {
         if (!isVariable()) {
             // if has placeholder and is string, return evaluated string
-            if (hasPlaceholder && type == ScriptType.STRING) {
+            if (type == ScriptType.STRING && hasPlaceholder) {
                 return new ScriptResult(PlaceholderHelper.setVariablesAndPlaceholders(
                         plantBlock, player, this.getStringValue()));
             }
@@ -176,4 +190,30 @@ public class ScriptResult extends ScriptBlock {
     public boolean containsVariable() {
         return isVariable();
     }
+
+    @Override
+    public boolean containsCategories(ScriptCategory... categories) {
+        for (ScriptCategory category : categories) {
+            if (getCategory() == category) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.RESULT;
+    }
+
+    @Override
+    public ScriptBlock optimizeSelf() {
+        return this;
+    }
+
+    @Override
+    public boolean shouldOptimize() {
+        return true;
+    }
+
 }

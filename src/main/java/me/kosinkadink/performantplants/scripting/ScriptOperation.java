@@ -22,9 +22,27 @@ public abstract class ScriptOperation extends ScriptBlock {
 
     public abstract ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException;
 
+    @Override
     public boolean containsVariable() {
         for (ScriptBlock input : inputs) {
             if (input.containsVariable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containsCategories(ScriptCategory... categories) {
+        for (ScriptBlock input : inputs) {
+            // check if input is one of the categories
+            for (ScriptCategory category : categories) {
+                if (input.getCategory() == category) {
+                    return true;
+                }
+            }
+            // check if ScriptBlocks in input are one of the categories
+            if (input.containsCategories(categories)) {
                 return true;
             }
         }
@@ -45,7 +63,7 @@ public abstract class ScriptOperation extends ScriptBlock {
         for (int i = 0; i < inputs.length; i++) {
             ScriptBlock input = inputs[i];
             // if operation and does not contain a variable, replace with result
-            if (input instanceof ScriptOperation && !input.containsVariable()) {
+            if (input instanceof ScriptOperation && input.shouldOptimize() && !input.containsVariable()) {
                 inputs[i] = ((ScriptOperation) input).perform();
             }
         }
@@ -54,6 +72,19 @@ public abstract class ScriptOperation extends ScriptBlock {
     @Override
     public ScriptResult loadValue(PlantBlock plantBlock, Player player) {
         return perform(plantBlock, player);
+    }
+
+    @Override
+    public ScriptBlock optimizeSelf() {
+        if (shouldOptimize() && !containsVariable()) {
+            return perform();
+        }
+        return this;
+    }
+
+    @Override
+    public boolean shouldOptimize() {
+        return true;
     }
 
 }

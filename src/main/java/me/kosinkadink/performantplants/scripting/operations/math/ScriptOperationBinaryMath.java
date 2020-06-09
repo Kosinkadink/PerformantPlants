@@ -1,7 +1,9 @@
-package me.kosinkadink.performantplants.scripting.operations.type;
+package me.kosinkadink.performantplants.scripting.operations.math;
 
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
 public abstract class ScriptOperationBinaryMath extends ScriptOperationBinary {
 
@@ -29,5 +31,9 @@ public abstract class ScriptOperationBinaryMath extends ScriptOperationBinary {
         }
     }
 
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.MATH;
+    }
 
 }

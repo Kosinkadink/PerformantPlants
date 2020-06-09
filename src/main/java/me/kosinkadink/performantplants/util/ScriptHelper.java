@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 
@@ -25,6 +26,36 @@ public class ScriptHelper {
             return ScriptType.STRING;
         }
         return null;
+    }
+
+    public static boolean isNumeric(ScriptBlock scriptBlock) {
+        switch(scriptBlock.getType()) {
+            case LONG:
+            case DOUBLE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isLong(ScriptBlock scriptBlock) {
+        return scriptBlock.getType() == ScriptType.LONG;
+    }
+
+    public static boolean isDouble(ScriptBlock scriptBlock) {
+        return scriptBlock.getType() == ScriptType.DOUBLE;
+    }
+
+    public static boolean isString(ScriptBlock scriptBlock) {
+        return scriptBlock.getType() == ScriptType.STRING;
+    }
+
+    public static boolean isBoolean(ScriptBlock scriptBlock) {
+        return scriptBlock.getType() == ScriptType.BOOLEAN;
+    }
+
+    public static boolean isNull(ScriptBlock scriptBlock) {
+        return scriptBlock == null || scriptBlock.getType() == ScriptType.NULL;
     }
 
     public static String setVariables(PlantBlock plantBlock, String text) {

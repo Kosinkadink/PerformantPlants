@@ -165,7 +165,7 @@ public class PlantBlock implements Droppable {
         stageBlockId = id;
     }
 
-    public boolean getGrows() {
+    public boolean isGrows() {
         return grows;
     }
 

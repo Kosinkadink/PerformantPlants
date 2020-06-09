@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting.operations.random;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
@@ -29,8 +30,19 @@ public class ScriptOperationChance extends ScriptOperationUnary {
 
     @Override
     protected void validateInputs() throws IllegalArgumentException {
-        if (getInput().getType() != ScriptType.LONG || getInput().getType() != ScriptType.DOUBLE) {
+        if (getInput().getType() != ScriptType.LONG && getInput().getType() != ScriptType.DOUBLE) {
             throw new IllegalArgumentException("Chance operation only supports ScriptType LONG and DOUBLE");
         }
     }
+
+    @Override
+    public boolean shouldOptimize() {
+        return false;
+    }
+
+    @Override
+    public ScriptCategory getCategory() {
+        return ScriptCategory.RANDOM;
+    }
+
 }

@@ -5,7 +5,6 @@ import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptOperation;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
-import me.kosinkadink.performantplants.scripting.operations.functions.ScriptOperationSetValue;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 

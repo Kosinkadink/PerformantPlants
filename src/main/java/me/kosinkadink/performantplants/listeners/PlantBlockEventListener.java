@@ -66,7 +66,7 @@ public class PlantBlockEventListener implements Listener {
                 BlockLocation blockLocation = new BlockLocation(block);
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
-                if (plantBlock.getGrows()) {
+                if (plantBlock.isGrows()) {
                     if (!plantBlock.checkAllRequirements(main)) {
                         event.setCancelled(true);
                         return;

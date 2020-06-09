@@ -1,28 +1,29 @@
 package me.kosinkadink.performantplants.effects;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.util.RandomHelper;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 public abstract class PlantEffect {
 
-    protected double chance = 100.0;
-    protected int delay = 0;
+    protected ScriptBlock doIf = ScriptResult.TRUE;
+    protected ScriptBlock delay = ScriptResult.ZERO;
 
     public boolean performEffect(Player player, PlantBlock plantBlock) {
-        if (RandomHelper.generateChancePercentage(chance)) {
-            if (delay == 0) {
+        if (getDoIfValue(player, plantBlock)) {
+            int delayValue = getDelayValue(player, plantBlock);
+            if (delayValue == 0) {
                 performEffectAction(player, plantBlock);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
                             () -> performEffectAction(player, plantBlock),
-                            delay
+                            delayValue
                     );
                 } else {
                     Bukkit.getLogger().warning("Could not schedule performEffectAction;" +
@@ -35,15 +36,16 @@ public abstract class PlantEffect {
     }
 
     public boolean performEffect(Block block, PlantBlock plantBlock) {
-        if (RandomHelper.generateChancePercentage(chance)) {
-            if (delay == 0) {
+        if (getDoIfValue(null, plantBlock)) {
+            int delayValue = getDelayValue(null, plantBlock);
+            if (delayValue == 0) {
                 performEffectAction(block, plantBlock);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
                             () -> performEffectAction(block, plantBlock),
-                            delay
+                            delayValue
                     );
                 } else {
                     Bukkit.getLogger().warning("Could not schedule performEffectAction;" +
@@ -59,20 +61,28 @@ public abstract class PlantEffect {
 
     void performEffectAction(Block block, PlantBlock plantBlock) { }
 
-    public double getChance() {
-        return chance;
+    public ScriptBlock getDoIf() {
+        return doIf;
     }
 
-    public void setChance(double chance) {
-        this.chance = Math.min(100, Math.max(0, chance));
+    public boolean getDoIfValue(Player player, PlantBlock plantBlock) {
+        return doIf.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public int getDelay() {
+    public void setDoIf(ScriptBlock doIf) {
+        this.doIf = doIf;
+    }
+
+    public ScriptBlock getDelay() {
         return delay;
     }
 
-    public void setDelay(int delay) {
-        this.delay = Math.max(0, delay);
+    public int getDelayValue(Player player, PlantBlock plantBlock) {
+        return Math.max(0, delay.loadValue(plantBlock, player).getIntegerValue());
+    }
+
+    public void setDelay(ScriptBlock delay) {
+        this.delay = delay;
     }
 
 }

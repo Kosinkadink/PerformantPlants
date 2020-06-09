@@ -12,7 +12,7 @@ public enum ScriptType {
     }
 
     public static String fromType(ScriptType type) {
-        return type.toString().toLowerCase();
+        return type.toString();
     }
 
 }

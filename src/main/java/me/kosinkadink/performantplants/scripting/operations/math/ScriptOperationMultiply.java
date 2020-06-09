@@ -4,7 +4,6 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
-import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinaryMath;
 import org.bukkit.entity.Player;
 
 public class ScriptOperationMultiply extends ScriptOperationBinaryMath {

@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.scripting.operations.logic;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinaryLogic;
 import org.bukkit.entity.Player;
 
 public class ScriptOperationOr extends ScriptOperationBinaryLogic {

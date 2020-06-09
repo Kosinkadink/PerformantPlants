@@ -413,7 +413,7 @@ public class DatabaseManager {
             pstmt.setInt(     4,chunk.getLocation().getX());
             pstmt.setInt(     5,chunk.getLocation().getZ());
             pstmt.setString(  6,block.getPlant().getId());
-            pstmt.setBoolean( 7,block.getGrows());
+            pstmt.setBoolean( 7,block.isGrows());
             pstmt.setInt(     8,block.getStageIndex());
             pstmt.setInt(     9,block.getDropStageIndex());
             pstmt.setBoolean(10,block.isExecutedStage());
