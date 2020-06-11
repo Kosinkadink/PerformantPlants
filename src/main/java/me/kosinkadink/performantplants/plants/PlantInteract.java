@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
@@ -12,14 +13,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class PlantInteract {
 
-    private boolean giveBlockDrops = false;
-    private boolean goToNext = false;
-    private String goToStage;
-    private boolean takeItem = false;
-    private boolean breakBlock = false;
-    private boolean onlyEffectsOnChance = true;
-    private double chance = 100.0;
-    private ScriptBlock chanceScriptBlock;
+    private ScriptBlock giveBlockDrops = ScriptResult.FALSE;
+    private ScriptBlock doIf;
+    private ScriptBlock takeItem = ScriptResult.FALSE;
+    private ScriptBlock onlyTakeItemOnDo = ScriptResult.FALSE;
+    private ScriptBlock breakBlock = ScriptResult.FALSE;
+    private ScriptBlock onlyBreakBlockOnDo = ScriptResult.FALSE;
+    private ScriptBlock onlyEffectsOnDo = ScriptResult.TRUE;
+    private ScriptBlock onlyConsumableEffectsOnDo = ScriptResult.FALSE;
+    private ScriptBlock onlyDropOnDo = ScriptResult.TRUE;
 
     private boolean matchMaterial = false;
     private boolean matchEnchantments = false;
@@ -30,6 +32,8 @@ public class PlantInteract {
     private PlantEffectStorage effectStorage = new PlantEffectStorage();
     private PlantConsumableStorage consumable;
     private ScriptBlock scriptBlock;
+    private ScriptBlock scriptBlockOnDo;
+    private ScriptBlock scriptBlockOnNotDo;
 
     public PlantInteract() { }
 
@@ -37,6 +41,7 @@ public class PlantInteract {
         this.itemStack = itemStack;
     }
 
+    // drop storage
     public DropStorage getDropStorage() {
         return dropStorage;
     }
@@ -45,6 +50,7 @@ public class PlantInteract {
         this.dropStorage = dropStorage;
     }
 
+    // effect storage
     public PlantEffectStorage getEffectStorage() {
         return effectStorage;
     }
@@ -53,6 +59,7 @@ public class PlantInteract {
         this.effectStorage = effectStorage;
     }
 
+    // consumable storage
     public PlantConsumableStorage getConsumableStorage() {
         return consumable;
     }
@@ -61,36 +68,25 @@ public class PlantInteract {
         this.consumable = consumable;
     }
 
-    public String getGoToStage() {
-        return goToStage;
+    // block drops
+    public boolean isGiveBlockDrops(Player player, PlantBlock plantBlock) {
+        return giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public boolean isChangeStage() {
-        return goToStage != null || isGoToNext();
-    }
-
-    public void setGoToStage(String goToStage) {
-        if (goToStage != null && !goToStage.isEmpty()) {
-            this.goToStage = goToStage;
-        }
-    }
-
-    public boolean isGiveBlockDrops() {
-        return giveBlockDrops;
-    }
-
-    public void setGiveBlockDrops(boolean giveBlockDrops) {
+    public void setGiveBlockDrops(ScriptBlock giveBlockDrops) {
         this.giveBlockDrops = giveBlockDrops;
     }
 
-    public boolean isGoToNext() {
-        return goToNext;
+    public boolean isOnlyDropOnDo(Player player, PlantBlock plantBlock) {
+        return onlyDropOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setGoToNext(boolean goToNext) {
-        this.goToNext = goToNext;
+    public void setOnlyDropOnDo(ScriptBlock onlyDropOnDo) {
+        this.onlyDropOnDo = onlyDropOnDo;
     }
 
+
+    // item stack
     public ItemStack getItemStack() {
         return itemStack;
     }
@@ -99,52 +95,71 @@ public class PlantInteract {
         this.itemStack = itemStack;
     }
 
-
-    public boolean isTakeItem() {
-        return takeItem;
+    // take item
+    public boolean isTakeItem(Player player, PlantBlock plantBlock) {
+        return takeItem.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setTakeItem(boolean takeItem) {
+    public void setTakeItem(ScriptBlock takeItem) {
         this.takeItem = takeItem;
     }
 
-    public boolean isBreakBlock() {
-        return breakBlock;
+    public boolean isOnlyTakeItemOnDo(Player player, PlantBlock plantBlock) {
+        return onlyTakeItemOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setBreakBlock(boolean breakBlock) {
+    public void setOnlyTakeItemOnDo(ScriptBlock takeItem) {
+        this.onlyTakeItemOnDo = takeItem;
+    }
+
+    // break block
+    public boolean isBreakBlock(Player player, PlantBlock plantBlock) {
+        return breakBlock.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setBreakBlock(ScriptBlock breakBlock) {
         this.breakBlock = breakBlock;
     }
 
-    public boolean isOnlyEffectsOnChance() {
-        return onlyEffectsOnChance;
+    public boolean isOnlyBreakBlockOnDo(Player player, PlantBlock plantBlock) {
+        return onlyBreakBlockOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setOnlyEffectsOnChance(boolean onlyEffectsOnChance) {
-        this.onlyEffectsOnChance = onlyEffectsOnChance;
+    public void setOnlyBreakBlockOnDo(ScriptBlock breakBlock) {
+        this.onlyBreakBlockOnDo = breakBlock;
     }
 
-    public double getChance() {
-        return chance;
+    // only effects on do
+    public boolean isOnlyEffectsOnDo(Player player, PlantBlock plantBlock) {
+        return onlyEffectsOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setChance(double chance) {
-        if (chance >= 0.0 && chance <= 100.0) {
-            this.chance = chance;
-        }
+    public void setOnlyEffectsOnDo(ScriptBlock onlyEffectsOnDo) {
+        this.onlyEffectsOnDo = onlyEffectsOnDo;
     }
 
-    public boolean generateChance() {
-        return ThreadLocalRandom.current().nextDouble() <= chance / 100.0;
+    public boolean isOnlyConsumableEffectsOnDo(Player player, PlantBlock plantBlock) {
+        return onlyConsumableEffectsOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public boolean generateChanceScriptBlock(PlantBlock plantBlock, Player player) {
-        if (chanceScriptBlock != null) {
-            return chanceScriptBlock.loadValue(plantBlock, player).getBooleanValue();
+    public void setOnlyConsumableEffectsOnDo(ScriptBlock onlyEffectsOnDo) {
+        this.onlyConsumableEffectsOnDo = onlyEffectsOnDo;
+    }
+
+
+    // do if
+    public void setDoIf(ScriptBlock doIf) {
+        this.doIf = doIf;
+    }
+
+    public boolean generateDoIf(Player player, PlantBlock plantBlock) {
+        if (doIf != null) {
+            return doIf.loadValue(plantBlock, player).getBooleanValue();
         }
         return true;
     }
 
+    // matching
     public boolean isMatchMaterial() {
         return matchMaterial;
     }
@@ -169,6 +184,7 @@ public class PlantInteract {
         this.matchEnchantmentLevel = matchEnchantmentLevel;
     }
 
+    // script blocks
     public ScriptBlock getScriptBlock() {
         return scriptBlock;
     }
@@ -177,7 +193,19 @@ public class PlantInteract {
         this.scriptBlock = scriptBlock;
     }
 
-    public void setChanceScriptBlock(ScriptBlock chanceScriptBlock) {
-        this.chanceScriptBlock = chanceScriptBlock;
+    public ScriptBlock getScriptBlockOnDo() {
+        return scriptBlockOnDo;
+    }
+
+    public void setScriptBlockOnDo(ScriptBlock scriptBlockOnDo) {
+        this.scriptBlockOnDo = scriptBlockOnDo;
+    }
+
+    public ScriptBlock getScriptBlockOnNotDo() {
+        return scriptBlockOnNotDo;
+    }
+
+    public void setScriptBlockOnNotDo(ScriptBlock scriptBlockOnNotDo) {
+        this.scriptBlockOnNotDo = scriptBlockOnNotDo;
     }
 }

@@ -95,21 +95,34 @@ public class PlantBlockEventListener implements Listener {
             // get PlantInteract behavior for main hand, if any
             PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack);
             if (plantInteract != null) {
-                // see if randomly generated chance is okay
-                boolean chanceSuccess = plantInteract.generateChance();
+                // see if should do
+                boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
+                boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
+                boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
                 // do break actions for block
-                if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
+                if (!onlyEffectsOnDo || shouldDo) {
                     plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
                 }
-                PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
-                // do consumable actions
-                if (consumableStorage != null) {
-                    PlantConsumable consumable = consumableStorage.getConsumable(event.getPlayer(), EquipmentSlot.HAND);
-                    if (consumable != null) {
-                        consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+                if (!onlyConsumableEffectsOnDo || shouldDo) {
+                    PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
+                    // do consumable actions
+                    if (consumableStorage != null) {
+                        PlantConsumable consumable = consumableStorage.getConsumable(event.getPlayer(), EquipmentSlot.HAND);
+                        if (consumable != null) {
+                            consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+                        }
                     }
                 }
-                // perform script block, if present
+                // perform all applicable script blocks
+                if (shouldDo) {
+                    if (plantInteract.getScriptBlockOnDo() != null) {
+                        plantInteract.getScriptBlockOnDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                    }
+                } else {
+                    if (plantInteract.getScriptBlockOnNotDo() != null) {
+                        plantInteract.getScriptBlockOnNotDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                    }
+                }
                 if (plantInteract.getScriptBlock() != null) {
                     plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
                 }
@@ -176,50 +189,49 @@ public class PlantBlockEventListener implements Listener {
                     return;
                 }
             }
-            // see if randomly generated chance is okay
-            boolean chanceSuccess = plantInteract.generateChance();
-            if (chanceSuccess) {
-                // if specific growth stage is given to advance to, change growth stage
-                if (plantInteract.isChangeStage()) {
-                    boolean success = false;
-                    if (plantInteract.getGoToStage() != null) {
-                        StageStorage stageStorage = event.getPlantBlock().getPlant().getStageStorage();
-                        if (stageStorage.isValidStage(plantInteract.getGoToStage())) {
-                            int stageIndex = stageStorage.getGrowthStageIndex(plantInteract.getGoToStage());
-                            success = event.getPlantBlock().goToStageForcefully(main, stageIndex);
-                        }
-                    }
-                    // if goToNext is set to true, then advance to next growth stage as if plant grew
-                    else if (plantInteract.isGoToNext()) {
-                        success = event.getPlantBlock().goToNextStage(main);
-                    }
-                    // if not successfully changed stage, cancel event and do nothing
-                    if (!success) {
-                        event.setCancelled(true);
-                        return;
-                    }
+            // see if should do
+            boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
+            boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
+            // try to load onlyConsumableEffectsOnDo if consumable exists
+            boolean onlyConsumableEffectsOnDo = consumable != null && plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
+            boolean onlyTakeItemOnDo = plantInteract.isOnlyTakeItemOnDo(event.getPlayer(), event.getPlantBlock());
+            boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(event.getPlayer(), event.getPlantBlock());
+            boolean onlyDropOnDo = plantInteract.isOnlyDropOnDo(event.getPlayer(), event.getPlantBlock());
+            // break block, if applicable
+            if (!onlyBreakOnDo || shouldDo) {
+                if (plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
+                    destroyPlantBlock(event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock()));
                 }
-                // break block, if applicable
-                if (plantInteract.isBreakBlock()) {
-                    // drop block items, if applicable
-                    destroyPlantBlock(event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops());
-                }
-                // drop interact items, if any
+            }
+            // drop items, if applicable
+            if (!onlyDropOnDo || shouldDo) {
                 DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock());
             }
-            // do other actions regardless of chance
-            if (plantInteract.isTakeItem()) {
-                decrementItemStack(itemStack);
+            // take item, if applicable
+            if (!onlyTakeItemOnDo || shouldDo) {
+                if (plantInteract.isTakeItem(event.getPlayer(), event.getPlantBlock())) {
+                    decrementItemStack(itemStack);
+                }
             }
-            // do interact actions for block
-            if (!plantInteract.isOnlyEffectsOnChance() || chanceSuccess) {
+            // do break actions for block
+            if (!onlyEffectsOnDo || shouldDo) {
                 plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
             }
-            // do consumable actions
-            if (consumable != null) {
-                consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+            if (!onlyConsumableEffectsOnDo || shouldDo) {
+                if (consumable != null) {
+                    consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+                }
             }
-            // perform script block, if present
+            // perform all applicable script blocks
+            if (shouldDo) {
+                if (plantInteract.getScriptBlockOnDo() != null) {
+                    plantInteract.getScriptBlockOnDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                }
+            } else {
+                if (plantInteract.getScriptBlockOnNotDo() != null) {
+                    plantInteract.getScriptBlockOnNotDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                }
+            }
             if (plantInteract.getScriptBlock() != null) {
                 plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
             }

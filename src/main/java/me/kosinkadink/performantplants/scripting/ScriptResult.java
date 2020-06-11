@@ -13,6 +13,7 @@ public class ScriptResult extends ScriptBlock {
     public static final ScriptResult FALSE = new ScriptResult(false);
     public static final ScriptResult ZERO = new ScriptResult(0);
     public static final ScriptResult EMPTY = new ScriptResult("");
+    public static final ScriptResult NULL = new ScriptResult(null);
 
     private Object value;
     private String variableName = null;

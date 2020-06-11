@@ -40,8 +40,8 @@ public class PlantGiveCommand extends PPCommand {
             commandSender.sendMessage(String.format("Plant item '%s' not recognized", plantId));
             return;
         }
-        // get amount; default to 1 if not provided
-        int amount = 1;
+        // get amount; default to max stack size if not provided
+        int amount = requestedItem.getMaxStackSize();
         if (argList.size() == 3) {
             try {
                 amount = Integer.parseInt(argList.get(2));

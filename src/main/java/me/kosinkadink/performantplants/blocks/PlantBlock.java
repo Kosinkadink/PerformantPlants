@@ -485,17 +485,22 @@ public class PlantBlock implements Droppable {
             }
             // perform on-execute
             if (!executedStage) {
+                executedStage = true;
                 PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
                 if (onExecute != null) {
                     DropHelper.performDrops(onExecute.getDropStorage(), getBlock());
                     // perform any effects set
                     onExecute.getEffectStorage().performEffects(getBlock(), this);
                     if (onExecute.getScriptBlock() != null) {
+                        int currentStageIndex = stageIndex;
                         onExecute.getScriptBlock().loadValue(this);
+                        // make sure no advancement happens if script block causes growth stage change
+                        if (currentStageIndex != stageIndex) {
+                            advance = false;
+                        }
                     }
                 }
             }
-            executedStage = true;
         }
         if (!canGrow) {
             PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
@@ -503,7 +508,12 @@ public class PlantBlock implements Droppable {
                 DropHelper.performDrops(onFail.getDropStorage(), getBlock());
                 onFail.getEffectStorage().performEffects(getBlock(), this);
                 if (onFail.getScriptBlock() != null) {
+                    int currentStageIndex = stageIndex;
                     onFail.getScriptBlock().loadValue(this);
+                    // make sure no advancement happens if script block causes growth stage change
+                    if (currentStageIndex != stageIndex) {
+                        advance = false;
+                    }
                 }
             }
         }
@@ -519,28 +529,6 @@ public class PlantBlock implements Droppable {
         boolean forcedToGrow = !grows && interacted;
         if (forcedToGrow) {
             grows = true;
-        }
-        // if failed to grow, go to stage if set
-        if (!canGrow) {
-            PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
-            if (onFail != null) {
-                if (onFail.getGoToStage() != null) {
-                    if (plant.getStageStorage().isValidStage(onFail.getGoToStage())) {
-                        goToStageForcefully(main, plant.getStageStorage().getGrowthStageIndex(onFail.getGoToStage()));
-                        return;
-                    }
-                }
-            }
-        }
-        PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
-        if (onExecute != null) {
-            // go to stage, if set
-            if (onExecute.getGoToStage() != null) {
-                if (plant.getStageStorage().isValidStage(onExecute.getGoToStage())) {
-                    goToStageForcefully(main, plant.getStageStorage().getGrowthStageIndex(onExecute.getGoToStage()));
-                    return;
-                }
-            }
         }
         if (canGrow && !growthCheckpoint && grows) {
             // increment growth stage; if would not be valid, stop growing

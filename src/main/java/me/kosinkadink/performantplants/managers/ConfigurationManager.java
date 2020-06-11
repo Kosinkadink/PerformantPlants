@@ -936,35 +936,67 @@ public class ConfigurationManager {
         return plantInteractStorage;
     }
 
-    PlantInteract loadPlantInteract(ConfigurationSection section) {
-        return loadPlantInteract(section, null);
-    }
-
     PlantInteract loadPlantInteract(ConfigurationSection section, PlantData data) {
         if (section == null) {
             return null;
         }
         PlantInteract plantInteract = new PlantInteract();
         // set if block should break on interact, if present
-        if (section.isBoolean("break-block")) {
-            plantInteract.setBreakBlock(section.getBoolean("break-block"));
+        if (section.isSet("break-block")) {
+            ScriptBlock value = createPlantScript(section, "break-block", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen break-block value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isBreakBlock(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setBreakBlock(value);
+            }
         }
+        if (section.isSet("only-break-block-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-break-block-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen only-break-block-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isOnlyBreakBlockOnDo(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setOnlyBreakBlockOnDo(value);
+            }
+        }
+
         // set if interaction should give block drops, if present
-        if (section.isBoolean("give-block-drops")) {
-            plantInteract.setGiveBlockDrops(section.getBoolean("give-block-drops"));
+        if (section.isSet("give-block-drops")) {
+            ScriptBlock value = createPlantScript(section, "give-block-drops", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen give-block-drops value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isGiveBlockDrops(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setGiveBlockDrops(value);
+            }
         }
+
         // set if should take item, if present
-        if (section.isBoolean("take-item")) {
-            plantInteract.setTakeItem(section.getBoolean("take-item"));
+        if (section.isSet("take-item")) {
+            ScriptBlock value = createPlantScript(section, "take-item", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen take-item value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isTakeItem(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setTakeItem(value);
+            }
         }
-        // set if should go to next (overridden by go to stage), if present
-        if (section.isBoolean("go-to-next")) {
-            plantInteract.setGoToNext(section.getBoolean("go-to-next"));
+        if (section.isSet("only-take-item-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-take-item-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen only-take-item-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isOnlyTakeItemOnDo(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setOnlyTakeItemOnDo(value);
+            }
         }
-        // set go to stage, if present
-        if (section.isString("go-to-stage")) {
-            plantInteract.setGoToStage(section.getString("go-to-stage"));
-        }
+
         // set match type only, if present
         if (section.isBoolean("match-material")) {
             plantInteract.setMatchMaterial(section.getBoolean("match-material"));
@@ -977,19 +1009,41 @@ public class ConfigurationManager {
         if (section.isBoolean("match-enchantment-level")) {
             plantInteract.setMatchEnchantmentLevel(section.getBoolean("match-enchantment-level"));
         }
-        // set chance of stage advancement, if present
-        if (section.isDouble("chance") || section.isInt("chance")) {
-            double chance = section.getDouble("chance");
-            if (chance <= 0.0 || chance > 100.0) {
-                main.getLogger().warning("chance was not greater than 0.0 and less/equal to 100.0 for interact section: " + section.getCurrentPath());
-                return null;
+
+        // set condition for doing actions, if present
+        if (section.isSet("do-if")) {
+            ScriptBlock value = createPlantScript(section, "do-if", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen do-if value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.generateDoIf(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setDoIf(value);
             }
-            plantInteract.setChance(chance);
         }
+
         // set if effects should only happen on successful chance, if present
-        if (section.isBoolean("only-effects-on-chance")) {
-            plantInteract.setOnlyEffectsOnChance(section.getBoolean("only-effects-on-chance"));
+        if (section.isSet("only-effects-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-effects-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen only-effects-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isOnlyEffectsOnDo(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setOnlyEffectsOnDo(value);
+            }
         }
+        if (section.isSet("only-consumable-effects-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-consumable-effects-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen only-consumable-effects-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isOnlyConsumableEffectsOnDo(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setOnlyConsumableEffectsOnDo(value);
+            }
+        }
+
         // add drops, if present
         if (section.isConfigurationSection("drops")) {
             DropStorage dropStorage = new DropStorage();
@@ -999,6 +1053,17 @@ public class ConfigurationManager {
             }
             plantInteract.setDropStorage(dropStorage);
         }
+        if (section.isSet("only-drop-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-drop-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                main.getLogger().warning(String.format("Interact will not have chosen only-drop-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isOnlyDropOnDo(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setOnlyDropOnDo(value);
+            }
+        }
+
         // add effects, if present
         addEffectsToEffectStorage(section, plantInteract.getEffectStorage(), data);
         // add consumable, if present
@@ -1006,11 +1071,21 @@ public class ConfigurationManager {
         if (consumable != null) {
             plantInteract.setConsumableStorage(consumable);
         }
-        // add script block, if present
-        ScriptBlock scriptBlock = loadPlantScript(section, data);
+
+        // add script blocks, if present
+        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
         if (scriptBlock != null) {
             plantInteract.setScriptBlock(scriptBlock);
         }
+        scriptBlock = createPlantScript(section, "plant-script-on-do", data);
+        if (scriptBlock != null) {
+            plantInteract.setScriptBlockOnDo(scriptBlock);
+        }
+        scriptBlock = createPlantScript(section, "plant-script-on-not-do", data);
+        if (scriptBlock != null) {
+            plantInteract.setScriptBlockOnNotDo(scriptBlock);
+        }
+
         return plantInteract;
     }
 
@@ -2833,8 +2908,8 @@ public class ConfigurationManager {
             main.getLogger().warning("Go-to-stage and go-to-next both missing in section: " + section.getCurrentPath());
             return null;
         }
-        ScriptBlock stage = null;
-        ScriptBlock ifNext = null;
+        ScriptBlock stage = ScriptResult.EMPTY;
+        ScriptBlock ifNext = ScriptResult.FALSE;
         if (section.isSet(stageString)) {
             stage = createPlantScript(section, stageString, data);
         }

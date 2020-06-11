@@ -29,13 +29,12 @@ public class ScriptOperationChangeStage extends ScriptOperation {
         if (plantBlock == null || plantBlock.hasParent()) {
             return ScriptResult.TRUE;
         }
-        ScriptResult stage = getStage() != null ? getStage().loadValue(plantBlock, player) : null;
-        ScriptResult ifNext = getIfNext() != null ? getStage().loadValue(plantBlock, player) : null;
+        String stageName = getStage().loadValue(plantBlock, player).getStringValue();
+        boolean ifNext = getIfNext().loadValue(plantBlock, player).getBooleanValue();
         // try to go to stage or next stage; if worked, return true; otherwise return false
         boolean success = false;
-        if (stage != null) {
+        if (!stageName.isEmpty()) {
             StageStorage stageStorage = plantBlock.getPlant().getStageStorage();
-            String stageName = stage.getStringValue();
             if (stageStorage.isValidStage(stageName)) {
                 int stageIndex = stageStorage.getGrowthStageIndex(stageName);
                 success = plantBlock.goToStageForcefully(main, stageIndex);
@@ -45,7 +44,7 @@ public class ScriptOperationChangeStage extends ScriptOperation {
             }
         }
         // if goToNext is set to true, then advance to next growth stage as if plant grew
-        else if (ifNext != null && ifNext.getBooleanValue()) {
+        else if (ifNext) {
             success = plantBlock.goToNextStage(main);
         }
         return new ScriptResult(success);

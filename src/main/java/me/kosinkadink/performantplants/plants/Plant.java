@@ -236,15 +236,17 @@ public class Plant {
                 }
                 // add all item interacts to check
                 checkInteractList.addAll(interactStorage.getInteractList());
-                // check interacts
+                // check interacts for any stage changes
+                // TODO: parse all ScriptBlocks and if any ChangeStage or Interact operations are found,
+                //  make sure the stages exist
                 for (PlantInteract plantInteract : checkInteractList) {
-                    if (plantInteract.getGoToStage() != null) {
-                        if (!stageStorage.isValidStage(plantInteract.getGoToStage())) {
-                            Bukkit.getLogger().warning(String.format("Stage with id '%s' does not exist for plant: %s",
-                                    plantInteract.getGoToStage(), id));
-                            return false;
-                        }
-                    }
+//                    if (plantInteract.getGoToStage() != null) {
+//                        if (!stageStorage.isValidStage(plantInteract.getGoToStage())) {
+//                            Bukkit.getLogger().warning(String.format("Stage with id '%s' does not exist for plant: %s",
+//                                    plantInteract.getGoToStage(), id));
+//                            return false;
+//                        }
+//                    }
                 }
             }
         }

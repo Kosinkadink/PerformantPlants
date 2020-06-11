@@ -25,7 +25,7 @@ public class PlantChatEffect extends PlantEffect {
             player.chat(TextHelper.translateAlternateColorCodes(fromPlayerString));
         }
         ScriptResult toPlayerResult = toPlayer.loadValue(plantBlock, player);
-        String toPlayerString = fromPlayerResult.getStringValue();
+        String toPlayerString = toPlayerResult.getStringValue();
         if (!toPlayerString.isEmpty()) {
             if (!toPlayerResult.isHasPlaceholder()) {
                 toPlayerString = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, toPlayerString);
