@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
@@ -19,12 +20,16 @@ public class ItemSettings {
     private List<String> lore;
     private String skullTexture;
     private int amount = 1;
-    private List<EnchantmentLevel> enchantments = new ArrayList<>();
-    private List<PotionEffect> potionEffects = new ArrayList<>();
+
+    private final List<EnchantmentLevel> enchantments = new ArrayList<>();
+    private final List<ItemFlag> itemFlags = new ArrayList<>();
+    private final List<PotionEffect> potionEffects = new ArrayList<>();
+
     private Color potionColor;
     private PotionData potionData;
     private int damage = 0;
     private boolean unbreakable = false;
+    private Integer customModelData = null;
 
     private ItemStack itemStack;
 
@@ -114,6 +119,10 @@ public class ItemSettings {
         enchantments.add(enchantmentLevel);
     }
 
+    public void addItemFlag(ItemFlag flag) {
+        itemFlags.add(flag);
+    }
+
     public void addPotionEffect(PotionEffect potionEffect) {
         potionEffects.add(potionEffect);
     }
@@ -132,6 +141,14 @@ public class ItemSettings {
 
     public void setPotionData(PotionData potionData) {
         this.potionData = potionData;
+    }
+
+    public Integer getCustomModelData() {
+        return customModelData;
+    }
+
+    public void setCustomModelData(Integer customModelData) {
+        this.customModelData = customModelData;
     }
 
     public ItemStack getItemStack() {
@@ -168,6 +185,15 @@ public class ItemSettings {
         // add potion data, if set
         if (getPotionData() != null) {
             builder.basePotionData(getPotionData());
+        }
+        // add item flags
+
+        if (!itemFlags.isEmpty()) {
+            builder.addItemFlags((ItemFlag[]) itemFlags.toArray());
+        }
+        // add custom model data
+        if (getCustomModelData() != null) {
+            builder.customModelData(getCustomModelData());
         }
         return builder.build();
     }

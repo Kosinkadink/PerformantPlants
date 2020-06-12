@@ -691,7 +691,19 @@ public class ConfigurationManager {
             if (section.isBoolean("unbreakable")) {
                 finalItemSettings.setUnbreakable(section.getBoolean("unbreakable"));
             }
-            // get enchantments -> Enchantment:Level
+            // get item flags, if present
+            List<String> itemFlagStrings = section.getStringList("flags");
+            for (String itemFlagString : itemFlagStrings) {
+                ItemFlag flag;
+                try {
+                    flag = ItemFlag.valueOf(itemFlagString.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("ItemFlag '%s' not recognized in item section: %s", itemFlagString, section.getCurrentPath()));
+                    return null;
+                }
+                finalItemSettings.addItemFlag(flag);
+            }
+            // get enchantments -> Enchantment:Level, if present
             List<String> enchantmentStrings = section.getStringList("enchantments");
             for (String enchantmentString : enchantmentStrings) {
                 String[] splitString = enchantmentString.split(":");
@@ -724,7 +736,7 @@ public class ConfigurationManager {
                 }
                 finalItemSettings.addEnchantmentLevel(new EnchantmentLevel(enchantment, level));
             }
-            // get potion effects -> PotionEffectType:Duration:Amplifier
+            // get potion effects -> PotionEffectType:Duration:Amplifier, if present
             List<String> potionStrings = section.getStringList("potion-effects");
             for (String potionString : potionStrings) {
                 String[] splitString = potionString.split(":");
@@ -778,6 +790,16 @@ public class ConfigurationManager {
                         finalItemSettings.setPotionData(potionData);
                     }
                 }
+            }
+            // get custom model data, if present
+            if (section.isInt("custom-model-data")) {
+                int customModelData = section.getInt("custom-model-data");
+                if (customModelData < 0) {
+                    main.getLogger().warning(String.format("CustomModelData '%d' cannot be less than 0 in section: %s",
+                            customModelData, section.getCurrentPath()));
+                    return null;
+                }
+                finalItemSettings.setCustomModelData(customModelData);
             }
             return finalItemSettings;
         }

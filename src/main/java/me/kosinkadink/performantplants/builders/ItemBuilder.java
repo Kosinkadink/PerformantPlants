@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.util.ReflectionHelper;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -83,6 +84,15 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder addItemFlags(ItemFlag... flags) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta != null) {
+            itemMeta.addItemFlags(flags);
+            item.setItemMeta(itemMeta);
+        }
+        return this;
+    }
+
     public ItemBuilder addEnchantment(Enchantment enchantment, int level) {
         item.addUnsafeEnchantment(enchantment, level);
         return this;
@@ -139,6 +149,15 @@ public class ItemBuilder {
 
     public ItemBuilder skullTexture(String encodedUrl) {
         ReflectionHelper.setSkullTexture(item, encodedUrl);
+        return this;
+    }
+
+    public ItemBuilder customModelData(Integer customModelData) {
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta != null) {
+            itemMeta.setCustomModelData(customModelData);
+            item.setItemMeta(itemMeta);
+        }
         return this;
     }
 
