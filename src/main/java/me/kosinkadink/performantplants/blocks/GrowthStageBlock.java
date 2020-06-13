@@ -1,9 +1,9 @@
 package me.kosinkadink.performantplants.blocks;
 
-import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 
-public class GrowthStageBlock implements Droppable {
+public class GrowthStageBlock {
 
     private String id;
     private RelativeLocation location;
@@ -26,10 +26,9 @@ public class GrowthStageBlock implements Droppable {
     private boolean stopGrowth = false;
     private boolean randomOrientation = false;
     private boolean placedOrientation = false;
-    private int dropLimit = -1;
-    private ArrayList<Drop> drops = new ArrayList<>();
     private PlantInteractStorage onInteract;
     private PlantInteractStorage onBreak;
+    private DropStorage dropStorage = new DropStorage();
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings, String skullTexture) {
         this.id = id;
@@ -82,26 +81,8 @@ public class GrowthStageBlock implements Droppable {
         this.breakParent = breakParent;
     }
 
-    public ArrayList<Drop> getDrops() {
-        return drops;
-    }
-
-    public void addDrop(Drop drop) {
-        drops.add(drop);
-    }
-
     public void setChildOf(RelativeLocation parentLocation) {
         childOf = parentLocation;
-    }
-
-    public int getDropLimit() {
-        return dropLimit;
-    }
-
-    public void setDropLimit(int limit) {
-        if (limit >= 0) {
-            dropLimit = limit;
-        }
     }
 
     public boolean isIgnoreSpace() {
@@ -180,6 +161,14 @@ public class GrowthStageBlock implements Droppable {
 
     public void setOnBreak(PlantInteractStorage onBreak) {
         this.onBreak = onBreak;
+    }
+
+    public DropStorage getDropStorage() {
+        return dropStorage;
+    }
+
+    public void setDropStorage(DropStorage dropStorage) {
+        this.dropStorage = dropStorage;
     }
 
 }

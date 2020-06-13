@@ -174,10 +174,13 @@ public class ScriptResult extends ScriptBlock {
             }
             return this;
         }
-        if (plantBlock == null || plantBlock.getPlantData() == null) {
+        PlantData data = null;
+        if (plantBlock != null) {
+            data = plantBlock.getEffectivePlantData();
+        }
+        if (data == null) {
             return null;
         }
-        PlantData data = plantBlock.getPlantData();
         JSONObject json = data.getData();
         return new ScriptResult(json.get(variableName));
     }

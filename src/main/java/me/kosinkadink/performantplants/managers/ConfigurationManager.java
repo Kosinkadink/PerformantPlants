@@ -4,11 +4,11 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.effects.*;
-import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationChangeStage;
+import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationConsumable;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationInteract;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
@@ -169,9 +169,11 @@ public class ConfigurationManager {
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
         // add consumable behavior
-        PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig, null);
-        if (consumable != null) {
-            plantItem.setConsumableStorage(consumable);
+        if (itemConfig.isConfigurationSection("consumable")) {
+            PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("consumable"), null);
+            if (consumable != null) {
+                plantItem.setConsumableStorage(consumable);
+            }
         }
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
@@ -275,18 +277,9 @@ public class ConfigurationManager {
                                 growthStage.setMinGrowthTime(stageMinGrowthTime);
                                 growthStage.setMaxGrowthTime(stageMaxGrowthTime);
                             }
-                            // set drop limit, if present
-                            if (stageConfig.isInt("drop-limit")) {
-                                int stageDropLimit = stageConfig.getInt("drop-limit");
-                                growthStage.setDropLimit(stageDropLimit);
-                            }
-                            // set drops, if present
-                            if (stageConfig.isSet("drops")) {
-                                // add drops
-                                boolean valid = addDropsToDroppable(stageConfig, growthStage);
-                                if (!valid) {
-                                    return;
-                                }
+                            // set drops and/or drop limit
+                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage())) {
+                                return;
                             }
                             // set growth checkpoint, if present
                             if (stageConfig.isBoolean("growth-checkpoint")) {
@@ -346,10 +339,6 @@ public class ConfigurationManager {
                                     main.getLogger().warning(String.format("Could not create growth stage block in plant %s due to: %s", plantId, e.getMessage()));
                                     return;
                                 }
-                                // set drop limit, if present
-                                if (blockConfig.isInt("drop-limit")) {
-                                    growthStageBlock.setDropLimit(blockConfig.getInt("drop-limit"));
-                                }
                                 // set ignore space, if present
                                 if (blockConfig.isBoolean("ignore-space")) {
                                     growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
@@ -392,9 +381,13 @@ public class ConfigurationManager {
                                 // set drops, if present
                                 if (blockConfig.isSet("drops")) {
                                     // add drops
-                                    boolean valid = addDropsToDroppable(blockConfig, growthStageBlock);
+                                    boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage());
                                     if (!valid) {
                                         return;
+                                    }
+                                    // if no limit defined for growthStageBlock but is defined for growth stage, apply it
+                                    if (!growthStageBlock.getDropStorage().isDropLimitSet() && growthStage.getDropStorage().isDropLimitSet()) {
+                                        growthStageBlock.getDropStorage().setDropLimit(growthStage.getDropStorage().getDropLimit());
                                     }
                                 }
                                 // set interact behavior, if present
@@ -445,9 +438,11 @@ public class ConfigurationManager {
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
                     addPricesToPlantItem(goodSection, goodItem);
-                    PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection, null);
-                    if (goodConsumable != null) {
-                        goodItem.setConsumableStorage(goodConsumable);
+                    if (goodSection.isConfigurationSection("consumable")) {
+                        PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection.getConfigurationSection("consumable"), null);
+                        if (goodConsumable != null) {
+                            goodItem.setConsumableStorage(goodConsumable);
+                        }
                     }
                     plant.addGoodItem(goodId, goodItem);
                     main.getLogger().info(String.format("Added good item '%s' to plant: %s", goodId, plantId));
@@ -1068,12 +1063,10 @@ public class ConfigurationManager {
 
         // add drops, if present
         if (section.isConfigurationSection("drops")) {
-            DropStorage dropStorage = new DropStorage();
-            boolean valid = addDropsToDroppable(section, dropStorage);
+            boolean valid = addDropsToDropStorage(section, plantInteract.getDropStorage());
             if (!valid) {
                 return null;
             }
-            plantInteract.setDropStorage(dropStorage);
         }
         if (section.isSet("only-drop-on-do")) {
             ScriptBlock value = createPlantScript(section, "only-drop-on-do", data);
@@ -1089,11 +1082,12 @@ public class ConfigurationManager {
         // add effects, if present
         addEffectsToEffectStorage(section, plantInteract.getEffectStorage(), data);
         // add consumable, if present
-        PlantConsumableStorage consumable = loadPlantConsumableStorage(section, data);
-        if (consumable != null) {
-            plantInteract.setConsumableStorage(consumable);
+        if (section.isConfigurationSection("consumable")) {
+            PlantConsumableStorage consumable = loadPlantConsumableStorage(section.getConfigurationSection("consumable"), data);
+            if (consumable != null) {
+                plantInteract.setConsumableStorage(consumable);
+            }
         }
-
         // add script blocks, if present
         ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
         if (scriptBlock != null) {
@@ -1115,14 +1109,10 @@ public class ConfigurationManager {
         if (section == null) {
             return null;
         }
-        if (!section.isConfigurationSection("consumable")) {
-            return null;
-        }
-        ConfigurationSection consumableStorageSection = section.getConfigurationSection("consumable");
         PlantConsumableStorage consumableStorage = new PlantConsumableStorage();
-        for (String placeholder : consumableStorageSection.getKeys(false)) {
-            if (consumableStorageSection.isConfigurationSection(placeholder)) {
-                PlantConsumable consumable = loadPlantConsumable(consumableStorageSection.getConfigurationSection(placeholder), data);
+        for (String placeholder : section.getKeys(false)) {
+            if (section.isConfigurationSection(placeholder)) {
+                PlantConsumable consumable = loadPlantConsumable(section.getConfigurationSection(placeholder), data);
                 if (consumable != null) {
                     consumableStorage.addConsumable(consumable);
                 }
@@ -1273,41 +1263,39 @@ public class ConfigurationManager {
         return new PotionData(potionType, extended, upgraded);
     }
 
-    boolean addDropsToDroppable(ConfigurationSection section, Droppable droppable) {
-        // iterate through drops
-        if (!section.isConfigurationSection("drops")) {
-            main.getLogger().warning("No drops provided in section: " + section.getCurrentPath());
-            return false;
-        }
+    boolean addDropsToDropStorage(ConfigurationSection section, DropStorage dropStorage) {
         // add drop limit, if present
         if (section.isInt("drop-limit")) {
-            droppable.setDropLimit(section.getInt("drop-limit"));
+            dropStorage.setDropLimit(section.getInt("drop-limit"));
         }
         ConfigurationSection dropsConfig = section.getConfigurationSection("drops");
-        for (String dropName : dropsConfig.getKeys(false)) {
-            ConfigurationSection dropConfig = dropsConfig.getConfigurationSection(dropName);
-            if (dropConfig == null) {
-                main.getLogger().warning("dropConfig was null in section: " + section.getCurrentPath());
-                return false;
+        if (dropsConfig != null) {
+            // iterate through drops
+            for (String dropName : dropsConfig.getKeys(false)) {
+                ConfigurationSection dropConfig = dropsConfig.getConfigurationSection(dropName);
+                if (dropConfig == null) {
+                    main.getLogger().warning("dropConfig was null in section: " + section.getCurrentPath());
+                    return false;
+                }
+                // get drop settings
+                DropSettings dropSettings = loadDropConfig(dropConfig);
+                if (dropSettings == null) {
+                    main.getLogger().warning("dropSettings were null in section: " + section.getCurrentPath());
+                    return false;
+                }
+                ItemSettings dropItemSettings = dropSettings.getItemSettings();
+                if (dropItemSettings == null) {
+                    main.getLogger().warning("dropItemSettings were null in section: " + section.getCurrentPath());
+                    return false;
+                }
+                Drop drop = new Drop(
+                        dropItemSettings.generateItemStack(),
+                        dropSettings.getMinAmount(),
+                        dropSettings.getMaxAmount(),
+                        dropSettings.getChance()
+                );
+                dropStorage.addDrop(drop);
             }
-            // get drop settings
-            DropSettings dropSettings = loadDropConfig(dropConfig);
-            if (dropSettings == null) {
-                main.getLogger().warning("dropSettings were null in section: " + section.getCurrentPath());
-                return false;
-            }
-            ItemSettings dropItemSettings = dropSettings.getItemSettings();
-            if (dropItemSettings == null) {
-                main.getLogger().warning("dropItemSettings were null in section: " + section.getCurrentPath());
-                return false;
-            }
-            Drop drop = new Drop(
-                    dropItemSettings.generateItemStack(),
-                    dropSettings.getMinAmount(),
-                    dropSettings.getMaxAmount(),
-                    dropSettings.getChance()
-            );
-            droppable.addDrop(drop);
         }
         return true;
     }
@@ -1797,8 +1785,12 @@ public class ConfigurationManager {
     }
 
     PlantDropEffect createDropEffect(ConfigurationSection section, PlantData data) {
+        if (!section.isConfigurationSection("drops")) {
+            main.getLogger().warning("Drop effect not added; no drops section provided in section: " + section.getCurrentPath());
+            return null;
+        }
         PlantDropEffect effect = new PlantDropEffect();
-        boolean added = addDropsToDroppable(section, effect.getDropStorage());
+        boolean added = addDropsToDropStorage(section, effect.getDropStorage());
         if (!added) {
             main.getLogger().warning("Drop effect not added; issue getting drops");
             return null;
@@ -2556,6 +2548,8 @@ public class ConfigurationManager {
                     returned = createScriptOperationChangeStage(blockSection, data); break;
                 case "interact":
                     returned = createScriptOperationInteract(blockSection, data); break;
+                case "consumable":
+                    returned = createScriptOperationConsumable(blockSection, data); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, data); break;
@@ -2922,6 +2916,20 @@ public class ConfigurationManager {
             useMainHand = createPlantScript(section, useMainHandString, data);
         }
         return new ScriptOperationInteract(plantInteractStorage, useMainHand);
+    }
+    ScriptOperation createScriptOperationConsumable(ConfigurationSection section, PlantData data) {
+        PlantConsumableStorage plantConsumableStorage = loadPlantConsumableStorage(section, data);
+        if (plantConsumableStorage == null) {
+            main.getLogger().warning("Could not load consumable section to generate PlantScript Consumable in " +
+                    "section: " + section.getCurrentPath());
+            return null;
+        }
+        String useMainHandString = "use-main-hand";
+        ScriptBlock useMainHand = ScriptResult.TRUE;
+        if (section.isSet(useMainHandString)) {
+            useMainHand = createPlantScript(section, useMainHandString, data);
+        }
+        return new ScriptOperationConsumable(plantConsumableStorage, useMainHand);
     }
     ScriptOperation createScriptOperationChangeStage(ConfigurationSection section, PlantData data) {
         String stageString = "go-to-stage";

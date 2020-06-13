@@ -59,7 +59,8 @@ public class ScriptHelper {
     }
 
     public static String setVariables(PlantBlock plantBlock, String text) {
-        if (!plantBlock.hasPlantData()) {
+        PlantData plantData = plantBlock.getEffectivePlantData();
+        if (plantData == null) {
             return text;
         }
         // figure out which variables are present in the string
@@ -68,7 +69,7 @@ public class ScriptHelper {
         while (matcher.find()) {
             String variableName = matcher.group(1);
             // see if variable is recognized;
-            String value = getVariableValue(plantBlock, variableName);
+            String value = getVariableValue(plantBlock, plantData, variableName);
             if (value == null) {
                 matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement("$"+variableName+"$"));
             } else {
@@ -79,7 +80,7 @@ public class ScriptHelper {
         return stringBuffer.toString();
     }
 
-    private static String getVariableValue(PlantBlock plantBlock, String variableName) {
+    private static String getVariableValue(PlantBlock plantBlock, PlantData plantData, String variableName) {
         // check if it is a property name
         if (variableName.startsWith("_")) {
             switch (variableName) {
@@ -98,7 +99,6 @@ public class ScriptHelper {
             }
         }
         // check if variable exists in plant block data
-        PlantData plantData = plantBlock.getPlantData();
         if (plantData.getData().containsKey(variableName)) {
             // create a ScriptResult for easy conversion to string
             try {

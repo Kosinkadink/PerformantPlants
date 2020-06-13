@@ -72,12 +72,19 @@ public class PlantSellCommand extends PPCommand {
         // take proper amount of money
         double totalWorth = requestedItem.getSellPrice()*takenAmount;
         main.getEconomy().depositPlayer(player, totalWorth);
-        // TODO: show message to seller
+        // show message to seller
         if (amount != 0 && takenAmount == 0) {
-            commandSender.sendMessage(playerName + " sold 0 of " + plantId + " due to none found in inventory");
+            player.sendMessage("Sold 0 of " + plantId + " due to none found in inventory");
+            if (!(commandSender instanceof Player) || ((Player) commandSender).getUniqueId() != player.getUniqueId()) {
+                commandSender.sendMessage(playerName + " sold 0 of " + plantId + " due to none found in inventory");
+            }
         } else {
-            commandSender.sendMessage(String.format("%s sold %d of %s for price of %.2f",
-                    playerName, takenAmount, plantId, totalWorth));
+            player.sendMessage(String.format("Sold %d of %s for price of %.2f",
+                    takenAmount, plantId, totalWorth));
+            if (!(commandSender instanceof Player) || ((Player) commandSender).getUniqueId() != player.getUniqueId()) {
+                commandSender.sendMessage(String.format("%s sold %d of %s for price of %.2f",
+                        playerName, takenAmount, plantId, totalWorth));
+            }
             // add sale to StatisticsManager
             main.getStatisticsManager().addPlantItemsSold(player.getUniqueId(), plantId, takenAmount);
         }

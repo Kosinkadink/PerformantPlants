@@ -11,6 +11,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
+    private static Main main;
 
     private Economy economy;
 
@@ -26,6 +27,7 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        main = this;
         registerManagers();
         registerListeners();
         registerCommands();
@@ -46,6 +48,10 @@ public class Main extends JavaPlugin {
         configManager.getConfigSettings().setDebug(true); // enable debug mode to get extra logging on shutdown
         databaseManager.cancelTask(); // cancel queued up save task, to prevent possible double-run
         databaseManager.saveDatabases(); // save all plant blocks
+    }
+
+    public static Main getInstance() {
+        return main;
     }
 
     private boolean setupEconomy() {

@@ -1,14 +1,13 @@
 package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.interfaces.Droppable;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -20,7 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-public class PlantBlock implements Droppable {
+public class PlantBlock {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
@@ -37,7 +36,7 @@ public class PlantBlock implements Droppable {
     private BukkitTask growthTask;
     private UUID playerUUID;
     private UUID plantUUID;
-    private ArrayList<Drop> drops = new ArrayList<>();
+    private DropStorage dropStorage = new DropStorage();
     private PlantData plantData = null;
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
@@ -187,42 +186,24 @@ public class PlantBlock implements Droppable {
         return plantUUID;
     }
 
-    public int getDropLimit() {
+    public DropStorage getDropStorage() {
         if (plant.hasGrowthStages()) {
-            GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
-            if (growthStage != null) {
-                return growthStage.getDropLimit(stageBlockId);
-            }
-        }
-        return 0;
-    }
-
-    @Override
-    public void setDropLimit(int limit) {
-        // do nothing
-    }
-
-    public ArrayList<Drop> getDrops() {
-        if (!plant.hasGrowthStages()) {
-            return drops;
-        } else {
             GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
             if (growthStage != null) {
                 GrowthStageBlock stageBlock = growthStage.getGrowthStageBlock(stageBlockId);
                 // get stageBlock's drops if exist
-                if (stageBlock != null && stageBlock.getDrops().size() > 0) {
-                    return stageBlock.getDrops();
+                if (stageBlock != null && stageBlock.getDropStorage().getDrops().size() > 0) {
+                    return stageBlock.getDropStorage();
                 }
                 // otherwise use growthStage's drops
-                return growthStage.getDrops();
+                return growthStage.getDropStorage();
             }
         }
-        return new ArrayList<>();
+        return dropStorage;
     }
 
-    @Override
-    public void addDrop(Drop drop) {
-        // do nothing
+    public void setDropStorage(DropStorage dropStorage) {
+        this.dropStorage = dropStorage;
     }
 
     public boolean isBreakChildren() {
@@ -299,6 +280,16 @@ public class PlantBlock implements Droppable {
 
     public PlantData getPlantData() {
         return plantData;
+    }
+
+    public PlantData getEffectivePlantData() {
+        if (hasParent()) {
+            PlantBlock parent = Main.getInstance().getPlantManager().getPlantBlock(getParentLocation());
+            if (parent != null) {
+                return parent.getPlantData();
+            }
+        }
+        return getPlantData();
     }
 
     public void setPlantData(PlantData plantData) {

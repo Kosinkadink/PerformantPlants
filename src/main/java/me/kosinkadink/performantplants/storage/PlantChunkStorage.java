@@ -51,10 +51,6 @@ public class PlantChunkStorage {
         MetadataHelper.setPlantBlockMetadata(main, block);
         // remove block from removal set
         removeBlockFromRemoval(block);
-        // TODO: remove this commented out line
-//        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Added PlantBlock: " + block.toString() + " to world: "
-//                + getWorldName()
-//        );
     }
 
     public boolean removePlantBlock(PlantBlock block) {

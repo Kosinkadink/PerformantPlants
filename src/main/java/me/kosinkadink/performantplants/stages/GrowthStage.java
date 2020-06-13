@@ -1,24 +1,20 @@
 package me.kosinkadink.performantplants.stages;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.interfaces.Droppable;
-import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.PlantInteract;
-import me.kosinkadink.performantplants.util.TimeHelper;
+import me.kosinkadink.performantplants.storage.DropStorage;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class GrowthStage implements Droppable {
+public class GrowthStage {
 
-    private String id;
-    private HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
+    private final String id;
+    private final HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private long minGrowthTime = -1;
     private long maxGrowthTime = -1;
     private boolean growthCheckpoint = false;
-    private int dropLimit = 0;
-    private ArrayList<Drop> drops = new ArrayList<>();
+    private DropStorage dropStorage = new DropStorage();
     private PlantInteract onExecute;
     private PlantInteract onFail;
 
@@ -30,12 +26,12 @@ public class GrowthStage implements Droppable {
         return id;
     }
 
-    public ArrayList<Drop> getDrops() {
-        return drops;
+    public DropStorage getDropStorage() {
+        return dropStorage;
     }
 
-    public void addDrop(Drop drop) {
-        drops.add(drop);
+    public void setDropStorage(DropStorage dropStorage) {
+        this.dropStorage = dropStorage;
     }
 
     public void addGrowthStageBlock(GrowthStageBlock block) {
@@ -70,27 +66,6 @@ public class GrowthStage implements Droppable {
             return ThreadLocalRandom.current().nextLong(minGrowthTime, maxGrowthTime + 1);
         }
         return 0;
-    }
-
-    public int getDropLimit() {
-        return dropLimit;
-    }
-
-    public int getDropLimit(String growthBlockId) {
-        GrowthStageBlock growthStageBlock = getGrowthStageBlock(growthBlockId);
-        if (growthStageBlock != null) {
-            int blockDropLimit = growthStageBlock.getDropLimit();
-            if (blockDropLimit >= 0) {
-                return blockDropLimit;
-            }
-        }
-        return getDropLimit();
-    }
-
-    public void setDropLimit(int limit) {
-        if (limit >= 0) {
-            dropLimit = limit;
-        }
     }
 
     public boolean isGrowthCheckpoint() {

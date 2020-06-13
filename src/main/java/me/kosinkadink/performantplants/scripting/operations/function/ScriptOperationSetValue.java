@@ -29,23 +29,25 @@ public class ScriptOperationSetValue extends ScriptOperation {
     public ScriptResult perform(PlantBlock plantBlock, Player player) {
         ScriptResult leftInstance = (ScriptResult) getLeft();
         ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
-        if (leftInstance.isVariable() && plantBlock != null && plantBlock.getPlantData() != null) {
-            PlantData plantData = plantBlock.getPlantData();
-            switch (leftInstance.getType()) {
-                case STRING:
-                    plantData.getData().put(leftInstance.getVariableName(), rightInstance.getStringValue());
-                    break;
-                case LONG:
-                    plantData.getData().put(leftInstance.getVariableName(), rightInstance.getLongValue());
-                    break;
-                case DOUBLE:
-                    plantData.getData().put(leftInstance.getVariableName(), rightInstance.getDoubleValue());
-                    break;
-                case BOOLEAN:
-                    plantData.getData().put(leftInstance.getVariableName(), rightInstance.getBooleanValue());
-                    break;
-                default:
-                    break;
+        if (leftInstance.isVariable() && plantBlock != null) {
+            PlantData plantData = plantBlock.getEffectivePlantData();
+            if (plantData != null) {
+                switch (leftInstance.getType()) {
+                    case STRING:
+                        plantData.getData().put(leftInstance.getVariableName(), rightInstance.getStringValue());
+                        break;
+                    case LONG:
+                        plantData.getData().put(leftInstance.getVariableName(), rightInstance.getLongValue());
+                        break;
+                    case DOUBLE:
+                        plantData.getData().put(leftInstance.getVariableName(), rightInstance.getDoubleValue());
+                        break;
+                    case BOOLEAN:
+                        plantData.getData().put(leftInstance.getVariableName(), rightInstance.getBooleanValue());
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         return rightInstance;

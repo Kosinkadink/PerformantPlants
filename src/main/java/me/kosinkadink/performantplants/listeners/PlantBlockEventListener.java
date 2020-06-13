@@ -8,7 +8,6 @@ import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import me.kosinkadink.performantplants.storage.StageStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -516,7 +515,7 @@ public class PlantBlockEventListener implements Listener {
         }
         // handle drops
         if (drops) {
-            DropHelper.performDrops(plantBlock, block);
+            DropHelper.performDrops(plantBlock.getDropStorage(), block);
         }
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {
