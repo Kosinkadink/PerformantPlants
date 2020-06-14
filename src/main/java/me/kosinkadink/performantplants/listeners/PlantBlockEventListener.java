@@ -142,7 +142,7 @@ public class PlantBlockEventListener implements Listener {
             if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
-            if (!event.getPlantBlock().checkGrowthRequirements(main)) {
+            if (!event.getPlantBlock().checkGrowthRequirements()) {
                 destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
             }
             // set it back to farmland to avoid weird effect on player

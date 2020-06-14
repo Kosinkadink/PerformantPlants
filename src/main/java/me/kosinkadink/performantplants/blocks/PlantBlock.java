@@ -14,6 +14,8 @@ import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -440,7 +442,7 @@ public class PlantBlock {
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
                 // if keep block vanilla, just change blockData
-                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
+                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation());
                 // if not air or not relevant plant block, continue
                 if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     continue;
@@ -580,18 +582,18 @@ public class PlantBlock {
 
     public boolean checkAllRequirements(Main main) {
         // check that grow block requirements are met
-        if (!checkGrowthRequirements(main)) {
+        if (!checkGrowthRequirements()) {
             return false;
         }
         // check that space is available for blocks that are required to be placed
-        if (!checkSpaceRequirements(main)) {
+        if (!checkSpaceRequirements()) {
             if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("No space to grow for " + toString());
             return false;
         }
         return true;
     }
 
-    public boolean checkGrowthRequirements(Main main) {
+    public boolean checkGrowthRequirements() {
         RequirementStorage requirements = plant.getGrowthRequirementStorage();
         if (isNewlyPlaced() && plant.hasPlantRequirements()) {
             requirements = plant.getPlantRequirementStorage();
@@ -605,27 +607,52 @@ public class PlantBlock {
         }
 
         if (requirements.isSet()) {
+            Block thisBlock = getBlock();
             if (requirements.hasWaterRequirement() && requirements.isWaterRequired()) {
-                if (!checkWaterPresent(main)) {
+                if (!checkWaterPresent(thisBlock)) {
                     return false;
                 }
             }
             if (requirements.hasLavaRequirement() && requirements.isLavaRequired()) {
-                if (!checkLavaPresent(main)) {
+                if (!checkLavaPresent(thisBlock)) {
                     return false;
                 }
             }
             if (requirements.hasLightRequirement()) {
-                if (!checkLightPresent(main, requirements)) {
+                if (!checkLightPresent(thisBlock, requirements)) {
+                    return false;
+                }
+            }
+            if (requirements.hasTimeRequirement()) {
+                if (!checkTimePresent(thisBlock, requirements)) {
+                    return false;
+                }
+            }
+            if (requirements.hasTemperatureRequirement()) {
+                if (!checkTemperaturePresent(thisBlock, requirements)) {
+                    return false;
+                }
+            }
+            if (requirements.hasWorldRequirement()) {
+                if (!checkWorldPresent(thisBlock, requirements)) {
+                    return false;
+                }
+            }
+            if (requirements.hasBiomeRequirement()) {
+                if (!checkBiomePresent(thisBlock, requirements)) {
+                    return false;
+                }
+            }
+            if (requirements.hasEnvironmentRequirement()) {
+                if (!checkEnvironmentPresent(thisBlock, requirements)) {
                     return false;
                 }
             }
             // check if required blocks are present
             if (requirements.hasRequiredBlocks()) {
                 boolean enoughMatch = false;
-                Block thisBlock = getBlock();
                 for (RequiredBlock requiredBlock : requirements.getRequiredBlocks()) {
-                    Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, requiredBlock.getLocation());
+                    Block block = BlockHelper.getAbsoluteBlock(thisBlock, requiredBlock.getLocation());
                     if (requiredBlock.checkIfMatches(block)) {
                         // if blacklisted, then return false
                         if (requiredBlock.isBlacklisted()) {
@@ -649,13 +676,13 @@ public class PlantBlock {
         return true;
     }
 
-    boolean checkSpaceRequirements(Main main) {
+    boolean checkSpaceRequirements() {
         // check that growth stage blocks can be placed, if required
         Block thisBlock = getBlock();
         HashMap<String,GrowthStageBlock> blocks = plant.getGrowthStage(stageIndex).getBlocks();
         for (GrowthStageBlock growthStageBlock : blocks.values()) {
             if (!growthStageBlock.isIgnoreSpace()) {
-                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, growthStageBlock.getLocation());
+                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation());
                 if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     return false;
                 }
@@ -664,18 +691,17 @@ public class PlantBlock {
         return true;
     }
 
-    boolean checkWaterPresent(Main main) {
+    boolean checkWaterPresent(Block thisBlock) {
         // check if there is a water or water-logged block adjacent
         ArrayList<Block> blocksToCheck = new ArrayList<>();
-        Block thisBlock = getBlock();
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
         for (Block block : blocksToCheck) {
             if (BlockHelper.hasWater(block)) {
                 return true;
@@ -684,18 +710,17 @@ public class PlantBlock {
         return false;
     }
 
-    boolean checkLavaPresent(Main main) {
+    boolean checkLavaPresent(Block thisBlock) {
         // check if there is a water or water-logged block adjacent
         ArrayList<Block> blocksToCheck = new ArrayList<>();
-        Block thisBlock = getBlock();
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
         for (Block block : blocksToCheck) {
             // if any lava found, return true
             if (block.getType() == Material.LAVA) {
@@ -706,22 +731,21 @@ public class PlantBlock {
         return false;
     }
 
-    boolean checkLightPresent(Main main, RequirementStorage storage) {
+    boolean checkLightPresent(Block thisBlock, RequirementStorage storage) {
         // check if there are any blocks nearby with required light levels
         ArrayList<Block> blocksToCheck = new ArrayList<>();
-        Block thisBlock = getBlock();
         // check 1 block up
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,1,0)));
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
         // check 1 block down
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,0)));
         boolean valid = false;
         for (Block block : blocksToCheck) {
             int lightLevel = 0;
@@ -747,6 +771,71 @@ public class PlantBlock {
             }
         }
         return valid;
+    }
+
+    boolean checkTimePresent(Block thisBlock, RequirementStorage storage) {
+        long time = getBlock().getWorld().getTime();
+        if (storage.hasTimeMinimum() && storage.hasTimeMaximum()) {
+            if (storage.getTimeMinimum() <= storage.getTimeMaximum()) {
+                return time >= storage.getTimeMinimum() && time <= storage.getTimeMaximum();
+            } else {
+                return time >= storage.getTimeMinimum() || time <= storage.getTimeMaximum();
+            }
+        }
+        if (storage.hasTimeMinimum()) {
+            return time >= storage.getTimeMinimum();
+        }
+        if (storage.hasTimeMaximum()) {
+            return time <= storage.getTimeMaximum();
+        }
+        return false;
+    }
+
+    boolean checkTemperaturePresent(Block thisBlock, RequirementStorage storage) {
+        double temperature = thisBlock.getTemperature();
+        if (storage.hasTemperatureMinimum() && temperature < storage.getTemperatureMinimum()) {
+            return false;
+        }
+        return !storage.hasTemperatureMaximum() || !(temperature > storage.getTemperatureMaximum());
+    }
+
+    boolean checkWorldPresent(Block thisBlock, RequirementStorage storage) {
+        String world = thisBlock.getWorld().getName();
+        if (storage.hasWorldWhitelist()) {
+            if (!storage.isInWorldWhitelist(world)) {
+                return false;
+            }
+        }
+        if (storage.hasWorldBlacklist()) {
+            return !storage.isInWorldBlacklist(world);
+        }
+        return true;
+    }
+
+    boolean checkBiomePresent(Block thisBlock, RequirementStorage storage) {
+        Biome biome = thisBlock.getBiome();
+        if (storage.hasBiomeWhitelist()) {
+            if (!storage.isInBiomeWhitelist(biome)) {
+                return false;
+            }
+        }
+        if (storage.hasBiomeBlacklist()) {
+            return !storage.isInBiomeBlacklist(biome);
+        }
+        return true;
+    }
+
+    boolean checkEnvironmentPresent(Block thisBlock, RequirementStorage storage) {
+        World.Environment environment = thisBlock.getWorld().getEnvironment();
+        if (storage.hasEnvironmentWhitelist()) {
+            if (!storage.isInEnvironmentWhitelist(environment)) {
+                return false;
+            }
+        }
+        if (storage.hasEnvironmentBlacklist()) {
+            return !storage.isInEnvironmentBlacklist(environment);
+        }
+        return true;
     }
 
     //endregion

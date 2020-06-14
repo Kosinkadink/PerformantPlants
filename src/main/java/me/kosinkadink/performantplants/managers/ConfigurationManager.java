@@ -36,6 +36,7 @@ import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.*;
+import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
@@ -1262,6 +1263,77 @@ public class ConfigurationManager {
         }
         if (section.isInt("light-maximum")) {
             requirementStorage.setLightLevelMaximum(section.getInt("light-maximum"));
+        }
+        // set time requirements, if present
+        if (section.isInt("time-minimum")) {
+            requirementStorage.setTimeMinimum(section.getLong("time-minimum"));
+        }
+        if (section.isInt("time-maximum")) {
+            requirementStorage.setTimeMaximum(section.getLong("time-maximum"));
+        }
+        // set temperature requirements, if present
+        if (section.isInt("temperature-minimum") || section.isDouble("temperature-minimum")) {
+            requirementStorage.setTemperatureMinimum(section.getDouble("temperature-minimum"));
+        }
+        if (section.isInt("temperature-maximum") || section.isDouble("temperature-maximum")) {
+            requirementStorage.setTemperatureMaximum(section.getDouble("temperature-maximum"));
+        }
+        // set world requirements, if present
+        if (section.isList("world-whitelist")) {
+            for (String world : section.getStringList("world-whitelist")) {
+                requirementStorage.addToWorldWhitelist(world);
+            }
+        }
+        if (section.isList("world-blacklist")) {
+            for (String world : section.getStringList("world-blacklist")) {
+                requirementStorage.addToWorldBlacklist(world);
+            }
+        }
+        // set biome requirements, if present
+        if (section.isList("biome-whitelist")) {
+            for (String biomeName : section.getStringList("biome-whitelist")) {
+                try {
+                    requirementStorage.addToBiomeWhitelist(Biome.valueOf(biomeName.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("Biome '%s' not recognized for biome-whitelist in section: %s",
+                            biomeName, section.getCurrentPath()));
+                    return false;
+                }
+            }
+        }
+        if (section.isList("biome-blacklist")) {
+            for (String biomeName : section.getStringList("biome-blacklist")) {
+                try {
+                    requirementStorage.addToBiomeBlacklist(Biome.valueOf(biomeName.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("Biome '%s' not recognized for biome-blacklist in section: %s",
+                            biomeName, section.getCurrentPath()));
+                    return false;
+                }
+            }
+        }
+        // set environment requirements, if present
+        if (section.isList("environment-whitelist")) {
+            for (String environmentName : section.getStringList("environment-whitelist")) {
+                try {
+                    requirementStorage.addToEnvironmentWhitelist(World.Environment.valueOf(environmentName.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("Environment '%s' not recognized for environment-whitelist in section: %s",
+                            environmentName, section.getCurrentPath()));
+                    return false;
+                }
+            }
+        }
+        if (section.isList("environment-blacklist")) {
+            for (String environmentName : section.getStringList("environment-blacklist")) {
+                try {
+                    requirementStorage.addToEnvironmentBlacklist(World.Environment.valueOf(environmentName.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("Environment '%s' not recognized for environment-blacklist in section: %s",
+                            environmentName, section.getCurrentPath()));
+                    return false;
+                }
+            }
         }
         // set block requirements, if present
         if (section.isSet("required-blocks") && section.isConfigurationSection("required-blocks")) {

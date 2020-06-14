@@ -53,7 +53,7 @@ public class BlockHelper {
         return Bukkit.createBlockData(material);
     }
 
-    public static Block getAbsoluteBlock(Main main, Block anchor, RelativeLocation relative) {
+    public static Block getAbsoluteBlock(Block anchor, RelativeLocation relative) {
         return anchor.getWorld().getBlockAt(
                  anchor.getX() + relative.getX(),
                 anchor.getY() + relative.getY(),
