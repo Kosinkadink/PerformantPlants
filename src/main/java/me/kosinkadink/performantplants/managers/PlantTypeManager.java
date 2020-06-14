@@ -55,6 +55,9 @@ public class PlantTypeManager {
 
     public PlantItem getPlantItemById(String itemId) {
         // see if id contains special type
+        if (itemId.endsWith(".")) {
+            return null;
+        }
         String[] plantInfo = itemId.split("\\.", 2);
         String plantId = plantInfo[0];
         String subtype = "";
@@ -66,13 +69,9 @@ public class PlantTypeManager {
         if (subtype.equals("seed")) {
             type = "seed";
         }
-        else if (subtype.startsWith("goods.")) {
-            String[] goodInfo = subtype.split("goods\\.", 2);
-            goodId = goodInfo[1];
-            type = "good";
-        }
         else if (!subtype.isEmpty()) {
-            return null;
+            goodId = subtype;
+            type = "good";
         }
         // get plant by id, if exists
         Plant plant = getPlantById(plantId);

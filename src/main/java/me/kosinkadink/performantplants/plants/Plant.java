@@ -64,7 +64,7 @@ public class Plant {
     }
 
     public void addGoodItem(String id, PlantItem goodItem) {
-        goodItem.setId(this.id + ".goods." + id);
+        goodItem.setId(this.id + "." + id);
         goods.put(id, goodItem);
     }
 

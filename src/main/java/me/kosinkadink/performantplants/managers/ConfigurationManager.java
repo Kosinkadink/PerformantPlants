@@ -410,6 +410,10 @@ public class ConfigurationManager {
         if (plantConfig.isConfigurationSection("goods")) {
             ConfigurationSection goodsSection = plantConfig.getConfigurationSection("goods");
             for (String goodId : goodsSection.getKeys(false)) {
+                if (goodId.equals("seed")) {
+                    main.getLogger().info(String.format("Good %s not added; uses reserved name 'seed'; in section: %s", goodId, goodsSection.getCurrentPath()));
+                    continue;
+                }
                 ConfigurationSection goodSection = goodsSection.getConfigurationSection(goodId);
                 ItemSettings goodSettings = loadItemConfig(goodSection, false);
                 if (goodSettings != null) {
@@ -604,15 +608,11 @@ public class ConfigurationManager {
                         }
                         ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
                         linkedItemSettings = loadItemConfig(itemSection, false);
-                    } else if (itemString.startsWith("goods.")) {
-                        String[] goodsInfo = itemString.split("\\.", 2);
-                        if (goodsInfo.length < 2) {
-                            main.getLogger().warning(String.format("Link %s does not contain an id for its goods request in section: %s", link, section.getCurrentPath()));
-                            return null;
-                        }
-                        String goodId = goodsInfo[1];
+                    } else if (!itemString.endsWith("goods")) {
+                        String goodId = itemString;
+                        itemString = "goods." + itemString;
                         if (!linkedPlantConfig.isConfigurationSection(itemString)) {
-                            main.getLogger().warning(String.format("Linked plant %s does not contain good %s", plantId, itemString));
+                            main.getLogger().warning(String.format("Linked plant %s does not contain good %s", plantId, goodId));
                             return null;
                         }
                         ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection(itemString);
