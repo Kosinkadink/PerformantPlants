@@ -66,6 +66,8 @@ public class PlantBlockEventListener implements Listener {
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
                 if (plantBlock.isGrows()) {
+                    // set newly placed; will check plant requirements instead of growth requirements, if present
+                    plantBlock.setNewlyPlaced(true);
                     if (!plantBlock.checkAllRequirements(main)) {
                         event.setCancelled(true);
                         return;

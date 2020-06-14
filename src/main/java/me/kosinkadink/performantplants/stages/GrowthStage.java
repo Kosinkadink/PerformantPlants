@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.stages;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.RequirementStorage;
 
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -15,6 +16,7 @@ public class GrowthStage {
     private long maxGrowthTime = -1;
     private boolean growthCheckpoint = false;
     private DropStorage dropStorage = new DropStorage();
+    private RequirementStorage requirementStorage = new RequirementStorage();
     private PlantInteract onExecute;
     private PlantInteract onFail;
 
@@ -32,6 +34,14 @@ public class GrowthStage {
 
     public void setDropStorage(DropStorage dropStorage) {
         this.dropStorage = dropStorage;
+    }
+
+    public RequirementStorage getRequirementStorage() {
+        return requirementStorage;
+    }
+
+    public void setRequirementStorage(RequirementStorage requirementStorage) {
+        this.requirementStorage = requirementStorage;
     }
 
     public void addGrowthStageBlock(GrowthStageBlock block) {

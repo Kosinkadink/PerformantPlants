@@ -1,13 +1,11 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
-import me.kosinkadink.performantplants.util.TimeHelper;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -24,9 +22,8 @@ public class Plant {
     private StageStorage stageStorage = new StageStorage();
     private PlantData plantData;
     // growth requirements
-    private boolean waterRequired = false;
-    private boolean lavaRequired = false;
-    private ArrayList<RequiredBlock> requiredBlocksToGrow = new ArrayList<>();
+    private RequirementStorage plantRequirementStorage = new RequirementStorage();
+    private RequirementStorage growthRequirementStorage = new RequirementStorage();
     // growth time - overridden by specific stage growth times
     private long minGrowthTime = -1;
     private long maxGrowthTime = -1;
@@ -101,6 +98,32 @@ public class Plant {
         return null;
     }
 
+    // requirements
+    public boolean hasPlantRequirements() {
+        return plantRequirementStorage != null && plantRequirementStorage.isSet();
+    }
+
+    public RequirementStorage getPlantRequirementStorage() {
+        return plantRequirementStorage;
+    }
+
+    public void setPlantRequirementStorage(RequirementStorage plantRequirementStorage) {
+        this.plantRequirementStorage = plantRequirementStorage;
+    }
+
+    public boolean hasGrowthRequirements() {
+        return growthRequirementStorage != null && growthRequirementStorage.isSet();
+    }
+
+    public RequirementStorage getGrowthRequirementStorage() {
+        return growthRequirementStorage;
+    }
+
+    public void setGrowthRequirementStorage(RequirementStorage growthRequirementStorage) {
+        this.growthRequirementStorage = growthRequirementStorage;
+    }
+
+    // plant data
     public PlantData getPlantData() {
         return plantData;
     }
@@ -156,34 +179,6 @@ public class Plant {
             }
         }
         return false;
-    }
-
-    public boolean isWaterRequired() {
-        return waterRequired;
-    }
-
-    public void setWaterRequired(boolean waterRequired) {
-        this.waterRequired = waterRequired;
-    }
-
-    public boolean isLavaRequired() {
-        return lavaRequired;
-    }
-
-    public void setLavaRequired(boolean lavaRequired) {
-        this.lavaRequired = lavaRequired;
-    }
-
-    public ArrayList<RequiredBlock> getRequiredBlocksToGrow() {
-        return requiredBlocksToGrow;
-    }
-
-    public boolean hasRequiredBlocksToGrow() {
-        return requiredBlocksToGrow.size() > 0;
-    }
-
-    public void addRequiredBlockToGrow(RequiredBlock block) {
-        requiredBlocksToGrow.add(block);
     }
 
     public void setMinGrowthTime(long time) {

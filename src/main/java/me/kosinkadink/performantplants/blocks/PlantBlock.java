@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
+import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -38,6 +39,8 @@ public class PlantBlock {
     private UUID plantUUID;
     private DropStorage dropStorage = new DropStorage();
     private PlantData plantData = null;
+    // temporary state variables
+    private boolean isNewlyPlaced = false;
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
         location = blockLocation;
@@ -69,6 +72,14 @@ public class PlantBlock {
         if (plant != null && plant.hasPlantData()) {
             plantData = plant.getPlantData().clone();
         }
+    }
+
+    public boolean isNewlyPlaced() {
+        return isNewlyPlaced;
+    }
+
+    public void setNewlyPlaced(boolean newlyPlaced) {
+        isNewlyPlaced = newlyPlaced;
     }
 
     public BlockLocation getLocation() {
@@ -419,8 +430,12 @@ public class PlantBlock {
         }
         // check if requirements are met for stage growth
         boolean canGrow = checkAllRequirements(main);
+        if (isNewlyPlaced && !canGrow) {
+            grows = false;
+        }
         // if requirements are met, perform growth actions
         if (canGrow && !executedStage) {
+            setNewlyPlaced(false);
             Block thisBlock = getBlock();
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
@@ -577,40 +592,59 @@ public class PlantBlock {
     }
 
     public boolean checkGrowthRequirements(Main main) {
-        if (plant.isWaterRequired()) {
-            if (!checkWaterPresent(main)) {
-                return false;
+        RequirementStorage requirements = plant.getGrowthRequirementStorage();
+        if (isNewlyPlaced() && plant.hasPlantRequirements()) {
+            requirements = plant.getPlantRequirementStorage();
+        } else {
+            if (plant.hasGrowthStages()) {
+                GrowthStage growthStage = plant.getGrowthStage(stageIndex);
+                if (growthStage != null && growthStage.getRequirementStorage().isSet()) {
+                    requirements = growthStage.getRequirementStorage();
+                }
             }
         }
-        if (plant.isLavaRequired()) {
-            if (!checkLavaPresent(main)) {
-                return false;
-            }
-        }
-        // check if required blocks are present
-        if (plant.hasRequiredBlocksToGrow()) {
-            boolean enoughMatch = false;
-            Block thisBlock = getBlock();
-            for (RequiredBlock requiredBlock : plant.getRequiredBlocksToGrow()) {
-                Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, requiredBlock.getLocation());
-                if (requiredBlock.checkIfMatches(block)) {
-                    // if blacklisted, then return false
-                    if (requiredBlock.isBlacklisted()) {
-                        return false;
-                    }
-                    enoughMatch = true;
-                } else if (requiredBlock.isRequired()) {
+
+        if (requirements.isSet()) {
+            if (requirements.hasWaterRequirement() && requirements.isWaterRequired()) {
+                if (!checkWaterPresent(main)) {
                     return false;
                 }
-                // check if not air, if set
-                if (requiredBlock.isNotAir()) {
-                    if (block.getBlockData().getMaterial().isAir()) {
-                        return false;
-                    }
-                    enoughMatch = true;
+            }
+            if (requirements.hasLavaRequirement() && requirements.isLavaRequired()) {
+                if (!checkLavaPresent(main)) {
+                    return false;
                 }
             }
-            return enoughMatch;
+            if (requirements.hasLightRequirement()) {
+                if (!checkLightPresent(main, requirements)) {
+                    return false;
+                }
+            }
+            // check if required blocks are present
+            if (requirements.hasRequiredBlocks()) {
+                boolean enoughMatch = false;
+                Block thisBlock = getBlock();
+                for (RequiredBlock requiredBlock : requirements.getRequiredBlocks()) {
+                    Block block = BlockHelper.getAbsoluteBlock(main, thisBlock, requiredBlock.getLocation());
+                    if (requiredBlock.checkIfMatches(block)) {
+                        // if blacklisted, then return false
+                        if (requiredBlock.isBlacklisted()) {
+                            return false;
+                        }
+                        enoughMatch = true;
+                    } else if (requiredBlock.isRequired()) {
+                        return false;
+                    }
+                    // check if not air, if set
+                    if (requiredBlock.isNotAir()) {
+                        if (block.getBlockData().getMaterial().isAir()) {
+                            return false;
+                        }
+                        enoughMatch = true;
+                    }
+                }
+                return enoughMatch;
+            }
         }
         return true;
     }
@@ -672,6 +706,49 @@ public class PlantBlock {
         return false;
     }
 
+    boolean checkLightPresent(Main main, RequirementStorage storage) {
+        // check if there are any blocks nearby with required light levels
+        ArrayList<Block> blocksToCheck = new ArrayList<>();
+        Block thisBlock = getBlock();
+        // check 1 block up
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,1,0)));
+        // check 1 block to the west
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(-1,-1,0)));
+        // check 1 block to the east
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(1,-1,0)));
+        // check 1 block to the north
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,-1)));
+        // check 1 block to the south
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,1)));
+        // check 1 block down
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(main, thisBlock, new RelativeLocation(0,-1,0)));
+        boolean valid = false;
+        for (Block block : blocksToCheck) {
+            int lightLevel = 0;
+            if (!block.getBlockData().getMaterial().isSolid()) {
+                lightLevel = block.getLightLevel();
+            }
+            // if light level matches, return true
+            if (storage.hasLightLevelMinimum()) {
+                if (lightLevel >= storage.getLightLevelMinimum()) {
+                    if (!storage.hasLightLevelMaximum()) {
+                        return true;
+                    }
+                    valid = true;
+                }
+            }
+            if (storage.hasLightLevelMaximum()) {
+                if (lightLevel > storage.getLightLevelMaximum()) {
+                    return false;
+                }
+                if (!valid && !storage.hasLightLevelMinimum()) {
+                    valid = true;
+                }
+            }
+        }
+        return valid;
+    }
+
     //endregion
 
     public static PlantBlock wrapBlock(Block block) {
@@ -685,5 +762,4 @@ public class PlantBlock {
     public String toString() {
         return String.format("PlantBlock (%s) @ %s", plant.getId(), location.toString());
     }
-
 }

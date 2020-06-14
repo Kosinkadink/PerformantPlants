@@ -31,10 +31,7 @@ import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperati
 import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.DropStorage;
-import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import me.kosinkadink.performantplants.storage.PlantEffectStorage;
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.storage.*;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
@@ -201,9 +198,6 @@ public class ConfigurationManager {
                 }
                 // if seed item has been set, get growth requirements + stages
                 if (plant.getSeedItem() != null) {
-                    // set water/lava requirements
-                    plant.setWaterRequired(growingConfig.isBoolean("water-required") && growingConfig.getBoolean("water-required"));
-                    plant.setLavaRequired(growingConfig.isBoolean("lava-required") && growingConfig.getBoolean("lava-required"));
                     // set growth bounds for general growth (overridable by stage-specific min/max growth time)
                     if (!growingConfig.isInt("min-growth-time") || !growingConfig.isInt("max-growth-time")) {
                         main.getLogger().warning("Growth time bounds not set/integer for growing for plant: " + plantId);
@@ -211,45 +205,20 @@ public class ConfigurationManager {
                     }
                     plant.setMinGrowthTime(growingConfig.getLong("min-growth-time"));
                     plant.setMaxGrowthTime(growingConfig.getLong("max-growth-time"));
-                    // get required blocks, if any
-                    if (growingConfig.isSet("required-blocks") && growingConfig.isConfigurationSection("required-blocks")) {
-                        ConfigurationSection requiredBlocks = growingConfig.getConfigurationSection("required-blocks");
-                        for (String blockName : requiredBlocks.getKeys(false)) {
-                            ConfigurationSection requiredBlockSection = requiredBlocks.getConfigurationSection(blockName);
-                            if (requiredBlockSection == null) {
-                                main.getLogger().warning("config section was null for required block for plant: " + plantId);
-                                return;
-                            }
-                            BlockSettings blockSettings = loadBlockConfig(requiredBlockSection);
-                            if (blockSettings == null) {
-                                main.getLogger().warning("blockSettings for required block returned null for plant: " + plantId);
-                                return;
-                            }
-                            RequiredBlock requiredBlock;
-                            try {
-                                requiredBlock = new RequiredBlock(
-                                        blockSettings.getXRel(),
-                                        blockSettings.getYRel(),
-                                        blockSettings.getZRel(),
-                                        blockSettings.getMaterial(),
-                                        blockSettings.getBlockDataStrings());
-                            } catch (IllegalArgumentException e) {
-                                main.getLogger().warning(String.format("Could not create required block in plant %s due to: %s", plantId, e.getMessage()));
-                                return;
-                            }
-                            // set required, if set
-                            if (requiredBlockSection.isBoolean("required")) {
-                                requiredBlock.setRequired(requiredBlockSection.getBoolean("required"));
-                            }
-                            // set blacklisted, if set
-                            if (requiredBlockSection.isBoolean("blacklisted")) {
-                                requiredBlock.setBlacklisted(requiredBlockSection.getBoolean("blacklisted"));
-                            }
-                            // set not air, if set
-                            if (requiredBlockSection.isBoolean("not-air")) {
-                                requiredBlock.setNotAir(requiredBlockSection.getBoolean("not-air"));
-                            }
-                            plant.addRequiredBlockToGrow(requiredBlock);
+                    // set plant requirements, if present
+                    if (growingConfig.isConfigurationSection("plant-requirements")) {
+                        if (!addRequirementsToStorage(growingConfig.getConfigurationSection("plant-requirements"),
+                                plant.getPlantRequirementStorage())) {
+                            main.getLogger().warning("plant-requirements could not be loaded for plant: " + plantId);
+                            return;
+                        }
+                    }
+                    // set growth requirements, if present
+                    if (growingConfig.isConfigurationSection("growth-requirements")) {
+                        if (!addRequirementsToStorage(growingConfig.getConfigurationSection("growth-requirements"),
+                                plant.getGrowthRequirementStorage())) {
+                            main.getLogger().warning("growth-requirements could not be loaded for plant: " + plantId);
+                            return;
                         }
                     }
                     // load plant data, if present
@@ -306,6 +275,14 @@ public class ConfigurationManager {
                                     return;
                                 }
                                 growthStage.setOnFail(onFail);
+                            }
+                            // set growth requirements, if present
+                            if (stageConfig.isConfigurationSection("growth-requirements")) {
+                                if (!addRequirementsToStorage(stageConfig.getConfigurationSection("growth-requirements"),
+                                        growthStage.getRequirementStorage())) {
+                                    main.getLogger().warning(String.format("Stage growth-requirements could not be loaded for stage %s of plant: %s", stageId, plantId));
+                                    return;
+                                }
                             }
                             // set blocks for growth
                             if (!stageConfig.isConfigurationSection("blocks")) {
@@ -512,14 +489,14 @@ public class ConfigurationManager {
             }
             String type = dropSection.getString("type");
             if (type.equalsIgnoreCase("block")) {
-                addBlockDrop(dropSection);
+                addVanillaBlockDrop(dropSection);
             } else if (type.equalsIgnoreCase("entity")) {
-                addEntityDrop(dropSection);
+                addVanillaEntityDrop(dropSection);
             }
         }
     }
 
-    void addBlockDrop(ConfigurationSection section) {
+    void addVanillaBlockDrop(ConfigurationSection section) {
         if (section == null) {
             return;
         }
@@ -548,7 +525,7 @@ public class ConfigurationManager {
         main.getLogger().info("Added vanilla drop behavior for block: " + material.toString());
     }
 
-    void addEntityDrop(ConfigurationSection section) {
+    void addVanillaEntityDrop(ConfigurationSection section) {
         if (section == null) {
             return;
         }
@@ -1261,6 +1238,74 @@ public class ConfigurationManager {
             upgraded = section.getBoolean("upgraded");
         }
         return new PotionData(potionType, extended, upgraded);
+    }
+
+    boolean addRequirementsToStorage(ConfigurationSection section, RequirementStorage requirementStorage) {
+        if (section == null) {
+            return false;
+        }
+        if (requirementStorage == null) {
+            main.getLogger().warning("No RequirementStorage provided in section: " + section.getCurrentPath());
+            return false;
+        }
+        // set water requirement, if present
+        if (section.isBoolean("water-required")) {
+            requirementStorage.setWaterRequired(section.getBoolean("water-required"));
+        }
+        // set lava requirement, if present
+        if (section.isBoolean("lava-required")) {
+            requirementStorage.setLavaRequired(section.getBoolean("lava-required"));
+        }
+        // set light requirement, if present
+        if (section.isInt("light-minimum")) {
+            requirementStorage.setLightLevelMinimum(section.getInt("light-minimum"));
+        }
+        if (section.isInt("light-maximum")) {
+            requirementStorage.setLightLevelMaximum(section.getInt("light-maximum"));
+        }
+        // set block requirements, if present
+        if (section.isSet("required-blocks") && section.isConfigurationSection("required-blocks")) {
+            ConfigurationSection requiredBlocksSection = section.getConfigurationSection("required-blocks");
+            for (String blockName : requiredBlocksSection.getKeys(false)) {
+                ConfigurationSection requiredBlockSection = requiredBlocksSection.getConfigurationSection(blockName);
+                if (requiredBlockSection == null) {
+                    main.getLogger().warning("config section was null for required block in section: " + requiredBlocksSection.getCurrentPath());
+                    return false;
+                }
+                BlockSettings blockSettings = loadBlockConfig(requiredBlockSection);
+                if (blockSettings == null) {
+                    main.getLogger().warning("blockSettings for required block returned null in section: " + requiredBlockSection.getCurrentPath());
+                    return false;
+                }
+                RequiredBlock requiredBlock;
+                try {
+                    requiredBlock = new RequiredBlock(
+                            blockSettings.getXRel(),
+                            blockSettings.getYRel(),
+                            blockSettings.getZRel(),
+                            blockSettings.getMaterial(),
+                            blockSettings.getBlockDataStrings());
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("Could not create required block in section due to: %s",
+                            requiredBlockSection.getCurrentPath(), e.getMessage()));
+                    return false;
+                }
+                // set required, if set
+                if (requiredBlockSection.isBoolean("required")) {
+                    requiredBlock.setRequired(requiredBlockSection.getBoolean("required"));
+                }
+                // set blacklisted, if set
+                if (requiredBlockSection.isBoolean("blacklisted")) {
+                    requiredBlock.setBlacklisted(requiredBlockSection.getBoolean("blacklisted"));
+                }
+                // set not air, if set
+                if (requiredBlockSection.isBoolean("not-air")) {
+                    requiredBlock.setNotAir(requiredBlockSection.getBoolean("not-air"));
+                }
+                requirementStorage.addRequiredBlock(requiredBlock);
+            }
+        }
+        return true;
     }
 
     boolean addDropsToDropStorage(ConfigurationSection section, DropStorage dropStorage) {

@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
+import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
@@ -83,17 +84,38 @@ public class ScriptHelper {
     private static String getVariableValue(PlantBlock plantBlock, PlantData plantData, String variableName) {
         // check if it is a property name
         if (variableName.startsWith("_")) {
-            switch (variableName) {
+            String relevantVariableName = variableName;
+            PlantBlock relevantPlantBlock = plantBlock;
+            if (variableName.startsWith("_parent")) {
+                if (plantBlock.hasParent()) {
+                    PlantBlock parentBlock = Main.getInstance().getPlantManager().getPlantBlock(plantBlock.getParentLocation());
+                    if (parentBlock != null) {
+                        relevantPlantBlock = parentBlock;
+                    }
+                }
+                try {
+                    relevantVariableName = variableName.substring("_parent".length());
+                } catch (IndexOutOfBoundsException e) {
+                    relevantVariableName = "";
+                }
+            }
+            switch (relevantVariableName) {
                 case "_x":
-                    return Integer.toString(plantBlock.getLocation().getX());
+                    return Integer.toString(relevantPlantBlock.getLocation().getX());
                 case "_y":
-                    return Integer.toString(plantBlock.getLocation().getY());
+                    return Integer.toString(relevantPlantBlock.getLocation().getY());
                 case "_z":
-                    return Integer.toString(plantBlock.getLocation().getZ());
+                    return Integer.toString(relevantPlantBlock.getLocation().getZ());
+                case "_x_center":
+                    return Double.toString(relevantPlantBlock.getLocation().getX() + 0.5);
+                case "_y_center":
+                    return Double.toString(relevantPlantBlock.getLocation().getY() + 0.5);
+                case "_z_center":
+                    return Double.toString(relevantPlantBlock.getLocation().getZ() + 0.5);
                 case "_world":
-                    return plantBlock.getLocation().getWorldName();
+                    return relevantPlantBlock.getLocation().getWorldName();
                 case "_plantId":
-                    return plantBlock.getPlant().getId();
+                    return relevantPlantBlock.getPlant().getId();
                 default:
                     return null;
             }
