@@ -173,6 +173,12 @@ public class ConfigurationManager {
                 plantItem.setConsumableStorage(consumable);
             }
         }
+        if (itemConfig.isConfigurationSection("clickable")) {
+            PlantConsumableStorage clickable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("clickable"), null);
+            if (clickable != null) {
+                plantItem.setClickableStorage(clickable);
+            }
+        }
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
         // if growing section is present, get seed item + stages
@@ -435,6 +441,12 @@ public class ConfigurationManager {
                         PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection.getConfigurationSection("consumable"), null);
                         if (goodConsumable != null) {
                             goodItem.setConsumableStorage(goodConsumable);
+                        }
+                    }
+                    if (goodSection.isConfigurationSection("clickable")) {
+                        PlantConsumableStorage goodClickable = loadPlantConsumableStorage(goodSection.getConfigurationSection("clickable"), null);
+                        if (goodClickable != null) {
+                            goodItem.setClickableStorage(goodClickable);
                         }
                     }
                     plant.addGoodItem(goodId, goodItem);

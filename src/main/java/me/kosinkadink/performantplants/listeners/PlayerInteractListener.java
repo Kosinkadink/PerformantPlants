@@ -247,9 +247,20 @@ public class PlayerInteractListener implements Listener {
                 }
             }
             // check if there is any general or vanilla click behavior
-            // TODO: fill out click behavior
             if (itemStack.getType() != Material.AIR) {
-
+                Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
+                if (plant != null) {
+                    PlantItem plantItem;
+                    plantItem = plant.getItemByItemStack(itemStack);
+                    if (plantItem.isClickable()) {
+                        PlantConsumable consumable = plantItem.getClickableStorage().getConsumable(player, event.getHand());
+                        if (consumable != null) {
+                            main.getServer().getPluginManager().callEvent(
+                                    new PlantConsumeEvent(player, consumable, event.getHand())
+                            );
+                        }
+                    }
+                }
             }
         }
         // endregion

@@ -10,6 +10,7 @@ public class PlantItem {
     private double buyPrice;
     private double sellPrice;
     private PlantConsumableStorage consumable;
+    private PlantConsumableStorage clickable;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -63,6 +64,18 @@ public class PlantItem {
 
     public void setConsumableStorage(PlantConsumableStorage consumable) {
         this.consumable = consumable;
+    }
+
+    public boolean isClickable() {
+        return clickable != null;
+    }
+
+    public PlantConsumableStorage getClickableStorage() {
+        return clickable;
+    }
+
+    public void setClickableStorage(PlantConsumableStorage clickable) {
+        this.clickable = clickable;
     }
 
 }
