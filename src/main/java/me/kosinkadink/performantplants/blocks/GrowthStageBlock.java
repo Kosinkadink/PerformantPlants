@@ -27,6 +27,7 @@ public class GrowthStageBlock {
     private boolean randomOrientation = false;
     private boolean placedOrientation = false;
     private PlantInteractStorage onInteract;
+    private PlantInteractStorage onClick;
     private PlantInteractStorage onBreak;
     private DropStorage dropStorage = new DropStorage();
 
@@ -146,6 +147,21 @@ public class GrowthStageBlock {
 
     public void setOnInteract(PlantInteractStorage onInteract) {
         this.onInteract = onInteract;
+    }
+
+    public PlantInteractStorage getOnClick() {
+        return onClick;
+    }
+
+    public PlantInteract getOnClick(ItemStack itemStack) {
+        if (onClick != null) {
+            return onClick.getPlantInteract(itemStack);
+        }
+        return null;
+    }
+
+    public void setOnClick(PlantInteractStorage onClick) {
+        this.onClick = onClick;
     }
 
     public PlantInteractStorage getOnBreak() {

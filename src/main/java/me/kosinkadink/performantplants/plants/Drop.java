@@ -9,10 +9,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Drop {
 
-    private ItemStack itemStack;
-    private ScriptBlock min;
-    private ScriptBlock max;
-    private ScriptBlock doIf;
+    private final ItemStack itemStack;
+    private final ScriptBlock min;
+    private final ScriptBlock max;
+    private final ScriptBlock doIf;
 
     public Drop(ItemStack itemStack, ScriptBlock min, ScriptBlock max, ScriptBlock doIf) {
         this.itemStack = itemStack;

@@ -13,16 +13,22 @@ public class PlantInteractEvent extends Event implements Cancellable {
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
 
-    private Player player;
-    private PlantBlock plantBlock;
-    private Block block;
-    private EquipmentSlot hand;
+    private final Player player;
+    private final PlantBlock plantBlock;
+    private final Block block;
+    private final EquipmentSlot hand;
+    private boolean useOnClick = false;
 
     public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, EquipmentSlot hand) {
         this.player = player;
         this.plantBlock = plantBlock;
         this.block = block;
         this.hand = hand;
+    }
+
+    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, EquipmentSlot hand, boolean useOnClick) {
+        this(player, plantBlock, block, hand);
+        this.useOnClick = useOnClick;
     }
 
     public Player getPlayer() {
@@ -39,6 +45,10 @@ public class PlantInteractEvent extends Event implements Cancellable {
 
     public EquipmentSlot getHand() {
         return hand;
+    }
+
+    public boolean isUseOnClick() {
+        return useOnClick;
     }
 
     public static HandlerList getHandlerList() {

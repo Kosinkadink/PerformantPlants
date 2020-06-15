@@ -168,13 +168,19 @@ public class PlantBlockEventListener implements Listener {
             // get item in main hand
             EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
-            // get PlantInteract behavior for main hand, if any
-            PlantInteract plantInteract = event.getPlantBlock().getOnInteract(itemStack);
-            // if no plant interact behavior, try again for the offhand
-            if (plantInteract == null) {
-                hand = EquipmentSlot.OFF_HAND;
-                itemStack = event.getPlayer().getInventory().getItemInOffHand();
+            // get PlantInteract to use
+            PlantInteract plantInteract;
+            if (!event.isUseOnClick()) {
+                // get PlantInteract behavior for main hand, if any
                 plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+                // if no plant interact behavior, try again for the offhand
+                if (plantInteract == null) {
+                    hand = EquipmentSlot.OFF_HAND;
+                    itemStack = event.getPlayer().getInventory().getItemInOffHand();
+                    plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+                }
+            } else {
+                plantInteract = event.getPlantBlock().getOnClick(itemStack);
             }
             // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {

@@ -379,6 +379,17 @@ public class ConfigurationManager {
                                     // add interactions to growth stage block
                                     growthStageBlock.setOnInteract(plantInteractStorage);
                                 }
+                                // set click behavior, if present
+                                if (blockConfig.isConfigurationSection("on-click")) {
+                                    ConfigurationSection onClickSection = blockConfig.getConfigurationSection("on-click");
+                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onClickSection, plant.getPlantData());
+                                    if (plantInteractStorage == null) {
+                                        main.getLogger().warning("Could not load on-click section: " + onClickSection.getCurrentPath());
+                                        return;
+                                    }
+                                    // add interactions to growth stage block
+                                    growthStageBlock.setOnClick(plantInteractStorage);
+                                }
                                 // set break behavior, if present
                                 if (blockConfig.isConfigurationSection("on-break")) {
                                     ConfigurationSection onBreakSection = blockConfig.getConfigurationSection("on-break");

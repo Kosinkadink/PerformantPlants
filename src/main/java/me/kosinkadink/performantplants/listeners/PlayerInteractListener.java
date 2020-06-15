@@ -132,96 +132,126 @@ public class PlayerInteractListener implements Listener {
             }
             return;
         }
-        // check if interacting with a plant block
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
-                block != null &&
-                MetadataHelper.hasPlantBlockMetadata(block)) {
-            // get plant block interacted with
-            PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
-            if (plantBlock != null && !player.isSneaking()) {
-                // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
-                event.setCancelled(true);
-                main.getServer().getPluginManager().callEvent(
-                        new PlantInteractEvent(player, plantBlock, block, event.getHand())
-                );
-                return;
+        // region RIGHT CLICK BEHAVIOR
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) {
+            // check if interacting with a plant block
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
+                    block != null &&
+                    MetadataHelper.hasPlantBlockMetadata(block)) {
+                // get plant block interacted with
+                PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
+                if (plantBlock != null && !player.isSneaking()) {
+                    // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
+                    event.setCancelled(true);
+                    main.getServer().getPluginManager().callEvent(
+                            new PlantInteractEvent(player, plantBlock, block, event.getHand())
+                    );
+                    return;
+                }
             }
-        }
-        // check if trying to place down plant or consume plant item
-        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) &&
-                itemStack.getType() != Material.AIR) {
-            Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
-            if (plant != null) {
-                PlantItem plantItem;
-                if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
-                        block != null) {
-                    // if block is inventory holder and player is sneaking, open block's inventory
-                    if (block.getType() == Material.CAMPFIRE) {
-                        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Right clicked on campfire holding a plant item");
-                        return;
-                    }
-                    if (BlockHelper.isInteractable(block) && !player.isSneaking()) {
-                        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented block from being placed on interactable block");
-                        return;
-                    }
-                    // check if item is consumable or player is sneaking
-                    plantItem = plant.getItemByItemStack(itemStack);
-                    if (!plantItem.isConsumable() || player.isSneaking()) {
-                        // check if item is a seed (cancel event regardless)
-                        event.setCancelled(true);
-                        if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
-                            // cancel event and send out PlantBlockEvent
-                            main.getServer().getPluginManager().callEvent(
-                                    new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
-                            );
+            // check if trying to place down plant or consume plant item
+            if (itemStack.getType() != Material.AIR) {
+                Plant plant = main.getPlantTypeManager().getPlantByItemStack(itemStack);
+                if (plant != null) {
+                    PlantItem plantItem;
+                    if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
+                            block != null) {
+                        // if block is inventory holder and player is sneaking, open block's inventory
+                        if (block.getType() == Material.CAMPFIRE) {
+                            if (main.getConfigManager().getConfigSettings().isDebug())
+                                main.getLogger().info("Right clicked on campfire holding a plant item");
                             return;
                         }
-                    }
-                }
-                // check if plant item can be consumed
-                plantItem = plant.getItemByItemStack(itemStack);
-                if (plantItem.isConsumable()) {
-                    // if in offhand and main hand is consumable, don't do anything
-                    boolean performConsumeForThisHand = true;
-                    if (event.getHand() == EquipmentSlot.OFF_HAND) {
-                        PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
-                        if (otherItem != null && otherItem.isConsumable()) {
-                            performConsumeForThisHand = false;
+                        if (BlockHelper.isInteractable(block) && !player.isSneaking()) {
+                            if (main.getConfigManager().getConfigSettings().isDebug())
+                                main.getLogger().info("Prevented block from being placed on interactable block");
+                            return;
                         }
-                    }
-                    if (performConsumeForThisHand) {
-                        PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(player, event.getHand());
-                        if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat())) {
+                        // check if item is consumable or player is sneaking
+                        plantItem = plant.getItemByItemStack(itemStack);
+                        if (!plantItem.isConsumable() || player.isSneaking()) {
+                            // check if item is a seed (cancel event regardless)
                             event.setCancelled(true);
-                            main.getServer().getPluginManager().callEvent(
-                                    new PlantConsumeEvent(player, consumable, event.getHand())
-                            );
-                        }
-                    }
-                }
-                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Action was not RIGHT CLICK or block was NULL");
-            }
-            else {
-                // check if item in other hand is consumable
-                if (!otherStack.getType().isAir() && !PlantItemBuilder.isPlantName(itemStack) && !itemStack.getType().isEdible()) {
-                    PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
-                    if (otherItem != null && otherItem.isConsumable()) {
-                        PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(player,
-                                PlayerHelper.oppositeHand(event.getHand()));
-                        if (otherConsumable != null) {
-                            event.setCancelled(true);
-                            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Prevented required block for consumable to perform its own action");
-                            if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
+                            if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
+                                // cancel event and send out PlantBlockEvent
                                 main.getServer().getPluginManager().callEvent(
-                                        new PlantConsumeEvent(player, otherConsumable, EquipmentSlot.OFF_HAND)
+                                        new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
+                                );
+                                return;
+                            }
+                        }
+                    }
+                    // check if plant item can be consumed
+                    plantItem = plant.getItemByItemStack(itemStack);
+                    if (plantItem.isConsumable()) {
+                        // if in offhand and main hand is consumable, don't do anything
+                        boolean performConsumeForThisHand = true;
+                        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                            PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
+                            if (otherItem != null && otherItem.isConsumable()) {
+                                performConsumeForThisHand = false;
+                            }
+                        }
+                        if (performConsumeForThisHand) {
+                            PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(player, event.getHand());
+                            if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat())) {
+                                event.setCancelled(true);
+                                main.getServer().getPluginManager().callEvent(
+                                        new PlantConsumeEvent(player, consumable, event.getHand())
                                 );
                             }
-                            return;
                         }
                     }
+                    if (main.getConfigManager().getConfigSettings().isDebug())
+                        main.getLogger().info("Block was NULL");
+                } else {
+                    // check if item in other hand is consumable
+                    if (!otherStack.getType().isAir() && !PlantItemBuilder.isPlantName(itemStack) && !itemStack.getType().isEdible()) {
+                        PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
+                        if (otherItem != null && otherItem.isConsumable()) {
+                            PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(player,
+                                    PlayerHelper.oppositeHand(event.getHand()));
+                            if (otherConsumable != null) {
+                                event.setCancelled(true);
+                                if (main.getConfigManager().getConfigSettings().isDebug())
+                                    main.getLogger().info("Prevented required block for consumable to perform its own action");
+                                if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
+                                    main.getServer().getPluginManager().callEvent(
+                                            new PlantConsumeEvent(player, otherConsumable, EquipmentSlot.OFF_HAND)
+                                    );
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    if (main.getConfigManager().getConfigSettings().isDebug())
+                        main.getLogger().info("Plant was NULL, doing nothing");
                 }
-                if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Plant was NULL, doing nothing");
             }
         }
+        // endregion
+        // region LEFT CLICK BEHAVIOR
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) {
+            // check if clicking on a plant block
+            if (event.getAction() == Action.LEFT_CLICK_BLOCK &&
+                    block != null &&
+                    MetadataHelper.hasPlantBlockMetadata(block)) {
+                // get plant block interacted with
+                PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
+                if (plantBlock != null) {
+                    PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getHand(), true);
+                    main.getServer().getPluginManager().callEvent(
+                            plantInteractEvent
+                    );
+                    return;
+                }
+            }
+            // check if there is any general or vanilla click behavior
+            // TODO: fill out click behavior
+            if (itemStack.getType() != Material.AIR) {
+
+            }
+        }
+        // endregion
     }
 }
