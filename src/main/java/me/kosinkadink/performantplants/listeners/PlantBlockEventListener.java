@@ -206,7 +206,7 @@ public class PlantBlockEventListener implements Listener {
             }
             // drop items, if applicable
             if (!onlyDropOnDo || shouldDo) {
-                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock());
+                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock(), event.getPlayer(), event.getPlantBlock());
             }
             // take item, if applicable
             if (!onlyTakeItemOnDo || shouldDo) {
@@ -517,7 +517,7 @@ public class PlantBlockEventListener implements Listener {
         }
         // handle drops
         if (drops) {
-            DropHelper.performDrops(plantBlock.getDropStorage(), block);
+            DropHelper.performDrops(plantBlock.getDropStorage(), block, null, plantBlock);
         }
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {

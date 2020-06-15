@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import org.bukkit.Location;
@@ -17,7 +18,7 @@ public class DropHelper {
         droppedItem.setVelocity(player.getEyeLocation().getDirection().normalize().multiply(0.3));
     }
 
-    public static void performDrops(DropStorage dropStorage, Location location) {
+    public static void performDrops(DropStorage dropStorage, Location location, Player player, PlantBlock plantBlock) {
         if (location == null) {
             return;
         }
@@ -30,7 +31,7 @@ public class DropHelper {
             if (limited && dropCount >= dropLimit) {
                 break;
             }
-            ItemStack dropStack = drop.generateDrop();
+            ItemStack dropStack = drop.generateDrop(player, plantBlock);
             if (dropStack.getAmount() != 0) {
                 dropCount++;
                 location.getWorld().dropItemNaturally(location, dropStack);
@@ -38,7 +39,7 @@ public class DropHelper {
         }
     }
 
-    public static void performDrops(DropStorage dropStorage, Block block) {
-        performDrops(dropStorage, block.getLocation());
+    public static void performDrops(DropStorage dropStorage, Block block, Player player, PlantBlock plantBlock) {
+        performDrops(dropStorage, block.getLocation(), player, plantBlock);
     }
 }

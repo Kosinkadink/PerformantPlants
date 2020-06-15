@@ -1,37 +1,40 @@
 package me.kosinkadink.performantplants.settings;
 
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+
 public class DropSettings {
 
-    private int minAmount = 1;
-    private int maxAmount = 1;
-    private double chance = 100.0;
+    private ScriptBlock minAmount = new ScriptResult(1);
+    private ScriptBlock maxAmount = new ScriptResult(1);
+    private ScriptBlock doIf = ScriptResult.TRUE;
     private ItemSettings itemSettings;
 
     public DropSettings() {}
 
 
-    public int getMinAmount() {
+    public ScriptBlock getMinAmount() {
         return minAmount;
     }
 
-    public void setMinAmount(int minAmount) {
+    public void setMinAmount(ScriptBlock minAmount) {
         this.minAmount = minAmount;
     }
 
-    public int getMaxAmount() {
+    public ScriptBlock getMaxAmount() {
         return maxAmount;
     }
 
-    public void setMaxAmount(int maxAmount) {
+    public void setMaxAmount(ScriptBlock maxAmount) {
         this.maxAmount = maxAmount;
     }
 
-    public double getChance() {
-        return chance;
+    public ScriptBlock getDoIf() {
+        return doIf;
     }
 
-    public void setChance(double chance) {
-        this.chance = chance;
+    public void setDoIf(ScriptBlock doIf) {
+        this.doIf = doIf;
     }
 
     public ItemSettings getItemSettings() {

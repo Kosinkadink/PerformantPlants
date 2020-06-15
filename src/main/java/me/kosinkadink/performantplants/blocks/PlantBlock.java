@@ -496,7 +496,7 @@ public class PlantBlock {
                 executedStage = true;
                 PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
                 if (onExecute != null) {
-                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock());
+                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock(), null, this);
                     // perform any effects set
                     onExecute.getEffectStorage().performEffects(getBlock(), this);
                     if (onExecute.getScriptBlock() != null) {
@@ -513,7 +513,7 @@ public class PlantBlock {
         if (!canGrow) {
             PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
             if (onFail != null) {
-                DropHelper.performDrops(onFail.getDropStorage(), getBlock());
+                DropHelper.performDrops(onFail.getDropStorage(), getBlock(), null, this);
                 onFail.getEffectStorage().performEffects(getBlock(), this);
                 if (onFail.getScriptBlock() != null) {
                     int currentStageIndex = stageIndex;

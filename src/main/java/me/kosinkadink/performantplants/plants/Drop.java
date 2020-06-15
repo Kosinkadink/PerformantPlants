@@ -1,5 +1,8 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -7,41 +10,57 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Drop {
 
     private ItemStack itemStack;
-    private int min;
-    private int max;
-    private double chance;
+    private ScriptBlock min;
+    private ScriptBlock max;
+    private ScriptBlock doIf;
 
-    public Drop(ItemStack itemStack, int min, int max, double chance) {
+    public Drop(ItemStack itemStack, ScriptBlock min, ScriptBlock max, ScriptBlock doIf) {
         this.itemStack = itemStack;
         this.min = min;
         this.max = max;
-        this.chance = chance;
+        this.doIf = doIf;
     }
 
     public ItemStack getItemStack() {
         return itemStack;
     }
 
-    public int getMin() {
+    public ScriptBlock getMin() {
         return min;
     }
 
-    public int getMax() {
+    public int getMinValue(Player player, PlantBlock plantBlock) {
+        return min.loadValue(plantBlock, player).getIntegerValue();
+    }
+
+    public ScriptBlock getMax() {
         return max;
     }
 
-    public double getChance() {
-        return chance;
+    public int getMaxValue(Player player, PlantBlock plantBlock) {
+        return max.loadValue(plantBlock, player).getIntegerValue();
     }
 
-    public ItemStack generateDrop() {
+    public ScriptBlock getDoIf() {
+        return doIf;
+    }
+
+    public boolean isDoIf(Player player, PlantBlock plantBlock) {
+        return doIf.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public ItemStack generateDrop(Player player, PlantBlock plantBlock) {
         ItemStack dropStack = itemStack.clone();
-        // if random double succeeds chance, drop actual amount
-        if (ThreadLocalRandom.current().nextDouble() <= chance/100.0) {
+        // if doIf true, drop amount
+        if (isDoIf(player, plantBlock)) {
+            int min = Math.max(0, getMinValue(player, plantBlock));
+            int max = Math.max(0, getMaxValue(player, plantBlock));
             if (min == max) {
                 dropStack.setAmount(min);
-            } else {
+            } else if (min < max) {
                 dropStack.setAmount(ThreadLocalRandom.current().nextInt(min, max + 1));
+            } else {
+                dropStack.setAmount(ThreadLocalRandom.current().nextInt(max, min + 1));
             }
             return dropStack;
         }

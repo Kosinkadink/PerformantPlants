@@ -41,7 +41,7 @@ public class VanillaDropListener implements Listener {
             PlantInteract interact = storage.getPlantInteract(heldItem);
             if (interact != null) {
                 // perform drops
-                DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation());
+                DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation(), player, null);
                 // perform effects
                 interact.getEffectStorage().performEffects(event.getEntity().getLocation().getBlock(), null);
                 // perform consumable, if killer is not null
@@ -74,7 +74,7 @@ public class VanillaDropListener implements Listener {
             PlantInteract interact = storage.getPlantInteract(heldItem);
             if (interact != null) {
                 // perform drops
-                DropHelper.performDrops(interact.getDropStorage(), block);
+                DropHelper.performDrops(interact.getDropStorage(), block, player, PlantBlock.wrapBlock(block));
                 // perform effects
                 interact.getEffectStorage().performEffects(block, PlantBlock.wrapBlock(block));
                 // perform consumable, if killer is not null

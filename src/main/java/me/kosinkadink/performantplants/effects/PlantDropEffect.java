@@ -14,12 +14,12 @@ public class PlantDropEffect extends PlantEffect {
 
     @Override
     void performEffectAction(Player player, PlantBlock plantBlock) {
-        DropHelper.performDrops(dropStorage, player.getLocation());
+        DropHelper.performDrops(dropStorage, player.getLocation(), player, plantBlock);
     }
 
     @Override
     void performEffectAction(Block block, PlantBlock plantBlock) {
-        DropHelper.performDrops(dropStorage, block);
+        DropHelper.performDrops(dropStorage, block, null, plantBlock);
     }
 
     public DropStorage getDropStorage() {

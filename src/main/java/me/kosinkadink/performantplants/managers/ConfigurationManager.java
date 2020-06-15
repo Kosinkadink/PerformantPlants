@@ -248,7 +248,7 @@ public class ConfigurationManager {
                                 growthStage.setMaxGrowthTime(stageMaxGrowthTime);
                             }
                             // set drops and/or drop limit
-                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage())) {
+                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage(), plantData)) {
                                 return;
                             }
                             // set growth checkpoint, if present
@@ -359,7 +359,7 @@ public class ConfigurationManager {
                                 // set drops, if present
                                 if (blockConfig.isSet("drops")) {
                                     // add drops
-                                    boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage());
+                                    boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage(), plantData);
                                     if (!valid) {
                                         return;
                                     }
@@ -827,45 +827,39 @@ public class ConfigurationManager {
         return null;
     }
 
-    DropSettings loadDropConfig(ConfigurationSection section) {
+    DropSettings loadDropConfig(ConfigurationSection section, PlantData data) {
         if (section != null) {
             DropSettings dropSettings = new DropSettings();
-            // set min and max amounts if present
+            // set min and max amounts, if present
             if (section.isSet("max-amount")) {
-                if (section.isInt("max-amount")) {
-                    // set max amount
-                    int maxAmount = section.getInt("max-amount");
-                    if (maxAmount < 1) {
-                        main.getLogger().warning("max-amount for drops must be at least 1 for drop section: " + section.getCurrentPath());
-                        return null;
-                    }
-                    dropSettings.setMaxAmount(maxAmount);
-                    // set min amount if present
-                    if (section.isInt("min-amount")) {
-                        int minAmount = section.getInt("min-amount");
-                        if (minAmount > maxAmount) {
-                            main.getLogger().warning("min-amount for drops cannot be greater than max-amount for drop section: " + section.getCurrentPath());
-                            return null;
-                        }
-                        dropSettings.setMinAmount(minAmount);
-                    }
-                } else {
-                    main.getLogger().warning("max-amount was not an int for drop section: " + section.getCurrentPath());
+                ScriptBlock value = createPlantScript(section, "max-amount", data);
+                if (value == null || !ScriptHelper.isLong(value)) {
+                    main.getLogger().warning(String.format("max-amount value could not be read or was not ScriptType LONG in drop section: %s",
+                            section.getCurrentPath()));
                     return null;
+                } else {
+                    dropSettings.setMaxAmount(value);
                 }
             }
-            // set drop chance if present
-            if (section.isSet("chance")) {
-                if (section.isDouble("chance")) {
-                    double chance = section.getDouble("chance");
-                    if (chance <= 0.0 || chance > 100.0) {
-                        main.getLogger().warning("chance was not greater than 0.0 and less/equal to 100.0 for drop section: " + section.getCurrentPath());
-                        return null;
-                    }
-                    dropSettings.setChance(chance);
-                } else {
-                    main.getLogger().warning("chance was not a double for drop section: " + section.getCurrentPath());
+            if (section.isSet("min-amount")) {
+                ScriptBlock value = createPlantScript(section, "min-amount", data);
+                if (value == null || !ScriptHelper.isLong(value)) {
+                    main.getLogger().warning(String.format("min-amount value could not be read or was not ScriptType LONG in drop section: %s",
+                            section.getCurrentPath()));
                     return null;
+                } else {
+                    dropSettings.setMinAmount(value);
+                }
+            }
+            // set drop do-if, if present
+            if (section.isSet("do-if")) {
+                ScriptBlock value = createPlantScript(section, "do-if", data);
+                if (value == null || !ScriptHelper.isBoolean(value)) {
+                    main.getLogger().warning(String.format("do-if value could not be read or was not ScriptType BOOLEAN in drop section: %s",
+                            section.getCurrentPath()));
+                    return null;
+                } else {
+                    dropSettings.setDoIf(value);
                 }
             }
             // set ItemSettings
@@ -1041,7 +1035,7 @@ public class ConfigurationManager {
 
         // add drops, if present
         if (section.isConfigurationSection("drops")) {
-            boolean valid = addDropsToDropStorage(section, plantInteract.getDropStorage());
+            boolean valid = addDropsToDropStorage(section, plantInteract.getDropStorage(), data);
             if (!valid) {
                 return null;
             }
@@ -1380,7 +1374,7 @@ public class ConfigurationManager {
         return true;
     }
 
-    boolean addDropsToDropStorage(ConfigurationSection section, DropStorage dropStorage) {
+    boolean addDropsToDropStorage(ConfigurationSection section, DropStorage dropStorage, PlantData data) {
         // add drop limit, if present
         if (section.isInt("drop-limit")) {
             dropStorage.setDropLimit(section.getInt("drop-limit"));
@@ -1395,7 +1389,7 @@ public class ConfigurationManager {
                     return false;
                 }
                 // get drop settings
-                DropSettings dropSettings = loadDropConfig(dropConfig);
+                DropSettings dropSettings = loadDropConfig(dropConfig, data);
                 if (dropSettings == null) {
                     main.getLogger().warning("dropSettings were null in section: " + section.getCurrentPath());
                     return false;
@@ -1409,7 +1403,7 @@ public class ConfigurationManager {
                         dropItemSettings.generateItemStack(),
                         dropSettings.getMinAmount(),
                         dropSettings.getMaxAmount(),
-                        dropSettings.getChance()
+                        dropSettings.getDoIf()
                 );
                 dropStorage.addDrop(drop);
             }
@@ -1907,7 +1901,7 @@ public class ConfigurationManager {
             return null;
         }
         PlantDropEffect effect = new PlantDropEffect();
-        boolean added = addDropsToDropStorage(section, effect.getDropStorage());
+        boolean added = addDropsToDropStorage(section, effect.getDropStorage(), data);
         if (!added) {
             main.getLogger().warning("Drop effect not added; issue getting drops");
             return null;
