@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,6 +85,9 @@ public class ScriptHelper {
     private static String getVariableValue(PlantBlock plantBlock, PlantData plantData, String variableName) {
         // check if it is a property name
         if (variableName.startsWith("_")) {
+            if ("_random_uuid".equals(variableName)) {
+                return UUID.randomUUID().toString();
+            }
             String relevantVariableName = variableName;
             PlantBlock relevantPlantBlock = plantBlock;
             if (variableName.startsWith("_parent")) {

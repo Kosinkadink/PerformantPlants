@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
+import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -48,7 +49,7 @@ public class PlantBlockEventListener implements Listener {
                 // check if empty block has plant metadata
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     // if so, destroy; erroneous existence and continue
-                    destroyPlantBlock(block, false);
+                    BlockHelper.destroyPlantBlock(main, block, false);
                 }
                 // get item in appropriate hand hand
                 ItemStack itemStack;
@@ -90,7 +91,7 @@ public class PlantBlockEventListener implements Listener {
                 return;
             }
             if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
-            destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
+            BlockHelper.destroyPlantBlock(main, event.getBlock(), event.getPlantBlock(), true);
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
@@ -143,7 +144,7 @@ public class PlantBlockEventListener implements Listener {
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
             if (!event.getPlantBlock().checkGrowthRequirements()) {
-                destroyPlantBlock(event.getBlock(), event.getPlantBlock(), true);
+                BlockHelper.destroyPlantBlock(main, event.getBlock(), event.getPlantBlock(), true);
             }
             // set it back to farmland to avoid weird effect on player
             // actual turning into dirt should happen due to PlayerInteractEvent not being cancelled
@@ -207,7 +208,7 @@ public class PlantBlockEventListener implements Listener {
             // break block, if applicable
             if (!onlyBreakOnDo || shouldDo) {
                 if (plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
-                    destroyPlantBlock(event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock()));
+                    BlockHelper.destroyPlantBlock(main, event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock()));
                 }
             }
             // drop items, if applicable
@@ -401,7 +402,7 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
                 event.setCancelled(true);
-                destroyPlantBlock(event.getBlock(), false);
+                BlockHelper.destroyPlantBlock(main, event.getBlock(), false);
             }
         }
     }
@@ -411,7 +412,7 @@ public class PlantBlockEventListener implements Listener {
         // check if exploded blocks were Plants, and if so destroy them
         for (Block block : event.blockList()) {
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                destroyPlantBlock(block, false);
+                BlockHelper.destroyPlantBlock(main, block, false);
             }
         }
     }
@@ -421,7 +422,7 @@ public class PlantBlockEventListener implements Listener {
         // check if exploded blocks were Plants, and if so destroy them
         for (Block block : event.blockList()) {
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                destroyPlantBlock(block, false);
+                BlockHelper.destroyPlantBlock(main, block, false);
             }
         }
     }
@@ -431,7 +432,7 @@ public class PlantBlockEventListener implements Listener {
         if (MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
                 !event.getToBlock().getType().isSolid()) {
             Block block = event.getToBlock();
-            destroyPlantBlock(block, true);
+            BlockHelper.destroyPlantBlock(main, block, true);
             event.setCancelled(true);
         }
     }
@@ -445,10 +446,10 @@ public class PlantBlockEventListener implements Listener {
             if (source.getType().isAir() &&
                     !block.getType().isSolid() &&
                     block.getLocation().getBlockY()-source.getLocation().getBlockY() > 0) {
-                destroyPlantBlock(block, true);
+                BlockHelper.destroyPlantBlock(main, block, true);
                 // only destroy source block if it is a plant block
                 if (MetadataHelper.hasPlantBlockMetadata(source)) {
-                    destroyPlantBlock(source, true);
+                    BlockHelper.destroyPlantBlock(main, source, true);
                 }
             }
             event.setCancelled(true);
@@ -473,7 +474,7 @@ public class PlantBlockEventListener implements Listener {
             if (anyPlantBlocks) {
                 event.setCancelled(true);
                 if (MetadataHelper.hasPlantBlockMetadata(event.getBlocks().get(0))) {
-                    destroyPlantBlock(event.getBlocks().get(0), true);
+                    BlockHelper.destroyPlantBlock(main, event.getBlocks().get(0), true);
                 }
             }
         }
@@ -506,54 +507,13 @@ public class PlantBlockEventListener implements Listener {
                     if (usingStickyBlock) {
                         return;
                     }
-                    destroyPlantBlock(block, true);
+                    BlockHelper.destroyPlantBlock(main, block, true);
                 }
             }
         }
     }
 
     //endregion
-
-    void destroyPlantBlock(Block block, PlantBlock plantBlock, boolean drops) {
-        block.setType(Material.AIR);
-        boolean removed = main.getPlantManager().removePlantBlock(plantBlock);
-        // if block was not removed, don't do anything else
-        if (!removed) {
-            return;
-        }
-        // handle drops
-        if (drops) {
-            DropHelper.performDrops(plantBlock.getDropStorage(), block, null, plantBlock);
-        }
-        // if block's children should be removed, remove them
-        if (plantBlock.isBreakChildren()) {
-            ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());
-            for (BlockLocation childLocation : childLocations) {
-                destroyPlantBlock(childLocation, drops);
-            }
-        }
-        // if block's parent should be removed, remove it
-        if (plantBlock.isBreakParent()) {
-            BlockLocation parentLocation = plantBlock.getParentLocation();
-            if (parentLocation != null) {
-                destroyPlantBlock(parentLocation, drops);
-            }
-        }
-    }
-
-    void destroyPlantBlock(Block block, boolean drops) {
-        PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
-        if (plantBlock != null) {
-            destroyPlantBlock(block, plantBlock, drops);
-        }
-    }
-
-    void destroyPlantBlock(BlockLocation blockLocation, boolean drops) {
-        PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
-        if (plantBlock != null) {
-            destroyPlantBlock(plantBlock.getBlock(), plantBlock, drops);
-        }
-    }
 
     void decrementItemStack(ItemStack itemStack) {
         // if material is air, do nothing

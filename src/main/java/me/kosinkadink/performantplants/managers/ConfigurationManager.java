@@ -229,9 +229,36 @@ public class ConfigurationManager {
                         }
                     }
                     // load plant data, if present
-                    PlantData plantData = createPlantData(growingConfig);
+                    PlantData plantData = createPlantData(growingConfig, plant);
                     if (plantData != null) {
                         plant.setPlantData(plantData);
+                    }
+                    // load stored plant script blocks, if present
+                    HashMap<String, ScriptBlock> scriptBlockHashMap = loadPlantScriptBlocks(
+                            growingConfig,
+                            "stored-script-blocks",
+                            plant.getPlantData()
+                    );
+                    if (scriptBlockHashMap == null) {
+                        main.getLogger().warning("Plant stored-script-blocks could not be registered for plant:" + plantId);
+                        return;
+                    }
+                    for (Map.Entry<String, ScriptBlock> entry : scriptBlockHashMap.entrySet()) {
+                        plant.addScriptBlock(entry.getKey(), entry.getValue());
+                    }
+                    // load stored plant growths stage blocks, if present
+                    List<GrowthStageBlock> plantStageBlocks = loadGrowthStageBlocks(
+                            growingConfig,
+                            "stored-stage-blocks",
+                            null,
+                            plant.getPlantData()
+                    );
+                    if (plantStageBlocks == null) {
+                        main.getLogger().warning("Plant stored-stage-blocks could not be registered for plant: " + plantId);
+                        return;
+                    }
+                    for (GrowthStageBlock block : plantStageBlocks) {
+                        plant.addGrowthStageBlock(block.getId(), block);
                     }
                     // get growth stages; since seed is present, growth stages are REQUIRED
                     if (!growingConfig.isSet("stages") && growingConfig.isConfigurationSection("stages")) {
@@ -296,119 +323,14 @@ public class ConfigurationManager {
                                 main.getLogger().warning(String.format("No blocks provided for growth stage %s in plant %s: ", stageId, plantId));
                                 return;
                             }
-                            ConfigurationSection blocksConfig = stageConfig.getConfigurationSection("blocks");
-                            for (String blockName : blocksConfig.getKeys(false)) {
-                                ConfigurationSection blockConfig = blocksConfig.getConfigurationSection(blockName);
-                                if (blockConfig == null) {
-                                    main.getLogger().warning("Could not load stage's blockConfig for plant: " + plantId);
-                                    return;
-                                }
-                                BlockSettings blockSettings = loadBlockConfig(blockConfig.getConfigurationSection("block-data"));
-                                if (blockSettings == null) {
-                                    main.getLogger().warning("blockSettings for growth block returned null for plant: " + plantId);
-                                    return;
-                                }
-                                GrowthStageBlock growthStageBlock;
-                                try {
-                                    growthStageBlock = new GrowthStageBlock(
-                                            blockName,
-                                            blockSettings.getXRel(),
-                                            blockSettings.getYRel(),
-                                            blockSettings.getZRel(),
-                                            blockSettings.getMaterial(),
-                                            blockSettings.getBlockDataStrings(),
-                                            blockSettings.getSkullTexture()
-                                    );
-                                } catch (IllegalArgumentException e) {
-                                    main.getLogger().warning(String.format("Could not create growth stage block in plant %s due to: %s", plantId, e.getMessage()));
-                                    return;
-                                }
-                                // set ignore space, if present
-                                if (blockConfig.isBoolean("ignore-space")) {
-                                    growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
-                                }
-                                // set break children, if present
-                                if (blockConfig.isBoolean("break-children")) {
-                                    growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
-                                }
-                                // set break parent, if present
-                                if (blockConfig.isBoolean("break-parent")) {
-                                    growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
-                                }
-                                // set update stage on break, if present
-                                if (blockConfig.isBoolean("regrow")) {
-                                    growthStageBlock.setUpdateStageOnBreak(blockConfig.getBoolean("regrow"));
-                                }
-                                // set random rotation, if present
-                                if (blockConfig.isBoolean("random-rotation")) {
-                                    growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
-                                }
-                                // set placed orientation, if present
-                                if (blockConfig.isBoolean("placed-rotation")) {
-                                    growthStageBlock.setPlacedOrientation(blockConfig.getBoolean("placed-rotation"));
-                                }
-                                // set childOf, if present
-                                if (blockConfig.isSet("child-of")) {
-                                    if (!blockConfig.isConfigurationSection("child-of")
-                                            || !blockConfig.isInt("child-of.x")
-                                            || !blockConfig.isInt("child-of.y")
-                                            || !blockConfig.isInt("child-of.z")) {
-                                        main.getLogger().warning("child-of is not configured properly for plant: " + plantId);
-                                        return;
-                                    }
-                                    growthStageBlock.setChildOf(new RelativeLocation(
-                                            blockConfig.getInt("child-of.x"),
-                                            blockConfig.getInt("child-of.y"),
-                                            blockConfig.getInt("child-of.z")
-                                    ));
-                                }
-                                // set drops, if present
-                                if (blockConfig.isSet("drops")) {
-                                    // add drops
-                                    boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage(), plantData);
-                                    if (!valid) {
-                                        return;
-                                    }
-                                    // if no limit defined for growthStageBlock but is defined for growth stage, apply it
-                                    if (!growthStageBlock.getDropStorage().isDropLimitSet() && growthStage.getDropStorage().isDropLimitSet()) {
-                                        growthStageBlock.getDropStorage().setDropLimit(growthStage.getDropStorage().getDropLimit());
-                                    }
-                                }
-                                // set interact behavior, if present
-                                if (blockConfig.isConfigurationSection("on-interact")) {
-                                    ConfigurationSection onInteractSection = blockConfig.getConfigurationSection("on-interact");
-                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onInteractSection, plant.getPlantData());
-                                    if (plantInteractStorage == null) {
-                                        main.getLogger().warning("Could not load on-interact section: " + onInteractSection.getCurrentPath());
-                                        return;
-                                    }
-                                    // add interactions to growth stage block
-                                    growthStageBlock.setOnInteract(plantInteractStorage);
-                                }
-                                // set click behavior, if present
-                                if (blockConfig.isConfigurationSection("on-click")) {
-                                    ConfigurationSection onClickSection = blockConfig.getConfigurationSection("on-click");
-                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onClickSection, plant.getPlantData());
-                                    if (plantInteractStorage == null) {
-                                        main.getLogger().warning("Could not load on-click section: " + onClickSection.getCurrentPath());
-                                        return;
-                                    }
-                                    // add interactions to growth stage block
-                                    growthStageBlock.setOnClick(plantInteractStorage);
-                                }
-                                // set break behavior, if present
-                                if (blockConfig.isConfigurationSection("on-break")) {
-                                    ConfigurationSection onBreakSection = blockConfig.getConfigurationSection("on-break");
-                                    PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onBreakSection, plant.getPlantData());
-                                    if (plantInteractStorage == null) {
-                                        main.getLogger().warning("Could not load on-break section: " + onBreakSection.getCurrentPath());
-                                        return;
-                                    }
-                                    // add interactions to growth stage block
-                                    growthStageBlock.setOnBreak(plantInteractStorage);
-                                }
-                                // add growth stage block to stage
-                                growthStage.addGrowthStageBlock(growthStageBlock);
+                            List<GrowthStageBlock> blocks = loadGrowthStageBlocks(stageConfig, "blocks", growthStage, plant.getPlantData());
+                            if (blocks == null || blocks.isEmpty()) {
+                                main.getLogger().warning(String.format("Something went wrong loading blocks for growth stage %s in plant %s: ", stageId, plantId));
+                                return;
+                            }
+                            // add growth stage blocks to stage
+                            for (GrowthStageBlock block : blocks) {
+                                growthStage.addGrowthStageBlock(block);
                             }
                             // add growth stage to plant
                             plant.addGrowthStage(growthStage);
@@ -732,40 +654,10 @@ public class ConfigurationManager {
                 }
                 finalItemSettings.addEnchantmentLevel(new EnchantmentLevel(enchantment, level));
             }
-            // get potion effects -> PotionEffectType:Duration:Amplifier, if present
-            List<String> potionStrings = section.getStringList("potion-effects");
-            for (String potionString : potionStrings) {
-                String[] splitString = potionString.split(":");
-                if (splitString.length > 3 || splitString.length < 2) {
-                    main.getLogger().warning("Potion string was invalid in item section: " + section.getCurrentPath());
-                    continue;
-                }
-                String potionName = splitString[0].toUpperCase();
-                // get potion name
-                PotionEffectType potionEffectType = PotionEffectType.getByName(potionName);
-                if (potionEffectType == null) {
-                    main.getLogger().warning(String.format("Potion '%s' not recognized in item section: %s",
-                            potionName, section.getCurrentPath()));
-                    continue;
-                }
-                // get duration
-                int duration;
-                try {
-                    duration = Math.max(1, Integer.parseInt(splitString[1]));
-                } catch (NumberFormatException e) {
-                    main.getLogger().warning("Potion duration was not an integer in item section: " + section.getCurrentPath());
-                    continue;
-                }
-                int amplifier = 0;
-                if (splitString.length == 3) {
-                    try {
-                        amplifier = Math.max(0, Integer.parseInt(splitString[2])-1);
-                    } catch (NumberFormatException e) {
-                        main.getLogger().warning("Potion amplifier was not an integer in item section: " + section.getCurrentPath());
-                        continue;
-                    }
-                }
-                finalItemSettings.addPotionEffect(new PotionEffect(potionEffectType, duration, amplifier));
+            // get potion effects, if present
+            List<PotionEffect> potionEffects = loadPotionEffects(section);
+            for (PotionEffect potionEffect : potionEffects) {
+                finalItemSettings.addPotionEffect(potionEffect);
             }
             // get potion color, if present
             if (section.isConfigurationSection("potion-color")) {
@@ -898,6 +790,186 @@ public class ConfigurationManager {
             return dropSettings;
         }
         return null;
+    }
+
+    List<PotionEffect> loadPotionEffects(ConfigurationSection section) {
+        List<PotionEffect> potionEffects = new ArrayList<>();
+        // get potion effects -> PotionEffectType:Duration:Amplifier, if present
+        List<String> potionStrings = section.getStringList("potion-effects");
+        for (String potionString : potionStrings) {
+            String[] splitString = potionString.split(":");
+            if (splitString.length > 3 || splitString.length < 2) {
+                main.getLogger().warning("Potion string was invalid in section: " + section.getCurrentPath());
+                continue;
+            }
+            String potionName = splitString[0].toUpperCase();
+            // get potion name
+            PotionEffectType potionEffectType = PotionEffectType.getByName(potionName);
+            if (potionEffectType == null) {
+                main.getLogger().warning(String.format("Potion '%s' not recognized in section: %s",
+                        potionName, section.getCurrentPath()));
+                continue;
+            }
+            // get duration
+            int duration;
+            try {
+                duration = Math.max(1, Integer.parseInt(splitString[1]));
+            } catch (NumberFormatException e) {
+                main.getLogger().warning("Potion duration was not an integer in section: " + section.getCurrentPath());
+                continue;
+            }
+            int amplifier = 0;
+            if (splitString.length == 3) {
+                try {
+                    amplifier = Math.max(0, Integer.parseInt(splitString[2])-1);
+                } catch (NumberFormatException e) {
+                    main.getLogger().warning("Potion amplifier was not an integer in section: " + section.getCurrentPath());
+                    continue;
+                }
+            }
+            potionEffects.add(new PotionEffect(potionEffectType, duration, amplifier));
+        }
+        return potionEffects;
+    }
+
+    List<GrowthStageBlock> loadGrowthStageBlocks(ConfigurationSection section, String sectionName, GrowthStage growthStage, PlantData data) {
+        if (section == null) {
+            return null;
+        }
+        ArrayList<GrowthStageBlock> blocks = new ArrayList<>();
+        ConfigurationSection blocksConfig = section.getConfigurationSection(sectionName);
+        if (blocksConfig == null) {
+            return blocks;
+        }
+        for (String blockName : blocksConfig.getKeys(false)) {
+            ConfigurationSection blockConfig = blocksConfig.getConfigurationSection(blockName);
+            if (blockConfig == null) {
+                main.getLogger().warning("Could not load stage's blockConfig in section: " + blocksConfig.getCurrentPath());
+                return null;
+            }
+            BlockSettings blockSettings = loadBlockConfig(blockConfig.getConfigurationSection("block-data"));
+            if (blockSettings == null) {
+                main.getLogger().warning("blockSettings for growth block returned null in section: " + blockConfig.getCurrentPath());
+                return null;
+            }
+            GrowthStageBlock growthStageBlock;
+            try {
+                growthStageBlock = new GrowthStageBlock(
+                        blockName,
+                        blockSettings.getXRel(),
+                        blockSettings.getYRel(),
+                        blockSettings.getZRel(),
+                        blockSettings.getMaterial(),
+                        blockSettings.getBlockDataStrings(),
+                        blockSettings.getSkullTexture()
+                );
+            } catch (IllegalArgumentException e) {
+                main.getLogger().warning(String.format("Could not create growth stage block in section %s due to: %s",
+                        blockConfig.getCurrentPath(), e.getMessage()));
+                return null;
+            }
+            // set ignore space, if present
+            if (blockConfig.isBoolean("ignore-space")) {
+                growthStageBlock.setIgnoreSpace(blockConfig.getBoolean("ignore-space"));
+            }
+            // set break children, if present
+            if (blockConfig.isBoolean("break-children")) {
+                growthStageBlock.setBreakChildren(blockConfig.getBoolean("break-children"));
+            }
+            // set break parent, if present
+            if (blockConfig.isBoolean("break-parent")) {
+                growthStageBlock.setBreakParent(blockConfig.getBoolean("break-parent"));
+            }
+            // set update stage on break, if present
+            if (blockConfig.isBoolean("regrow")) {
+                growthStageBlock.setUpdateStageOnBreak(blockConfig.getBoolean("regrow"));
+            }
+            // set random rotation, if present
+            if (blockConfig.isBoolean("random-rotation")) {
+                growthStageBlock.setRandomOrientation(blockConfig.getBoolean("random-rotation"));
+            }
+            // set placed orientation, if present
+            if (blockConfig.isBoolean("placed-rotation")) {
+                growthStageBlock.setPlacedOrientation(blockConfig.getBoolean("placed-rotation"));
+            }
+            // set replace plant block, if present
+            if (blockConfig.isBoolean("replace-plant-block")) {
+                growthStageBlock.setReplacePlantBlock(blockConfig.getBoolean("replace-plant-block"));
+            }
+            // set replace vanilla block, if present
+            if (blockConfig.isBoolean("replace-vanilla-block")) {
+                growthStageBlock.setReplaceVanillaBlock(blockConfig.getBoolean("replace-vanilla-block"));
+            }
+            // set replace vanilla block, if present
+            if (blockConfig.isBoolean("vanilla-block")) {
+                growthStageBlock.setVanillaBlock(blockConfig.getBoolean("vanilla-block"));
+            }
+            // set childOf, if present
+            if (blockConfig.isSet("child-of")) {
+                if (!blockConfig.isConfigurationSection("child-of")
+                        || !blockConfig.isInt("child-of.x")
+                        || !blockConfig.isInt("child-of.y")
+                        || !blockConfig.isInt("child-of.z")) {
+                    main.getLogger().warning("child-of is not configured properly in section: " + section.getCurrentPath());
+                    return null;
+                }
+                growthStageBlock.setChildOf(new RelativeLocation(
+                        blockConfig.getInt("child-of.x"),
+                        blockConfig.getInt("child-of.y"),
+                        blockConfig.getInt("child-of.z")
+                ));
+            }
+            // set drops, if present
+            if (blockConfig.isSet("drops")) {
+                // add drops
+                boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage(), data);
+                if (!valid) {
+                    return null;
+                }
+                // if no limit defined for growthStageBlock but is defined for growth stage, apply it
+                if (growthStage != null) {
+                    if (!growthStageBlock.getDropStorage().isDropLimitSet() && growthStage.getDropStorage().isDropLimitSet()) {
+                        growthStageBlock.getDropStorage().setDropLimit(growthStage.getDropStorage().getDropLimit());
+                    }
+                }
+            }
+            // set interact behavior, if present
+            if (blockConfig.isConfigurationSection("on-interact")) {
+                ConfigurationSection onInteractSection = blockConfig.getConfigurationSection("on-interact");
+                PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onInteractSection, data);
+                if (plantInteractStorage == null) {
+                    main.getLogger().warning("Could not load on-interact section: " + onInteractSection.getCurrentPath());
+                    return null;
+                }
+                // add interactions to growth stage block
+                growthStageBlock.setOnInteract(plantInteractStorage);
+            }
+            // set click behavior, if present
+            if (blockConfig.isConfigurationSection("on-click")) {
+                ConfigurationSection onClickSection = blockConfig.getConfigurationSection("on-click");
+                PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onClickSection, data);
+                if (plantInteractStorage == null) {
+                    main.getLogger().warning("Could not load on-click section: " + onClickSection.getCurrentPath());
+                    return null;
+                }
+                // add interactions to growth stage block
+                growthStageBlock.setOnClick(plantInteractStorage);
+            }
+            // set break behavior, if present
+            if (blockConfig.isConfigurationSection("on-break")) {
+                ConfigurationSection onBreakSection = blockConfig.getConfigurationSection("on-break");
+                PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(onBreakSection, data);
+                if (plantInteractStorage == null) {
+                    main.getLogger().warning("Could not load on-break section: " + onBreakSection.getCurrentPath());
+                    return null;
+                }
+                // add interactions to growth stage block
+                growthStageBlock.setOnBreak(plantInteractStorage);
+            }
+            // add growth stage block to stage
+            blocks.add(growthStageBlock);
+        }
+        return blocks;
     }
 
     PlantInteractStorage loadPlantInteractStorage(ConfigurationSection section) {
@@ -1949,6 +2021,11 @@ public class ConfigurationManager {
 
     PlantAreaEffect createAreaEffect(ConfigurationSection section, PlantData data) {
         PlantAreaEffect effect = new PlantAreaEffect();
+        // get potion effects, if present
+        List<PotionEffect> potionEffects = loadPotionEffects(section);
+        for (PotionEffect potionEffect : potionEffects) {
+            effect.addPotionEffect(potionEffect);
+        }
         if (section.isConfigurationSection("color")) {
             ConfigurationSection colorSection = section.getConfigurationSection("color");
             if (colorSection != null) {
@@ -2446,7 +2523,7 @@ public class ConfigurationManager {
 
     //region Plant Script
 
-    PlantData createPlantData(ConfigurationSection section) {
+    PlantData createPlantData(ConfigurationSection section, Plant plant) {
         if (section == null) {
             return null;
         }
@@ -2523,19 +2600,31 @@ public class ConfigurationManager {
                         section.getConfigurationSection("plant-data").getCurrentPath());
                 return null;
             }
-            return new PlantData(data);
+            PlantData plantData = new PlantData(data);
+            plantData.setPlant(plant);
+            return plantData;
         }
         return null;
     }
 
-    ScriptBlock loadPlantScript(ConfigurationSection section, PlantData data) {
+    HashMap<String, ScriptBlock> loadPlantScriptBlocks(ConfigurationSection section, String subsectionName, PlantData data) {
         if (section == null) {
             return null;
         }
-        if (section.isConfigurationSection("plant-script")) {
-            return createPlantScript(section, "plant-script", data);
+        HashMap<String, ScriptBlock> scriptBlockHashMap = new HashMap<>();
+        if (section.isConfigurationSection(subsectionName)) {
+            ConfigurationSection scriptBlocksSection = section.getConfigurationSection(subsectionName);
+            for (String scriptBlockName : scriptBlocksSection.getKeys(false)) {
+                ScriptBlock scriptBlock = createPlantScript(scriptBlocksSection, scriptBlockName, data);
+                if (scriptBlock == null) {
+                    main.getLogger().warning(String.format("Could not create plant script block '%s' in section: %s",
+                            scriptBlockName, scriptBlocksSection.getCurrentPath()));
+                    return null;
+                }
+                scriptBlockHashMap.put(scriptBlockName, scriptBlock);
+            }
         }
-        return null;
+        return scriptBlockHashMap;
     }
 
     ScriptBlock createPlantScript(ConfigurationSection section, String subsectionName, PlantData data) {
@@ -2584,6 +2673,9 @@ public class ConfigurationManager {
                 case "variable":
                 case "result":
                     returned = createPlantScriptResult(blockSection, data); break;
+                // reference to defined stored-script-block in plant
+                case "stored":
+                    returned = getStoredScriptBlock(blockSection, data); break;
                 // math
                 case "+":
                 case "add":
@@ -2684,6 +2776,8 @@ public class ConfigurationManager {
                     returned = createScriptOperationInteract(blockSection, data); break;
                 case "consumable":
                     returned = createScriptOperationConsumable(blockSection, data); break;
+                case "createblocks":
+                    returned = createScriptOperationCreatePlantBlocks(blockSection, data); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, data); break;
@@ -2778,6 +2872,25 @@ public class ConfigurationManager {
         arrayList.add(left);
         arrayList.add(right);
         return arrayList;
+    }
+
+    // stored script block
+    ScriptBlock getStoredScriptBlock(ConfigurationSection section, PlantData data) {
+        if (data == null || data.getPlant() == null) {
+            return null;
+        }
+        ScriptBlock scriptBlockName = createScriptOperationUnary(section, data);
+        if (scriptBlockName == null) {
+            main.getLogger().warning("Name of script block name could not be parsed in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        if (scriptBlockName.containsVariable() || !(scriptBlockName instanceof ScriptResult)) {
+            main.getLogger().warning("Script block name of stored script block cannot contain variables or not " +
+                    "be ScriptResult in section: " + section.getCurrentPath());
+            return null;
+        }
+        return data.getPlant().getScriptBlock(((ScriptResult) scriptBlockName).getStringValue());
     }
 
     // math
@@ -3081,6 +3194,10 @@ public class ConfigurationManager {
             ifNext = createPlantScript(section, ifNextString, data);
         }
         return new ScriptOperationChangeStage(main, stage, ifNext);
+    }
+    ScriptOperation createScriptOperationCreatePlantBlocks(ConfigurationSection section, PlantData data) {
+        // TODO: fill out
+        return null;
     }
 
     //random

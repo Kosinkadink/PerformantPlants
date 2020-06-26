@@ -26,8 +26,8 @@ public class PlantBlock {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
-    private HashSet<BlockLocation> childLocations = new HashSet<>();
-    private Plant plant;
+    private final HashSet<BlockLocation> childLocations = new HashSet<>();
+    private final Plant plant;
     private int stageIndex;
     private int dropStageIndex;
     private boolean executedStage = false;
@@ -38,7 +38,7 @@ public class PlantBlock {
     private long duration;
     private BukkitTask growthTask;
     private UUID playerUUID;
-    private UUID plantUUID;
+    private final UUID plantUUID;
     private DropStorage dropStorage = new DropStorage();
     private PlantData plantData = null;
     // temporary state variables
@@ -137,6 +137,20 @@ public class PlantBlock {
         return location.getBlock();
     }
 
+    public Block getEffectiveBlock() {
+        if (hasParent()) {
+            return getParentLocation().getBlock();
+        }
+        return getBlock();
+    }
+
+    public PlantBlock getEffectivePlantBlock() {
+        if (hasParent()) {
+            return Main.getInstance().getPlantManager().getPlantBlock(getParentLocation());
+        }
+        return this;
+    }
+
     public Plant getPlant() {
         return plant;
     }
@@ -200,7 +214,13 @@ public class PlantBlock {
     }
 
     public DropStorage getDropStorage() {
-        if (plant.hasGrowthStages()) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getDropStorage();
+            }
+        }
+        else if (plant.hasGrowthStages()) {
             GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
             if (growthStage != null) {
                 GrowthStageBlock stageBlock = growthStage.getGrowthStageBlock(stageBlockId);
@@ -220,7 +240,13 @@ public class PlantBlock {
     }
 
     public boolean isBreakChildren() {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isBreakChildren();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.isBreakChildren();
@@ -230,7 +256,13 @@ public class PlantBlock {
     }
 
     public boolean isBreakParent() {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isBreakParent();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.isBreakParent();
@@ -240,7 +272,13 @@ public class PlantBlock {
     }
 
     public boolean isUpdateStageOnBreak() {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isUpdateStageOnBreak();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.isUpdateStageOnBreak();
@@ -250,7 +288,13 @@ public class PlantBlock {
     }
 
     public boolean isStopGrowth() {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isStopGrowth();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.isStopGrowth();
@@ -260,7 +304,13 @@ public class PlantBlock {
     }
 
     public PlantInteract getOnInteract(ItemStack itemStack) {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnInteract(itemStack);
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.getOnInteract(itemStack);
@@ -270,7 +320,13 @@ public class PlantBlock {
     }
 
     public PlantInteract getOnClick(ItemStack itemStack) {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnClick(itemStack);
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.getOnClick(itemStack);
@@ -280,7 +336,13 @@ public class PlantBlock {
     }
 
     public PlantInteract getOnBreak(ItemStack itemStack) {
-        if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnBreak(itemStack);
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.getOnBreak(itemStack);
@@ -400,26 +462,18 @@ public class PlantBlock {
 
     public boolean goToStageForcefully(Main main, int growthStageIndex) {
         if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
+        // if stage index not valid, do nothing
+        if (!plant.isValidStage(growthStageIndex)) {
+            return false;
+        }
         // pause task
         pauseTask();
-        // check that growthsStageIndex is valid
-        if (!plant.isValidStage(growthStageIndex)) {
-            startTask(main);
-            return false;
-        }
-        // perform growth without advancement
-        boolean canGrow = performGrowth(main, false);
-        // if couldn't grow, do nothing (grow naturally)
-        if (!canGrow) {
-            startTask(main);
-            return false;
-        }
-        // otherwise, pause task
+        // remember old stage index
         int previousStageIndex = stageIndex;
         stageIndex = growthStageIndex;
         executedStage = false;
         // perform growth again without advancement to get block to this stage
-        canGrow = performGrowth(main, false);
+        boolean canGrow = performGrowth(main, false);
         // if can't grow, revert back to previous state and continue previous task
         if (!canGrow) {
             stageIndex = previousStageIndex;

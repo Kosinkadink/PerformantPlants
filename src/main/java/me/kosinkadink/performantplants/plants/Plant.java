@@ -2,7 +2,9 @@ package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
+import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
@@ -19,6 +21,8 @@ public class Plant {
     private PlantItem plantItem;
     private PlantItem plantSeedItem;
     private HashMap<String, PlantItem> goods = new HashMap<>();
+    private HashMap<String, GrowthStageBlock> growthStageBlockMap = new HashMap<>();
+    private HashMap<String, ScriptBlock> scriptBlockMap = new HashMap<>();
     private StageStorage stageStorage = new StageStorage();
     private PlantData plantData;
     // growth requirements
@@ -96,6 +100,32 @@ public class Plant {
             }
         }
         return null;
+    }
+
+    // drop map
+    public HashMap<String, GrowthStageBlock> getGrowthStageBlockMap() {
+        return growthStageBlockMap;
+    }
+
+    public GrowthStageBlock getGrowthStageBlock(String blockId) {
+        return growthStageBlockMap.get(blockId);
+    }
+
+    public void addGrowthStageBlock(String blockId, GrowthStageBlock growthStageBlock) {
+        growthStageBlockMap.put(blockId, growthStageBlock);
+    }
+
+    // plant script block map
+    public HashMap<String, ScriptBlock> getScriptBlockMap() {
+        return scriptBlockMap;
+    }
+
+    public ScriptBlock getScriptBlock(String blockId) {
+        return scriptBlockMap.get(blockId);
+    }
+
+    public void addScriptBlock(String blockId, ScriptBlock scriptBlock) {
+        scriptBlockMap.put(blockId, scriptBlock);
     }
 
     // requirements

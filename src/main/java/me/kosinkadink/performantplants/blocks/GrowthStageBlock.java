@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
@@ -14,9 +13,9 @@ import java.util.ArrayList;
 
 public class GrowthStageBlock {
 
-    private String id;
-    private RelativeLocation location;
-    private BlockData blockData;
+    private final String id;
+    private final RelativeLocation location;
+    private final BlockData blockData;
     private String skullTexture;
     private RelativeLocation childOf;
     private boolean breakChildren = true;
@@ -30,20 +29,16 @@ public class GrowthStageBlock {
     private PlantInteractStorage onClick;
     private PlantInteractStorage onBreak;
     private DropStorage dropStorage = new DropStorage();
+    // block replacement variables
+    private boolean replacePlantBlock = false;
+    private boolean replaceVanillaBlock = false;
+    private boolean isVanillaBlock = false;
 
     public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings, String skullTexture) {
         this.id = id;
         location = new RelativeLocation(xRel, yRel, zRel);
         blockData = BlockHelper.createBlockData(material, blockDataStrings);
         this.skullTexture = skullTexture;
-    }
-
-    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material, ArrayList<String> blockDataStrings) {
-        this(id, xRel, yRel, zRel, material, blockDataStrings, null);
-    }
-
-    public GrowthStageBlock(String id, int xRel, int yRel, int zRel, Material material) {
-        this(id, xRel, yRel, zRel, material, new ArrayList<>(), null);
     }
 
     public String getId() {
@@ -187,4 +182,28 @@ public class GrowthStageBlock {
         this.dropStorage = dropStorage;
     }
 
+    // block replacement
+    public boolean isReplacePlantBlock() {
+        return replacePlantBlock;
+    }
+
+    public void setReplacePlantBlock(boolean replacePlantBlock) {
+        this.replacePlantBlock = replacePlantBlock;
+    }
+
+    public boolean isReplaceVanillaBlock() {
+        return replaceVanillaBlock;
+    }
+
+    public void setReplaceVanillaBlock(boolean replaceVanillaBlock) {
+        this.replaceVanillaBlock = replaceVanillaBlock;
+    }
+
+    public boolean isVanillaBlock() {
+        return isVanillaBlock;
+    }
+
+    public void setVanillaBlock(boolean vanillaBlock) {
+        isVanillaBlock = vanillaBlock;
+    }
 }
