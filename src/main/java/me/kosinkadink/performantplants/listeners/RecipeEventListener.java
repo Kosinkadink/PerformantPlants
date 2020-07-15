@@ -34,7 +34,7 @@ public class RecipeEventListener implements Listener {
         if (!main.getRecipeManager().isRecipe(event.getRecipe())) {
             for (ItemStack ingredient : event.getInventory().getMatrix()) {
                 // if plant item is used, set result to air
-                if (PlantItemBuilder.isPlantName(ingredient)) {
+                if (main.getPlantTypeManager().isPlantItemStack(ingredient)) {
                     event.getInventory().setResult(new ItemStack(Material.AIR));
                     return;
                 }
@@ -88,7 +88,7 @@ public class RecipeEventListener implements Listener {
     @EventHandler
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         // check if a smelting recipe was registered for item stack
-        if (PlantItemBuilder.isPlantName(event.getSource())) {
+        if (main.getPlantTypeManager().isPlantItemStack(event.getSource())) {
             switch (event.getBlock().getType()) {
                 case FURNACE:
                     if (!main.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
@@ -120,7 +120,7 @@ public class RecipeEventListener implements Listener {
     public void onFurnaceBurn(FurnaceBurnEvent event) {
         // check if a plant item is about to be used as fuel
         // cancel if plant
-        if (PlantItemBuilder.isPlantName(event.getFuel())) {
+        if (main.getPlantTypeManager().isPlantItemStack(event.getFuel())) {
             event.setCancelled(true);
             return;
         }
@@ -128,7 +128,7 @@ public class RecipeEventListener implements Listener {
         InventoryHolder inventoryHolder = (InventoryHolder) event.getBlock().getState();
         FurnaceInventory furnaceInventory = (FurnaceInventory) inventoryHolder.getInventory();
         // check if a smelting recipe was registered for item stack
-        if (PlantItemBuilder.isPlantName(furnaceInventory.getSmelting()) && !main.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
+        if (main.getPlantTypeManager().isPlantItemStack(furnaceInventory.getSmelting()) && !main.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
             event.setCancelled(true);
         }
     }

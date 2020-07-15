@@ -49,6 +49,11 @@ public class PlantTypeManager {
         return null;
     }
 
+    public boolean isPlantItemStack(ItemStack itemStack) {
+        return PlantItemBuilder.hasPlantPrefix(itemStack)
+                && getPlantByItemStack(itemStack) != null;
+    }
+
     public Plant getPlantById(String id) {
         return plantTypeMap.get(id);
     }

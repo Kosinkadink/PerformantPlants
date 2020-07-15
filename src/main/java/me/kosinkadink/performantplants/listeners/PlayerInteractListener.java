@@ -39,7 +39,7 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         if (event.getBlockAgainst().getType() == Material.CAMPFIRE) {
-            if (PlantItemBuilder.isPlantName(event.getItemInHand())) {
+            if (main.getPlantTypeManager().isPlantItemStack(event.getItemInHand())) {
                 event.setCancelled(true);
             }
         }
@@ -206,7 +206,7 @@ public class PlayerInteractListener implements Listener {
                         main.getLogger().info("Block was NULL");
                 } else {
                     // check if item in other hand is consumable
-                    if (!otherStack.getType().isAir() && !PlantItemBuilder.isPlantName(itemStack) && !itemStack.getType().isEdible()) {
+                    if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !main.getPlantTypeManager().isPlantItemStack(itemStack)) {
                         PlantItem otherItem = main.getPlantTypeManager().getPlantItemByItemStack(otherStack);
                         if (otherItem != null && otherItem.isConsumable()) {
                             PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(player,

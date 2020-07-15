@@ -26,6 +26,8 @@ import org.bukkit.inventory.meta.Damageable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -458,6 +460,17 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        handlePistonEvent(event, event.getBlocks());
+    }
+
+    @EventHandler
+    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        handlePistonEvent(event, event.getBlocks());
+    }
+
+    //endregion
+
+    private void handlePistonEvent(BlockPistonEvent event, List<Block> eventBlocks) {
         // if piston to be extended is Plant, cancel it (plant shouldn't extend)
         if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
@@ -465,55 +478,71 @@ public class PlantBlockEventListener implements Listener {
         else if (!event.isCancelled()) {
             // check if any pushed blocks were Plants
             boolean anyPlantBlocks = false;
-            for (Block block : event.getBlocks()) {
+            for (Block block : eventBlocks) {
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     anyPlantBlocks = true;
                     break;
                 }
             }
             if (anyPlantBlocks) {
-                event.setCancelled(true);
-                if (MetadataHelper.hasPlantBlockMetadata(event.getBlocks().get(0))) {
-                    BlockHelper.destroyPlantBlock(main, event.getBlocks().get(0), true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
-        // if piston to be retracted is Plant, cancel it (plant shouldn't retract)
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-        }
-        // if the piston is sticky, check if any plants are being pulled
-        else if (!event.isCancelled() && event.isSticky()) {
-            // check if sticky piston is retracting a sticky block
-            boolean usingStickyBlock = false;
-            if (event.getBlocks().size() > 0 &&
-                    !MetadataHelper.hasPlantBlockMetadata(event.getBlocks().get(0)) && (
-                            event.getBlocks().get(0).getBlockData().getMaterial() == Material.SLIME_BLOCK ||
-                            event.getBlocks().get(0).getBlockData().getMaterial() == Material.HONEY_BLOCK
-                            )) {
-                usingStickyBlock = true;
-            }
-            // check if any pulled blocks were Plants
-            for (Block block : event.getBlocks()) {
-                // also check if the block was solid; non-solid can't get pulled
-                if (MetadataHelper.hasPlantBlockMetadata(block) &&
-                        block.getType().isSolid()) {
-                    event.setCancelled(true);
-                    // if was using sticky block, don't do anything now after cancellation
-                    if (usingStickyBlock) {
-                        return;
+                // destroy any plant blocks immediately being moved by piston
+                if (MetadataHelper.hasPlantBlockMetadata(eventBlocks.get(0))) {
+                    BlockHelper.destroyPlantBlock(main, eventBlocks.get(0), true);
+                    if (eventBlocks.get(0).getType().isSolid()) {
+                        event.setCancelled(true);
                     }
-                    BlockHelper.destroyPlantBlock(main, block, true);
+                } else {
+                    // otherwise, need to see if solid non-plant blocks are moving any plant blocks
+                    HashSet<Block> stickyBlocks = new HashSet<>();
+                    HashSet<Block> solidBlocks = new HashSet<>();
+                    HashSet<Block> solidPlantBlocks = new HashSet<>();
+                    ArrayList<Block> plantBlocks = new ArrayList<>();
+                    ArrayList<Block> plantBlocksToDestroy = new ArrayList<>();
+                    for (Block block : eventBlocks) {
+                        if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                            if (block.getType().isSolid()) {
+                                solidPlantBlocks.add(block);
+                            }
+                            plantBlocks.add(block);
+                        }
+                        // check if sticky block and/or solid
+                        else {
+                            if (block.getType() == Material.SLIME_BLOCK || block.getType() == Material.HONEY_BLOCK) {
+                                stickyBlocks.add(block);
+                            }
+                            if (block.getType().isSolid()) {
+                                solidBlocks.add(block);
+                            }
+                        }
+                    }
+                    // destroy any plant blocks moved by a block
+                    for (Block plantBlock : plantBlocks) {
+                        Block interactingBlock = plantBlock.getRelative(event.getDirection().getOppositeFace());
+                        if (solidBlocks.contains(interactingBlock)) {
+                            plantBlocksToDestroy.add(plantBlock);
+                        } else if (solidPlantBlocks.contains(interactingBlock)) {
+                            event.setCancelled(true);
+                            return;
+                        } else if (plantBlock.getType().isSolid() && !stickyBlocks.isEmpty()) {
+                            // if block is moved by a sticky block, destroy it
+                            if (stickyBlocks.contains(plantBlock.getRelative(BlockFace.DOWN)) ||
+                                    stickyBlocks.contains(plantBlock.getRelative(BlockFace.UP)) ||
+                                    stickyBlocks.contains(plantBlock.getRelative(BlockFace.NORTH)) ||
+                                    stickyBlocks.contains(plantBlock.getRelative(BlockFace.EAST)) ||
+                                    stickyBlocks.contains(plantBlock.getRelative(BlockFace.SOUTH)) ||
+                                    stickyBlocks.contains(plantBlock.getRelative(BlockFace.WEST))) {
+                                plantBlocksToDestroy.add(plantBlock);
+                            }
+                        }
+                    }
+                    // destroy any plant blocks marked for destruction
+                    for (Block plantBlock : plantBlocksToDestroy) {
+                        BlockHelper.destroyPlantBlock(main, plantBlock, true);
+                    }
                 }
             }
         }
     }
-
-    //endregion
 
     void decrementItemStack(ItemStack itemStack) {
         // if material is air, do nothing

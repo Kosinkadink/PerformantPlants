@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.builders.PlantItemBuilder;
+import me.kosinkadink.performantplants.Main;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -33,8 +33,8 @@ public class ItemHelper {
             return false;
         }
         if (base.getItemMeta() instanceof Damageable && getDamage(base) == 0) { // && !PlantItemBuilder.isPlantName(checked)) {
-            boolean isBasePlant = PlantItemBuilder.isPlantName(base);
-            boolean isCheckedPlant = PlantItemBuilder.isPlantName(checked);
+            boolean isBasePlant = Main.getInstance().getPlantTypeManager().isPlantItemStack(base);
+            boolean isCheckedPlant = Main.getInstance().getPlantTypeManager().isPlantItemStack(checked);
             if (isBasePlant != isCheckedPlant) {
                 return false;
             }

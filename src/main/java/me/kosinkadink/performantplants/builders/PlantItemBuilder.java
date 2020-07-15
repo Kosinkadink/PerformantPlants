@@ -7,8 +7,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class PlantItemBuilder extends ItemBuilder {
 
-    static String prefix = String.format("%s%s%s",ChatColor.LIGHT_PURPLE, ChatColor.RESET, ChatColor.LIGHT_PURPLE);
-    static String postfix = String.format("%s%s%s",ChatColor.RESET, ChatColor.LIGHT_PURPLE, ChatColor.RESET);
+    static String prefix = ""+ChatColor.LIGHT_PURPLE;
+    static String postfix = ""+ChatColor.RESET;
+    static String colorString = "" + ChatColor.COLOR_CHAR;
+
 
     public PlantItemBuilder(Material material) {
         super(material);
@@ -25,31 +27,21 @@ public class PlantItemBuilder extends ItemBuilder {
     public PlantItemBuilder displayName(String name) {
         ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta != null) {
-            // add prefix/postfix if not already present
-            if (!isPlantName(name)) {
-                itemMeta.setDisplayName(prefix + name + postfix);
-                item.setItemMeta(itemMeta);
-            }
+            itemMeta.setDisplayName(prefix + name + postfix);
+            item.setItemMeta(itemMeta);
         }
         return this;
     }
 
-    public static boolean isPlantName(ItemStack itemStack) {
+    public static boolean hasPlantPrefix(ItemStack itemStack) {
         if (itemStack == null) {
             return false;
         }
         ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta != null && itemMeta.hasDisplayName()) {
-            return isPlantName(itemMeta.getDisplayName());
+            return itemMeta.getDisplayName().startsWith(colorString);
         }
         return false;
-    }
-
-    public static boolean isPlantName(String name) {
-        if (name == null) {
-            return false;
-        }
-        return name.startsWith(prefix) && name.endsWith(postfix);
     }
 
 }

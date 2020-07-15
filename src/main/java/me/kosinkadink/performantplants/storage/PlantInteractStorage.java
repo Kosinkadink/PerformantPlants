@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.storage;
 
+import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.util.ItemHelper;
@@ -24,8 +25,8 @@ public class PlantInteractStorage {
             // if no match interact and less exclusive properties should be checked, check them
             if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
                 if (plantInteract.isMatchMaterial()) {
-                    if (PlantItemBuilder.isPlantName(itemStack) ||
-                            itemStack.getType() != plantInteract.getItemStack().getType()) {
+                    if (itemStack.getType() != plantInteract.getItemStack().getType() ||
+                            Main.getInstance().getPlantTypeManager().isPlantItemStack(itemStack)) {
                         continue;
                     }
                 }
