@@ -125,4 +125,89 @@ public class RecipeManager {
         }
     }
 
+    public void clearRecipes() {
+        clearShapedRecipes();
+        clearShapelessRecipes();
+        clearFurnaceRecipes();
+        clearBlastingRecipes();
+        clearSmokingRecipes();
+        clearCampfireRecipes();
+        clearStonecuttingRecipes();
+    }
+
+    private void clearRecipe(Recipe recipe) {
+        if (recipe instanceof ShapedRecipe) {
+            ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof ShapelessRecipe) {
+            ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof FurnaceRecipe) {
+            FurnaceRecipe convertedRecipe = (FurnaceRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof BlastingRecipe) {
+            BlastingRecipe convertedRecipe = (BlastingRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof SmokingRecipe) {
+            SmokingRecipe convertedRecipe = (SmokingRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof CampfireRecipe) {
+            CampfireRecipe convertedRecipe = (CampfireRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        } else if (recipe instanceof StonecuttingRecipe) {
+            StonecuttingRecipe convertedRecipe = (StonecuttingRecipe) recipe;
+            main.getServer().removeRecipe(convertedRecipe.getKey());
+        }
+    }
+
+    private void clearPlantRecipes(HashMap<String, PlantRecipe> recipeMap) {
+        for (PlantRecipe recipe : recipeMap.values()) {
+            clearRecipe(recipe.getRecipe());
+        }
+        recipeMap.clear();
+    }
+
+    private void clearShapedRecipes() {
+        clearPlantRecipes(shapedRecipeMap);
+    }
+
+    private void clearShapelessRecipes() {
+        clearPlantRecipes(shapelessRecipeMap);
+    }
+
+    private void clearFurnaceRecipes() {
+        for (Recipe recipe : furnaceRecipeMap.values()) {
+            clearRecipe(recipe);
+        }
+        furnaceRecipeMap.clear();
+    }
+
+    private void clearBlastingRecipes() {
+        for (Recipe recipe : blastingRecipeMap.values()) {
+            clearRecipe(recipe);
+        }
+        blastingRecipeMap.clear();
+    }
+
+    private void clearSmokingRecipes() {
+        for (Recipe recipe : smokingRecipeMap.values()) {
+            clearRecipe(recipe);
+        }
+        blastingRecipeMap.clear();
+    }
+
+    private void clearCampfireRecipes() {
+        for (Recipe recipe : campfireRecipeMap.values()) {
+            clearRecipe(recipe);
+        }
+        campfireRecipeMap.clear();
+    }
+
+    private void clearStonecuttingRecipes() {
+        for (Recipe recipe : stonecuttingRecipeMap.values()) {
+            clearRecipe(recipe);
+        }
+        stonecuttingRecipeMap.clear();
+    }
+
 }

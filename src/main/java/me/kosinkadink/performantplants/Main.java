@@ -28,12 +28,11 @@ public class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         main = this;
+        setupEconomy();
         registerManagers();
         registerListeners();
         registerCommands();
-        if (setupEconomy()) {
-            registerVaultCommands();
-        } else {
+        if (!hasEconomy()) {
             getServer().getConsoleSender().sendMessage(String.format("%s[PerformantPlants] Vault not found; buy/sell commands will be disabled",
                     ChatColor.YELLOW));
         }
@@ -50,20 +49,30 @@ public class Main extends JavaPlugin {
         databaseManager.saveDatabases(); // save all plant blocks
     }
 
+    public void manualReload() {
+        // clear all recipes - will remove any custom recipes from the server to allow replacement
+        recipeManager.clearRecipes();
+        // act as if disabling plugin
+        onDisable();
+        // replace registered managers
+        registerManagers();
+        // register commands
+        registerCommands();
+    }
+
     public static Main getInstance() {
         return main;
     }
 
-    private boolean setupEconomy() {
+    private void setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            return false;
+            return;
         }
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp == null) {
-            return false;
+            return;
         }
         economy = rsp.getProvider();
-        return economy != null;
     }
 
     private void registerManagers() {
@@ -89,6 +98,7 @@ public class Main extends JavaPlugin {
 
     private void registerCommands() {
         commandManager.registerCommand(new PlantChunksCommand(this));
+        commandManager.registerCommand(new PlantReloadCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
         commandManager.registerCommand(new PlantInfoCommand(this));
         // Plant Stat Commands
@@ -102,11 +112,19 @@ public class Main extends JavaPlugin {
         commandManager.registerCommand(new PlantTagRemoveCommand(this));
         commandManager.registerCommand(new PlantTagListCommand(this));
         commandManager.registerCommand(new PlantTagInfoCommand(this));
+        // Vault Commands, if economy present
+        if (hasEconomy()) {
+            registerVaultCommands();
+        }
     }
 
     private void registerVaultCommands() {
         commandManager.registerCommand(new PlantBuyCommand(this));
         commandManager.registerCommand(new PlantSellCommand(this));
+    }
+
+    public boolean hasEconomy() {
+        return economy != null;
     }
 
     public Economy getEconomy() {
