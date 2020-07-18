@@ -13,7 +13,7 @@ public class PlantTagAddCommand extends PPCommand {
 
     public PlantTagAddCommand(Main mainClass) {
         super(new String[] { "tag", "add" },
-                "Unregister tag; cannot be undone.",
+                "Add plant ids to existing tag.",
                 "/pp tag add <tag-id> <plant-ids,comma,separated>",
                 "performantplants.tag.add",
                 2,
@@ -38,7 +38,7 @@ public class PlantTagAddCommand extends PPCommand {
         // get plant ids to be added
         String[] plantIdList = plantIdsCommas.split(",");
         if (plantIdList.length == 0) {
-            commandSender.sendMessage("No plantIds provided");
+            commandSender.sendMessage("No plant ids provided");
             return;
         }
         ArrayList<String> plantIdsAdded = new ArrayList<>();
@@ -53,16 +53,16 @@ public class PlantTagAddCommand extends PPCommand {
         }
         // report result to user
         if (plantIdsAdded.isEmpty()) {
-            commandSender.sendMessage("Could not recognize any of the provided plantIds");
+            commandSender.sendMessage("Could not recognize any of the provided plant ids");
             return;
         }
         if (!plantIdsNotAdded.isEmpty()) {
-            commandSender.sendMessage(String.format("Partial success; added plantIds: %s, but following plantIds do not exist: %s",
+            commandSender.sendMessage(String.format("Partial success; added plant ids: %s, but following plant ids do not exist: %s",
                     plantIdsAdded.toString(),
                     plantIdsNotAdded.toString())
             );
             return;
         }
-        commandSender.sendMessage(String.format("Added all plantIds successfully: %s", plantIdsAdded));
+        commandSender.sendMessage(String.format("Added all plant ids successfully: %s", plantIdsAdded));
     }
 }

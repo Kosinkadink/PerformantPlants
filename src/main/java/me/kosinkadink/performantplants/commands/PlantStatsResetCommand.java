@@ -19,8 +19,8 @@ public class PlantStatsResetCommand extends PPCommand {
 
     public PlantStatsResetCommand(Main mainClass) {
         super(new String[] { "stats", "reset" },
-                "Resets specific stat for specific players for specific plantItemId.",
-                "/pp stats reset <stat> <player> <plantItemId>",
+                "Resets specific stat for specific players for specific plant-id.",
+                "/pp stats reset <stat> <player> <plant-id>",
                 "performantplants.stats.reset",
                 3,
                 3);

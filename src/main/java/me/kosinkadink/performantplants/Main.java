@@ -99,6 +99,8 @@ public class Main extends JavaPlugin {
     private void registerCommands() {
         commandManager.registerCommand(new PlantChunksCommand(this));
         commandManager.registerCommand(new PlantReloadCommand(this));
+        commandManager.registerCommand(new PlantHelpCommand(this));
+        commandManager.registerCommand(new PlantPermsCommand(this));
         commandManager.registerCommand(new PlantGiveCommand(this));
         commandManager.registerCommand(new PlantInfoCommand(this));
         // Plant Stat Commands

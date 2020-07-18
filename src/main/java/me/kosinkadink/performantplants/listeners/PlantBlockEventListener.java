@@ -8,10 +8,7 @@ import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import me.kosinkadink.performantplants.util.BlockHelper;
-import me.kosinkadink.performantplants.util.DropHelper;
-import me.kosinkadink.performantplants.util.ItemHelper;
-import me.kosinkadink.performantplants.util.MetadataHelper;
+import me.kosinkadink.performantplants.util.*;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -41,7 +38,7 @@ public class PlantBlockEventListener implements Listener {
     public void onPlantPlace(PlantPlaceEvent event) {
         if (!event.isCancelled()) {
             // check if player has permission
-            if (!event.getPlayer().hasPermission("performantplants.place")) {
+            if (!event.getPlayer().hasPermission(PermissionHelper.Place)) {
                 event.setCancelled(true);
                 return;
             }
@@ -88,7 +85,7 @@ public class PlantBlockEventListener implements Listener {
     public void onPlantBreak(PlantBreakEvent event) {
         if (!event.isCancelled()) {
             // check if player has permission
-            if (!event.getPlayer().hasPermission("performantplants.break")) {
+            if (!event.getPlayer().hasPermission(PermissionHelper.Break)) {
                 event.setCancelled(true);
                 return;
             }
@@ -138,7 +135,7 @@ public class PlantBlockEventListener implements Listener {
     public void onPlantFarmlandTrample(PlantFarmlandTrampleEvent event) {
         if (!event.isCancelled()) {
             // check if player has permission
-            if (!event.getPlayer().hasPermission("performantplants.interact")) {
+            if (!event.getPlayer().hasPermission(PermissionHelper.Interact)) {
                 event.setCancelled(true);
                 return;
             }
@@ -158,7 +155,7 @@ public class PlantBlockEventListener implements Listener {
     public void onPlantInteract(PlantInteractEvent event) {
         if (!event.isCancelled()) {
             // check if player has permission
-            if (!event.getPlayer().hasPermission("performantplants.interact")) {
+            if (!event.getPlayer().hasPermission(PermissionHelper.Interact)) {
                 event.setCancelled(true);
                 return;
             }
@@ -251,7 +248,7 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onPlantConsume(PlantConsumeEvent event) {
         // check if player has permission
-        if (!event.getPlayer().hasPermission("performantplants.consume")) {
+        if (!event.getPlayer().hasPermission(PermissionHelper.Consume)) {
             event.setCancelled(true);
             return;
         }

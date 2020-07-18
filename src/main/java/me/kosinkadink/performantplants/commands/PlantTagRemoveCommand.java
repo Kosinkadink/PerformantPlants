@@ -13,7 +13,7 @@ public class PlantTagRemoveCommand extends PPCommand {
 
     public PlantTagRemoveCommand(Main mainClass) {
         super(new String[] { "tag", "remove" },
-                "Removes plantIds from tag; unregisters tag if no plantIds remaining.",
+                "Removes plant ids from tag; unregisters tag if no plant ids remaining.",
                 "/pp tag remove <tag-id> <plant-ids,comma,separated>",
                 "performantplants.tag.remove",
                 2,
@@ -38,7 +38,7 @@ public class PlantTagRemoveCommand extends PPCommand {
         // get plant ids to be added
         String[] plantIdList = plantIdsCommas.split(",");
         if (plantIdList.length == 0) {
-            commandSender.sendMessage("No plantIds provided");
+            commandSender.sendMessage("No plant ids provided");
             return;
         }
         ArrayList<String> plantIdsRemoved = new ArrayList<>();
@@ -51,21 +51,21 @@ public class PlantTagRemoveCommand extends PPCommand {
             }
         }
         if (plantIdsRemoved.isEmpty()) {
-            commandSender.sendMessage("None of the plantIds were found stored in the tag; none removed");
+            commandSender.sendMessage("None of the plant ids were found stored in the tag; none removed");
             return;
         }
         boolean allRemoved = main.getStatisticsManager().getPlantTag(tagId) == null;
         if (allRemoved) {
-            commandSender.sendMessage("Successfully removed plantIds; no plantIds left in tag, tag is now unregistered");
+            commandSender.sendMessage("Successfully removed plant ids; no plant ids left in tag, tag is now unregistered");
             return;
         }
         if (!plantIdsNotRemoved.isEmpty()) {
-            commandSender.sendMessage(String.format("Partial success; removed plantIds: %s, but following plantIds not found in tag: %s",
+            commandSender.sendMessage(String.format("Partial success; removed plant ids: %s, but following plant ids not found in tag: %s",
                     plantIdsRemoved.toString(),
                     plantIdsNotRemoved.toString())
             );
             return;
         }
-        commandSender.sendMessage(String.format("Removed specified plantIds successfully: %s", plantIdsRemoved));
+        commandSender.sendMessage(String.format("Removed specified plant ids successfully: %s", plantIdsRemoved));
     }
 }

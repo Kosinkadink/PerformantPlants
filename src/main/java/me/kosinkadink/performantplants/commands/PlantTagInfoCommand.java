@@ -12,7 +12,7 @@ public class PlantTagInfoCommand extends PPCommand {
 
     public PlantTagInfoCommand(Main mainClass) {
         super(new String[] { "tag", "info" },
-                "Show list of plantIds for specified tag.",
+                "Show list of plant ids for specified tag.",
                 "/pp tag info <tag-id>",
                 "performantplants.tag.info",
                 1,
