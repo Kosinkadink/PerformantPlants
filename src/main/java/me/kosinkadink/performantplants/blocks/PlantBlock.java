@@ -17,6 +17,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -303,33 +304,33 @@ public class PlantBlock {
         return false;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack) {
+    public PlantInteract getOnInteract(ItemStack itemStack, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract(itemStack);
+                return stageBlock.getOnInteract(itemStack, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract(itemStack);
+                return growthStageBlock.getOnInteract(itemStack, blockFace);
             }
         }
         return null;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack) {
+    public PlantInteract getOnClick(ItemStack itemStack, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick(itemStack);
+                return stageBlock.getOnClick(itemStack, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick(itemStack);
+                return growthStageBlock.getOnClick(itemStack, blockFace);
             }
         }
         return null;

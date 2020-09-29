@@ -20,15 +20,19 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class BlockHelper {
 
-    private static BlockFace[] rotatableBlockFaces = {
+    private static final BlockFace[] rotatableBlockFaces = {
         BlockFace.EAST,BlockFace.EAST_NORTH_EAST,BlockFace.EAST_SOUTH_EAST,
         BlockFace.NORTH,BlockFace.NORTH_NORTH_EAST,BlockFace.NORTH_EAST,BlockFace.NORTH_NORTH_WEST,BlockFace.NORTH_WEST,
         BlockFace.WEST,BlockFace.WEST_NORTH_WEST,BlockFace.WEST_SOUTH_WEST,
         BlockFace.SOUTH,BlockFace.SOUTH_SOUTH_EAST,BlockFace.SOUTH_EAST,BlockFace.SOUTH_SOUTH_WEST,BlockFace.SOUTH_WEST
     };
 
-    private static BlockFace[] directionalBlockFaces = {
+    private static final BlockFace[] directionalBlockFaces = {
             BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH
+    };
+
+    private static final BlockFace[] omnidirectionalBlockFaces = {
+            BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN
     };
 
     public static BlockData createBlockData(Material material, ArrayList<String> blockDataStrings) {
@@ -40,10 +44,10 @@ public class BlockHelper {
             stringBuilder.append("[");
             for (int i = 0; i < blockDataStrings.size(); i++) {
                 if (i < blockDataStrings.size()-1) {
-                    stringBuilder.append(blockDataStrings.get(i));
+                    stringBuilder.append(blockDataStrings.get(i)).append(",");
                 }
                 else {
-                    stringBuilder.append(blockDataStrings.get(i)).append(",");
+                    stringBuilder.append(blockDataStrings.get(i));
                 }
             }
             // end of string
@@ -160,6 +164,15 @@ public class BlockHelper {
         }
         // if ((348.75F <= rotation) && (rotation < 360.0F))
         return BlockFace.NORTH;
+    }
+
+    public static boolean isOmnidirectionalBlockFace(BlockFace blockFace) {
+        for (BlockFace omnidirectionalBlockFace : omnidirectionalBlockFaces) {
+            if (blockFace == omnidirectionalBlockFace) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean hasWater(Block block) {

@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.util.ItemHelper;
+import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -20,8 +21,18 @@ public class PlantInteractStorage {
     }
 
     public PlantInteract getPlantInteract(ItemStack itemStack) {
+        return getPlantInteract(itemStack, null);
+    }
+
+    public PlantInteract getPlantInteract(ItemStack itemStack, BlockFace blockFace) {
         PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
+            // if blockFace provided and plantInteract has a blockFace requirement, check it
+            if (blockFace != null && plantInteract.hasRequiredBlockFaces()) {
+                if (!plantInteract.isRequiredBlockFace(blockFace)) {
+                    continue;
+                }
+            }
             // if no match interact and less exclusive properties should be checked, check them
             if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
                 if (plantInteract.isMatchMaterial()) {

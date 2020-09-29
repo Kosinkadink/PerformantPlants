@@ -42,7 +42,8 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug())
+                main.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
             if (block.isEmpty()) {
                 // check if empty block has plant metadata
@@ -89,8 +90,11 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
-            BlockHelper.destroyPlantBlock(main, event.getBlock(), event.getPlantBlock(), true);
+            if (main.getConfigManager().getConfigSettings().isDebug())
+                main.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
+            // track if block should break and if drops should occur
+            boolean actuallyBreakBlock = true;
+            boolean giveBlockDrops = true;
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
@@ -98,9 +102,17 @@ public class PlantBlockEventListener implements Listener {
             if (plantInteract != null) {
                 // see if should do
                 boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
+                boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(event.getPlayer(), event.getPlantBlock());
                 boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
                 boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
-                // do break actions for block
+                // see if drops should occur
+                giveBlockDrops = plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock());
+                // determine if block should be broken
+                if (!onlyBreakOnDo || shouldDo) {
+                    if (!plantInteract.isBreakBlockNull() && !plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
+                        actuallyBreakBlock = false;
+                    }
+                }
                 if (!onlyEffectsOnDo || shouldDo) {
                     plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
                 }
@@ -128,6 +140,10 @@ public class PlantBlockEventListener implements Listener {
                     plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
                 }
             }
+            if (actuallyBreakBlock) {
+                BlockHelper.destroyPlantBlock(main, event.getBlock(), event.getPlantBlock(), giveBlockDrops);
+                event.setBlockBroken(true);
+            }
         }
     }
 
@@ -139,7 +155,8 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug())
+                main.getLogger().info("Reviewing PlantFarmlandTrampleEvent for block: " + event.getBlock().getLocation().toString());
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
             if (!event.getPlantBlock().checkGrowthRequirements()) {
@@ -164,7 +181,8 @@ public class PlantBlockEventListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
+            if (main.getConfigManager().getConfigSettings().isDebug())
+                main.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
             // get item in main hand
             EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
@@ -172,15 +190,15 @@ public class PlantBlockEventListener implements Listener {
             PlantInteract plantInteract;
             if (!event.isUseOnClick()) {
                 // get PlantInteract behavior for main hand, if any
-                plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+                plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getBlockFace());
                 // if no plant interact behavior, try again for the offhand
                 if (plantInteract == null) {
                     hand = EquipmentSlot.OFF_HAND;
                     itemStack = event.getPlayer().getInventory().getItemInOffHand();
-                    plantInteract = event.getPlantBlock().getOnInteract(itemStack);
+                    plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getBlockFace());
                 }
             } else {
-                plantInteract = event.getPlantBlock().getOnClick(itemStack);
+                plantInteract = event.getPlantBlock().getOnClick(itemStack, event.getBlockFace());
             }
             // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {

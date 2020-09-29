@@ -144,7 +144,7 @@ public class PlayerInteractListener implements Listener {
                     // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
                     event.setCancelled(true);
                     main.getServer().getPluginManager().callEvent(
-                            new PlantInteractEvent(player, plantBlock, block, event.getHand())
+                            new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand())
                     );
                     return;
                 }
@@ -239,7 +239,7 @@ public class PlayerInteractListener implements Listener {
                 // get plant block interacted with
                 PlantBlock plantBlock = main.getPlantManager().getPlantBlock(block);
                 if (plantBlock != null) {
-                    PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getHand(), true);
+                    PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand(), true);
                     main.getServer().getPluginManager().callEvent(
                             plantInteractEvent
                     );

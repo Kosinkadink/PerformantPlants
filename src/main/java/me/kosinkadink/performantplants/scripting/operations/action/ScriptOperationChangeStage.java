@@ -26,18 +26,20 @@ public class ScriptOperationChangeStage extends ScriptOperation {
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
         // if no block or is a child (has parent), do nothing
-        if (plantBlock == null || plantBlock.hasParent()) {
+        if (plantBlock == null) {
             return ScriptResult.TRUE;
         }
-        String stageName = getStage().loadValue(plantBlock, player).getStringValue();
-        boolean ifNext = getIfNext().loadValue(plantBlock, player).getBooleanValue();
+        // use self or parent block, if has one
+        PlantBlock effectivePlantBlock = plantBlock.getEffectivePlantBlock();
+        String stageName = getStage().loadValue(effectivePlantBlock, player).getStringValue();
+        boolean ifNext = getIfNext().loadValue(effectivePlantBlock, player).getBooleanValue();
         // try to go to stage or next stage; if worked, return true; otherwise return false
         boolean success = false;
         if (!stageName.isEmpty()) {
-            StageStorage stageStorage = plantBlock.getPlant().getStageStorage();
+            StageStorage stageStorage = effectivePlantBlock.getPlant().getStageStorage();
             if (stageStorage.isValidStage(stageName)) {
                 int stageIndex = stageStorage.getGrowthStageIndex(stageName);
-                success = plantBlock.goToStageForcefully(main, stageIndex);
+                success = effectivePlantBlock.goToStageForcefully(main, stageIndex);
             } else {
                 main.getLogger().warning(String.format("OperationChangeStage: stage name '%s' not recognized for " +
                         "block: %s", stageName, plantBlock.toString()));
@@ -45,7 +47,7 @@ public class ScriptOperationChangeStage extends ScriptOperation {
         }
         // if goToNext is set to true, then advance to next growth stage as if plant grew
         else if (ifNext) {
-            success = plantBlock.goToNextStage(main);
+            success = effectivePlantBlock.goToNextStage(main);
         }
         return new ScriptResult(success);
     }

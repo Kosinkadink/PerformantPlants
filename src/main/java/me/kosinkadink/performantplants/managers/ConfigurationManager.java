@@ -32,11 +32,13 @@ import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.*;
+import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.EnchantmentLevel;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
@@ -1092,6 +1094,26 @@ public class ConfigurationManager {
         // set match enchantment level, if present
         if (section.isBoolean("match-enchantment-level")) {
             plantInteract.setMatchEnchantmentLevel(section.getBoolean("match-enchantment-level"));
+        }
+        // set required block faces, if present
+        if (section.isList("required-block-faces")) {
+            for (String name : section.getStringList("required-block-faces")) {
+                BlockFace blockFace;
+                try {
+                    blockFace = BlockFace.valueOf(name);
+                } catch (IllegalArgumentException e) {
+                    main.getLogger().warning(String.format("BlockFace '%s' not recognized in item section: %s",
+                            name, section.getCurrentPath()));
+                    return null;
+                }
+                if (!BlockHelper.isOmnidirectionalBlockFace(blockFace)) {
+                    main.getLogger().warning(String.format("BlockFace '%s' is not a valid omnidirectional block face " +
+                                    "(UP,DOWN,EAST,WEST,NORTH,SOUTH) in item section: %s",
+                            name, section.getCurrentPath()));
+                    return null;
+                }
+                plantInteract.addRequiredBlockFace(blockFace);
+            }
         }
 
         // set condition for doing actions, if present

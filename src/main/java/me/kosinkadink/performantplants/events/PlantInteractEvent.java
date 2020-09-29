@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.events;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -16,18 +17,20 @@ public class PlantInteractEvent extends Event implements Cancellable {
     private final Player player;
     private final PlantBlock plantBlock;
     private final Block block;
+    private final BlockFace blockFace;
     private final EquipmentSlot hand;
     private boolean useOnClick = false;
 
-    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, EquipmentSlot hand) {
+    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand) {
         this.player = player;
         this.plantBlock = plantBlock;
         this.block = block;
+        this.blockFace = blockFace;
         this.hand = hand;
     }
 
-    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, EquipmentSlot hand, boolean useOnClick) {
-        this(player, plantBlock, block, hand);
+    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand, boolean useOnClick) {
+        this(player, plantBlock, block, blockFace, hand);
         this.useOnClick = useOnClick;
     }
 
@@ -41,6 +44,10 @@ public class PlantInteractEvent extends Event implements Cancellable {
 
     public Block getBlock() {
         return block;
+    }
+
+    public BlockFace getBlockFace() {
+        return blockFace;
     }
 
     public EquipmentSlot getHand() {

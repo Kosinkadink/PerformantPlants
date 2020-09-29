@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 
@@ -133,9 +134,9 @@ public class GrowthStageBlock {
         return onInteract;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack) {
+    public PlantInteract getOnInteract(ItemStack itemStack, BlockFace blockFace) {
         if (onInteract != null) {
-            return onInteract.getPlantInteract(itemStack);
+            return onInteract.getPlantInteract(itemStack, blockFace);
         }
         return null;
     }
@@ -148,9 +149,9 @@ public class GrowthStageBlock {
         return onClick;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack) {
+    public PlantInteract getOnClick(ItemStack itemStack, BlockFace blockFace) {
         if (onClick != null) {
-            return onClick.getPlantInteract(itemStack);
+            return onClick.getPlantInteract(itemStack, blockFace);
         }
         return null;
     }

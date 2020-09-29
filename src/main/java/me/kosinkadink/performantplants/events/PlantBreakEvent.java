@@ -12,9 +12,10 @@ public class PlantBreakEvent extends Event implements Cancellable {
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
 
-    private Player player;
-    private PlantBlock plantBlock;
-    private Block block;
+    private final Player player;
+    private final PlantBlock plantBlock;
+    private final Block block;
+    private boolean blockBroken = false;
 
     public PlantBreakEvent(Player player, PlantBlock plantBlock, Block block) {
         this.player = player;
@@ -34,6 +35,14 @@ public class PlantBreakEvent extends Event implements Cancellable {
         return block;
     }
 
+    public boolean isBlockBroken() {
+        return blockBroken;
+    }
+
+    public void setBlockBroken(boolean blockBroken) {
+        this.blockBroken = blockBroken;
+    }
+
     public HandlerList getHandlers() {
         return HANDLERS;
     }
@@ -51,4 +60,5 @@ public class PlantBreakEvent extends Event implements Cancellable {
     public void setCancelled(boolean b) {
         isCancelled = b;
     }
+
 }
