@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public class ScriptHelper {
 
-    private static Pattern variablesPattern = Pattern.compile("\\$([_a-z-A-Z0-9]+?)\\$");
+    private static final Pattern variablesPattern = Pattern.compile("\\$([-_a-zA-Z0-9%\\\\.{}]+?)\\$");
 
     public static ScriptType getType(Object o) {
         if (o == null) {
@@ -61,9 +61,9 @@ public class ScriptHelper {
     }
 
     public static String setVariables(PlantBlock plantBlock, String text) {
-        PlantData plantData = plantBlock.getEffectivePlantData();
-        if (plantData == null) {
-            return text;
+        PlantData plantData = null;
+        if (plantBlock != null) {
+            plantData = plantBlock.getEffectivePlantData();
         }
         // figure out which variables are present in the string
         Matcher matcher = variablesPattern.matcher(text);
@@ -80,6 +80,59 @@ public class ScriptHelper {
         }
         matcher.appendTail(stringBuffer);
         return stringBuffer.toString();
+    }
+
+    public static boolean updateGlobalPlantDataVariableValue(PlantData plantData, String variableName, Object value) {
+        // if variable name contains period, then it refers to a plant variable
+        if (variableName.contains(".")) {
+            String[] variableParts = getVariableNameParts(variableName);
+            if (variableParts != null) {
+                return Main.getInstance().getPlantTypeManager().updateVariable(
+                        variableParts[0],
+                        variableParts[1],
+                        variableParts[2],
+                        variableParts[3],
+                        value);
+            }
+        }
+        // otherwise it could be referring to a specific plant block's PlantData
+        else {
+            if (plantData != null) {
+                return plantData.updateVariable(variableName, value);
+            }
+        }
+        return false;
+    }
+
+    public static Object getGlobalPlantDataVariableValue(PlantData plantData, String variableName) {
+        // if variable name contains period, then it refers to a plant variable
+        if (variableName.contains(".")) {
+            String[] variableParts = getVariableNameParts(variableName);
+            if (variableParts != null) {
+                return Main.getInstance().getPlantTypeManager().getVariable(
+                        variableParts[0],
+                        variableParts[1],
+                        variableParts[2],
+                        variableParts[3]);
+            }
+        }
+        // otherwise it could be referring to a specific plant block's PlantData
+        else {
+            if (plantData != null) {
+                return plantData.getVariable(variableName);
+            }
+        }
+        return null;
+    }
+
+    private static String[] getVariableNameParts(String variableName) {
+        String[] variableParts = variableName.split("\\.");
+        if (variableParts.length == 4) {
+            return variableParts;
+        } else if (variableParts.length == 2) {
+            return new String[] { variableParts[0], "", "", variableParts[1] };
+        }
+        return null;
     }
 
     private static String getVariableValue(PlantBlock plantBlock, PlantData plantData, String variableName) {
@@ -125,10 +178,11 @@ public class ScriptHelper {
             }
         }
         // check if variable exists in plant block data
-        if (plantData.getData().containsKey(variableName)) {
+        Object variableValue = getGlobalPlantDataVariableValue(plantData, variableName);
+        if (variableValue != null) {
             // create a ScriptResult for easy conversion to string
             try {
-                return new ScriptResult(plantData.getData().get(variableName)).getStringValue();
+                return new ScriptResult(variableValue).getStringValue();
             } catch (IllegalArgumentException e) {
                 // something went wrong, return null
                 return null;
