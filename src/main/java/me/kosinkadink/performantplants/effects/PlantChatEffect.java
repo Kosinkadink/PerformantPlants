@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.effects;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.TextHelper;
 import org.bukkit.entity.Player;
 
@@ -19,17 +18,11 @@ public class PlantChatEffect extends PlantEffect {
         ScriptResult fromPlayerResult = fromPlayer.loadValue(plantBlock, player);
         String fromPlayerString = fromPlayerResult.getStringValue();
         if (!fromPlayerString.isEmpty()) {
-            if (!fromPlayerResult.isHasPlaceholder()) {
-                fromPlayerString = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, fromPlayerString);
-            }
             player.chat(TextHelper.translateAlternateColorCodes(fromPlayerString));
         }
         ScriptResult toPlayerResult = toPlayer.loadValue(plantBlock, player);
         String toPlayerString = toPlayerResult.getStringValue();
         if (!toPlayerString.isEmpty()) {
-            if (!toPlayerResult.isHasPlaceholder()) {
-                toPlayerString = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, toPlayerString);
-            }
             player.sendMessage(TextHelper.translateAlternateColorCodes(toPlayerString));
         }
     }

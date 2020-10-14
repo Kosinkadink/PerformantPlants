@@ -132,8 +132,13 @@ public class ConfigurationManager {
             plantConfig.load(file);
         }
         catch (Exception e) {
-            main.getLogger().severe("Error occurred trying to load plantConfig: " + plantId);
+            main.getLogger().severe("Error occurred trying to load plant config: " + plantId);
             e.printStackTrace();
+            return;
+        }
+        if (plantId.startsWith("_")) {
+            main.getLogger().warning(String.format("Plant config '%s' cannot start with '_' character; will not be " +
+                    "loaded until this is fixed", plantId));
             return;
         }
         // put plant yaml config in config map for future reference
@@ -142,11 +147,57 @@ public class ConfigurationManager {
 
     void loadPlantsFromConfigs() {
         // now that all configs are loaded in, create plants from loaded configs
+        // first, load in global plant data from each config so it can be referenced later
+        main.getLogger().info("Starting to load global data for all plants...");
+        for (Map.Entry<String, YamlConfiguration> entry : plantConfigMap.entrySet()) {
+            String plantId = entry.getKey();
+            YamlConfiguration plantConfig = entry.getValue();
+            loadGlobalPlantDataFromConfig(plantId, plantConfig);
+        }
+        main.getLogger().info("Done loading global data for all plants");
+        // now load in the actual plants from the configs
+        main.getLogger().info("Starting to load configs for all plants...");
         for (Map.Entry<String, YamlConfiguration> entry : plantConfigMap.entrySet()) {
             String plantId = entry.getKey();
             main.getLogger().info("Attempting to load plant: " + plantId);
             YamlConfiguration plantConfig = entry.getValue();
             loadPlantFromConfig(plantId, plantConfig);
+        }
+        main.getLogger().info("Done loading configs for all plants");
+    }
+
+    void loadGlobalPlantDataFromConfig(String plantId, YamlConfiguration plantConfig) {
+        // get global-data section
+        ConfigurationSection globalDataSection = plantConfig.getConfigurationSection("global-data");
+        if (globalDataSection != null) {
+            main.getLogger().info("Attempting to add global variables for plant: " + plantId);
+            PlantDataStorage plantDataStorage = new PlantDataStorage(plantId);
+            // attempt to add unscoped plant data
+            PlantData unscopedData = createPlantData(globalDataSection, null);
+            if (unscopedData != null) {
+                plantDataStorage.addUnscopedPlantData(unscopedData);
+                main.getLogger().info(String.format("Added unscoped global variables for plant: %s", plantId));
+            }
+            // add scoped plant data
+            ConfigurationSection scopedDataSection = globalDataSection.getConfigurationSection("scoped");
+            if (scopedDataSection != null) {
+                // parse through each scope
+                for (String scope : scopedDataSection.getKeys(false)) {
+                    // attempt to get scoped plant data
+                    PlantData scopedData = createPlantData(scopedDataSection, scope, null);
+                    if (scopedData != null) {
+                        plantDataStorage.addScopedPlantData(scope, scopedData);
+                        main.getLogger().info(String.format("Added '%s' scoped global variables for plant: %s",
+                                scope, plantId));
+                    }
+                }
+            }
+            if (!plantDataStorage.isEmpty()) {
+                main.getPlantTypeManager().addPlantDataStorage(plantDataStorage);
+                main.getLogger().info("Successfully added global data for plant: " + plantId);
+            } else {
+                main.getLogger().info("No global data added for plant: " + plantId);
+            }
         }
     }
 
@@ -2546,16 +2597,20 @@ public class ConfigurationManager {
     //region Plant Script
 
     PlantData createPlantData(ConfigurationSection section, Plant plant) {
+        return createPlantData(section, "plant-data", plant);
+    }
+
+    PlantData createPlantData(ConfigurationSection section, String sectionName, Plant plant) {
         if (section == null) {
             return null;
         }
         JSONObject data = new JSONObject();
-        if (section.isConfigurationSection("plant-data")) {
-            ConfigurationSection plantDataSection = section.getConfigurationSection("plant-data");
+        if (section.isConfigurationSection(sectionName)) {
+            ConfigurationSection plantDataSection = section.getConfigurationSection(sectionName);
             for (String variableName : plantDataSection.getKeys(false)) {
                 // check that variable names don't use any reserved or restricted names
                 if (variableName.isEmpty()) {
-                    main.getLogger().warning("Variables names cannot be empty; no varialbes will be initialized " +
+                    main.getLogger().warning("Variables names cannot be empty; no variables will be initialized " +
                             "until this is fixed in section: " + plantDataSection.getCurrentPath());
                     return null;
                 }
@@ -2568,6 +2623,12 @@ public class ConfigurationManager {
                 if (Character.isDigit(variableName.charAt(0))) {
                     main.getLogger().warning(String.format("Variable name '%s' cannot begin with a digit; no " +
                             "variables will be initialized until this is fixed in section: %s",
+                            variableName, plantDataSection.getCurrentPath()));
+                    return null;
+                }
+                if (variableName.contains(".")) {
+                    main.getLogger().warning(String.format("Variable name '%s' cannot contain a period; no variables" +
+                            "will be initialized until this is fixed in section: %s",
                             variableName, plantDataSection.getCurrentPath()));
                     return null;
                 }
@@ -2619,7 +2680,7 @@ public class ConfigurationManager {
             }
             if (data.isEmpty()) {
                 main.getLogger().warning("No variables were loaded, so no plant data will be created in section " +
-                        section.getConfigurationSection("plant-data").getCurrentPath());
+                        section.getConfigurationSection(sectionName).getCurrentPath());
                 return null;
             }
             PlantData plantData = new PlantData(data);
@@ -2831,14 +2892,21 @@ public class ConfigurationManager {
         if (section.isString("variable")) {
             // get variable from data
             String variableName = section.getString("variable");
+            // if variableName is null, don't go any further
+            if (variableName == null) {
+                main.getLogger().warning(String.format("Variable name could not be parsed, so this PlantScript will " +
+                        "not be loaded until this is fixed in section: %s", section.getCurrentPath()));
+                return null;
+            }
             // if no plant data present or data does not contain variable name, return null
-            if (data == null || !data.getData().containsKey(variableName)) {
+            Object variableValue = ScriptHelper.getGlobalPlantDataVariableValue(data, variableName);
+            if (variableValue == null) {
                 main.getLogger().warning(String.format("Variable '%s' not found, so this PlantScript will not be " +
                         "loaded until that is fixed in section: %s", variableName, section.getCurrentPath()));
                 return null;
             }
             // get type from returned object
-            ScriptType type = ScriptHelper.getType(data.getData().get(variableName));
+            ScriptType type = ScriptHelper.getType(variableValue);
             if (type == null) {
                 main.getLogger().warning(String.format("Variable '%s' is stored with unrecognized type; something " +
                         "really went wrong so this PlantScript will not be loaded until this is fixed in section: %s",

@@ -22,18 +22,14 @@ public class PlantData {
         return data.toString();
     }
 
-    public void updateData(PlantData plantData) {
+    public boolean updateData(PlantData plantData) {
         // updates values of data
         JSONObject newData = plantData.getData();
+        boolean updatedAnyVariable = false;
         for (Object key : newData.keySet()) {
-            // if current data contains same key, check if same type
-            if (data.containsKey(key)) {
-                // update value if same type
-                if (ScriptHelper.getType(data.get(key)) == ScriptHelper.getType(newData.get(key))) {
-                    data.put(key, newData.get(key));
-                }
-            }
+            updatedAnyVariable = updateVariable(key, newData.get(key)) || updatedAnyVariable;
         }
+        return updatedAnyVariable;
     }
 
     public JSONObject getData() {
@@ -55,4 +51,36 @@ public class PlantData {
         return newPlantData;
     }
 
+    public boolean dataEquals(PlantData otherPlantData) {
+        // compare lengths
+        if (data.size() != otherPlantData.data.size()) {
+            return false;
+        }
+        // compare keys and values
+        for (Object key : otherPlantData.data.keySet()) {
+            if (!data.containsKey(key)) {
+                return false;
+            }
+            if (data.get(key) != otherPlantData.data.get(key)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean updateVariable(Object variableName, Object value) {
+        // if current data contains same key, check if same type
+        if (data.containsKey(variableName)) {
+            // update value if same type
+            if (ScriptHelper.getType(data.get(variableName)) == ScriptHelper.getType(value)) {
+                Object previousValue = data.put(variableName, value);
+                return previousValue != value;
+            }
+        }
+        return false;
+    }
+
+    public Object getVariable(String variableName) {
+        return data.get(variableName);
+    }
 }

@@ -174,15 +174,15 @@ public class ScriptResult extends ScriptBlock {
             }
             return this;
         }
-        PlantData data = null;
+        PlantBlock effectivePlantBlock = null;
+        PlantData plantData = null;
         if (plantBlock != null) {
-            data = plantBlock.getEffectivePlantData();
+            effectivePlantBlock = plantBlock.getEffectivePlantBlock();
+            plantData = effectivePlantBlock.getPlantData();
         }
-        if (data == null) {
-            return null;
-        }
-        JSONObject json = data.getData();
-        return new ScriptResult(json.get(variableName));
+        Object variableValue = ScriptHelper.getGlobalPlantDataVariableValue(plantData,
+                PlaceholderHelper.setVariablesAndPlaceholders(effectivePlantBlock, player, variableName));
+        return new ScriptResult(variableValue);
     }
 
     @Override

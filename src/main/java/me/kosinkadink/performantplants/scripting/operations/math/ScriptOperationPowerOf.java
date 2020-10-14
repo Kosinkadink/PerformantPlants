@@ -19,7 +19,7 @@ public class ScriptOperationPowerOf extends ScriptOperationPower {
         // if left was a variable, set the result to its new value
         if (getLeft() instanceof ScriptResult && getLeft().containsVariable()) {
             // perform set value
-            new ScriptOperationSetValue(getLeft(), result).perform(plantBlock);
+            new ScriptOperationSetValue(getLeft(), result).perform(plantBlock, player);
         }
         return result;
     }

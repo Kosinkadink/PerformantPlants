@@ -1,29 +1,50 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.blocks.RequiredBlock;
-import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
-import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
-import me.kosinkadink.performantplants.stages.GrowthStage;
-import org.bukkit.Material;
+import me.kosinkadink.performantplants.storage.PlantDataStorage;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantTypeManager {
 
     private Main main;
-    private ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PlantDataStorage> plantDataStorageMap = new ConcurrentHashMap<>();
 
     public PlantTypeManager(Main mainClass) {
         main = mainClass;
+    }
+
+    void addPlantDataStorage(PlantDataStorage storage) {
+        plantDataStorageMap.put(storage.getPlantId(), storage);
+    }
+
+    public PlantDataStorage getPlantDataStorage(String plantId) {
+        return plantDataStorageMap.get(plantId);
+    }
+
+    public ConcurrentHashMap<String, PlantDataStorage> getPlantDataStorageMap() {
+        return plantDataStorageMap;
+    }
+
+    public Object getVariable(String plantId, String scope, String parameter, String variableName) {
+        PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
+        if (plantDataStorage != null) {
+            return plantDataStorage.getVariable(scope, parameter, variableName);
+        }
+        return null;
+    }
+
+    public boolean updateVariable(String plantId, String scope, String parameter, String variableName, Object value) {
+        PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
+        if (plantDataStorage != null) {
+            return plantDataStorage.updateVariable(scope, parameter, variableName, value);
+        }
+        return false;
     }
 
     void addPlantType(Plant plantType) {

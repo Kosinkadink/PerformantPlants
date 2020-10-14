@@ -9,9 +9,15 @@ public class PlaceholderHelper {
 
     public static String setVariablesAndPlaceholders(PlantBlock plantBlock, Player player, String stringInput) {
         String formatted = stringInput;
-        if (plantBlock != null) {
-            formatted = ScriptHelper.setVariables(plantBlock, formatted);
+        // replace bracket placeholders
+        if (player != null) {
+            if (Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+                formatted = PlaceholderAPI.setBracketPlaceholders(player, formatted);
+            }
         }
+        // replace plant variables
+        formatted = ScriptHelper.setVariables(plantBlock, formatted);
+        // replace placeholders
         if (player != null) {
             if (Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
                 formatted = PlaceholderAPI.setPlaceholders(player, formatted);

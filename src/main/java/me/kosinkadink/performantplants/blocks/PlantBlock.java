@@ -71,9 +71,15 @@ public class PlantBlock {
         this.playerUUID = playerUUID;
     }
 
-    void initializePlantData() {
+    public void forcefullyInitializePlantData() {
         if (plant != null && plant.hasPlantData()) {
             plantData = plant.getPlantData().clone();
+        }
+    }
+
+    void initializePlantData() {
+        if (grows) {
+            forcefullyInitializePlantData();
         }
     }
 
