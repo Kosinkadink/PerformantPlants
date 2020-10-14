@@ -14,6 +14,10 @@ public class ScopedPlantData {
         this.defaultPlantData = defaultPlantData;
     }
 
+    public ConcurrentHashMap<String, PlantData> getPlantDataMap() {
+        return plantDataMap;
+    }
+
     public String getScope() {
         return scope;
     }

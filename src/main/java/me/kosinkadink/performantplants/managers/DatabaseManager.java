@@ -6,9 +6,12 @@ import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.PlantData;
+import me.kosinkadink.performantplants.scripting.ScopeParameterIdentifier;
+import me.kosinkadink.performantplants.scripting.ScopedPlantData;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.statistics.StatisticsTagItem;
 import me.kosinkadink.performantplants.storage.PlantChunkStorage;
+import me.kosinkadink.performantplants.storage.PlantDataStorage;
 import me.kosinkadink.performantplants.storage.StatisticsAmountStorage;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import me.kosinkadink.performantplants.util.TimeHelper;
@@ -25,10 +28,11 @@ import java.util.UUID;
 
 public class DatabaseManager {
 
-    private Main main;
+    private final Main main;
     private String storageDir = "storage/";
-    private HashMap<String, File> databaseFiles = new HashMap<>();
+    private final HashMap<String, File> databaseFiles = new HashMap<>();
     private File statisticsDatabaseFile;
+    private File globalDataDatabaseFile;
     private BukkitTask saveTask;
 
     public DatabaseManager(Main mainClass) {
@@ -41,6 +45,7 @@ public class DatabaseManager {
     //region Load Data
 
     void loadDatabases() {
+        // load per-world plant dbs
         main.getLogger().info("Loading plant databases...");
         for (World world : Bukkit.getWorlds()) {
             // check if db for world exists
@@ -62,6 +67,12 @@ public class DatabaseManager {
         boolean loaded = loadStatisticsDatabase(file);
         if (loaded) {
             statisticsDatabaseFile = file;
+        }
+        // load global plant data db; also created db file if doesn't already exist
+        file = new File(main.getDataFolder(), storageDir + "global_data");
+        loaded = loadGlobalDataDatabase(file);
+        if (loaded) {
+            globalDataDatabaseFile = file;
         }
     }
 
@@ -122,6 +133,24 @@ public class DatabaseManager {
         return true;
     }
 
+    boolean loadGlobalDataDatabase(File file) {
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        String url = getUrlFromFile(file);
+        // Load global plant data from globalPlantData
+        boolean success = addGlobalPlantDataFromDatabase(conn, url);
+        if (!success) {
+            return false;
+        }
+        // add done now
+        main.getLogger().info("Successfully loaded global data db at url: " + url);
+        return true;
+    }
+
     //endregion
 
     //region Save Data
@@ -135,6 +164,10 @@ public class DatabaseManager {
         // save statistics db
         if (statisticsDatabaseFile != null) {
             saveStatisticsDatabase(statisticsDatabaseFile);
+        }
+        // save global data db
+        if (globalDataDatabaseFile != null) {
+            saveGlobalPlantDataDatabase(globalDataDatabaseFile);
         }
     }
 
@@ -366,6 +399,94 @@ public class DatabaseManager {
         return true;
     }
 
+    boolean saveGlobalPlantDataDatabase(File file) {
+        // Create dirs if file does not exist
+        if (!file.exists()) {
+            // if doesn't exist, make sure directories are created
+            file.getParentFile().mkdirs();
+        }
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        // Create tables if don't already exist
+        createTableGlobalPlantData(conn);
+        ////////////////////////////////////////////////////////
+        // remove any ScopeParameterIdentifiers set for removal
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing scopedPlantData from db...");
+        ArrayList<ScopeParameterIdentifier> identifiersToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (PlantDataStorage plantDataStorage : main.getPlantTypeManager().getPlantDataStorageMap().values()) {
+            for (ScopeParameterIdentifier identifier : plantDataStorage.getScopesToDelete()) {
+                boolean success = removeScopedPlantDataFromTableGlobalPlantData(conn, identifier);
+                if (success) {
+                    identifiersToRemoveCache.add(identifier);
+                }
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        // remove cached removal identifiers from being removed next time
+        for (ScopeParameterIdentifier identifier : identifiersToRemoveCache) {
+            PlantDataStorage plantDataStorage = main.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
+            if (plantDataStorage != null) {
+                plantDataStorage.removeScopeFromRemoval(identifier);
+            }
+        }
+        identifiersToRemoveCache.clear();
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing scopedPlantData from db");
+        /////////////////////////////////////////////////////////////
+
+        /////////////////////////////////////
+        // add/update all plantTags entries
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating scopedPlantData in db...");
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (PlantDataStorage plantDataStorage : main.getPlantTypeManager().getPlantDataStorageMap().values()) {
+            for (ScopedPlantData scopedPlantData : plantDataStorage.getScopeMap().values()) {
+                for (Map.Entry<String, PlantData> entry : scopedPlantData.getPlantDataMap().entrySet()) {
+                    String parameter = entry.getKey();
+                    PlantData plantData = entry.getValue();
+                    insertScopedPlantDataIntoTableGlobalPlantData(
+                            conn,
+                            plantDataStorage.getPlantId(),
+                            scopedPlantData.getScope(),
+                            parameter,
+                            plantData
+                    );
+                }
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating scopedPlantData in db");
+        //////////////////////////////////////////
+        return true;
+    }
+
     //endregion
 
     //region PlantBlocks Table
@@ -517,6 +638,75 @@ public class DatabaseManager {
             return false;
         }
         //main.getLogger().info("Removed BlockLocation from data: " + blockLocation.toString());
+        return true;
+    }
+
+    //endregion
+
+    //region GlobalPlantData Table
+
+    boolean createTableGlobalPlantData(Connection conn) {
+        // Create table if doesn't already exist
+        String sql = "CREATE TABLE IF NOT EXISTS globalPlantData (\n"
+                + "    plant TEXT NOT NULL,\n"
+                + "    scope TEXT NOT NULL,\n"
+                + "    parameter TEXT NOT NULL,\n"
+                + "    json_data TEXT,\n"
+                + "    PRIMARY KEY (plant,scope,parameter)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            main.getLogger().severe(
+                    "Exception occurred creating table 'globalPlantData'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertScopedPlantDataIntoTableGlobalPlantData(Connection conn, String plantId, String scope,
+                                                          String parameter, PlantData plantData) {
+        String sql = "REPLACE INTO globalPlantData(plant, scope, parameter, json_data)\n"
+                + "VALUES(?,?,?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, plantId);
+            pstmt.setString(2, scope);
+            pstmt.setString(3, parameter);
+            pstmt.setString(4, plantData.createJsonString());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning(String.format("Could not insert ScopedPlantData into " +
+                    "globalPlantData: %s,%s,%s; %s", plantId, scope, parameter, e.toString())
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean removeScopedPlantDataFromTableGlobalPlantData(Connection conn, ScopeParameterIdentifier scopeParameterIdentifier) {
+        String sql = "DELETE FROM globalPlantData\n"
+                + "    WHERE plant = ?"
+                + "    AND scope = ?"
+                + "    AND parameter = ?;";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, scopeParameterIdentifier.getPlantId());
+            pstmt.setString(2, scopeParameterIdentifier.getScope());
+            pstmt.setString(3, scopeParameterIdentifier.getParameter());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            main.getLogger().warning(String.format("Could not remove ScopedPlantData from " +
+                    "globalPlantData: %s; %s",
+                    scopeParameterIdentifier.toString(),
+                    e.toString()
+                    ));
+            return false;
+        }
         return true;
     }
 
@@ -904,6 +1094,10 @@ public class DatabaseManager {
             PlantData plantData = new PlantData(rs.getString("json_data"));
             // get plant block at location
             PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
+            // forcefully initialize plant data if block has no parent (and therefore is a parent)
+            if (!plantBlock.hasParent()) {
+                plantBlock.forcefullyInitializePlantData();
+            }
             // update data, if plantBlock has initial data
             if (plantBlock.hasPlantData()) {
                 plantBlock.getPlantData().updateData(plantData);
@@ -913,6 +1107,82 @@ public class DatabaseManager {
             return blockLocation;
         } catch (SQLException e) {
             main.getLogger().warning("SQLException occurred trying to load data; " + e.toString());
+        }
+        return null;
+    }
+
+    //end region
+
+    //region Add Global Plant Data
+
+    boolean addGlobalPlantDataFromDatabase(Connection conn, String url) {
+        // Create table if doesn't already exist
+        createTableGlobalPlantData(conn);
+        // create list of identifiers to remove, if data is no longer necessary to be kept in db
+        ArrayList<ScopeParameterIdentifier> identifiersToRemove = new ArrayList<>();
+        // Get and load all plant data stored in db
+        String sql = "SELECT plant, scope, parameter, json_data FROM globalPlantData;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                ScopeParameterIdentifier toRemove = addGlobalPlantDataFromResultSet(rs);
+                if (toRemove != null) {
+                    identifiersToRemove.add(toRemove);
+                }
+            }
+        } catch (SQLException e) {
+            main.getLogger().severe("Exception occurred loading globalPlantData from url: " + url + "; " + e.toString());
+            return false;
+        }
+        // remove identifiers to be removed
+        if (!identifiersToRemove.isEmpty()) {
+            // =========== TRANSACTION START
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("BEGIN;");
+            } catch (SQLException e) {
+                main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            }
+            for (ScopeParameterIdentifier identifier : identifiersToRemove) {
+                removeScopedPlantDataFromTableGlobalPlantData(conn, identifier);
+            }
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("COMMIT;");
+            } catch (SQLException e) {
+                main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            }
+            // =========== TRANSACTION END
+        }
+        return true;
+    }
+
+    ScopeParameterIdentifier addGlobalPlantDataFromResultSet(ResultSet rs) {
+        try {
+            // create identifier from db entry
+            ScopeParameterIdentifier identifier = new ScopeParameterIdentifier(
+                    rs.getString("plant"),
+                    rs.getString("scope"),
+                    rs.getString("parameter")
+            );
+            // get plant data
+            PlantData plantData = new PlantData(rs.getString("json_data"));
+            // get plant data storage
+            PlantDataStorage plantDataStorage = main.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
+            // if plant id shouldn't have any global data, then return identifier for removal
+            if (plantDataStorage == null) {
+                return identifier;
+            }
+            // attempt to update global scoped data
+            boolean updated = plantDataStorage.updateData(identifier.getScope(), identifier.getParameter(), plantData);
+            // if didn't update anything, was using default values and doesn't need to be included in the db;
+            // mark for removal
+            if (!updated) {
+                return identifier;
+            }
+        } catch (SQLException e) {
+            main.getLogger().warning("SQLException occurred trying to load globalPlantData; " + e.toString());
         }
         return null;
     }

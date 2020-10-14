@@ -13,18 +13,22 @@ public class PlantTypeManager {
 
     private Main main;
     private final ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PlantDataStorage> plantDataMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PlantDataStorage> plantDataStorageMap = new ConcurrentHashMap<>();
 
     public PlantTypeManager(Main mainClass) {
         main = mainClass;
     }
 
     void addPlantDataStorage(PlantDataStorage storage) {
-        plantDataMap.put(storage.getPlantId(), storage);
+        plantDataStorageMap.put(storage.getPlantId(), storage);
     }
 
     public PlantDataStorage getPlantDataStorage(String plantId) {
-        return plantDataMap.get(plantId);
+        return plantDataStorageMap.get(plantId);
+    }
+
+    public ConcurrentHashMap<String, PlantDataStorage> getPlantDataStorageMap() {
+        return plantDataStorageMap;
     }
 
     public Object getVariable(String plantId, String scope, String parameter, String variableName) {

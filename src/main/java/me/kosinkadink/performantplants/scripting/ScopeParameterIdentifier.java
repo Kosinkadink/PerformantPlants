@@ -2,14 +2,20 @@ package me.kosinkadink.performantplants.scripting;
 
 import java.util.Objects;
 
-public class ScopeParameterPair {
+public class ScopeParameterIdentifier {
 
+    private final String plantId;
     private final String scope;
     private final String parameter;
 
-    public ScopeParameterPair(String scope, String parameter) {
+    public ScopeParameterIdentifier(String plantId, String scope, String parameter) {
+        this.plantId = plantId;
         this.scope = scope;
         this.parameter = parameter;
+    }
+
+    public String getPlantId() {
+        return plantId;
     }
 
     public String getScope() {
@@ -28,18 +34,18 @@ public class ScopeParameterPair {
         // false is object is null or not of same class
         if (o == null || getClass() != o.getClass())
             return false;
-        ScopeParameterPair fromO = (ScopeParameterPair)o;
+        ScopeParameterIdentifier fromO = (ScopeParameterIdentifier)o;
         // true if all components match, false otherwise
-        return scope.equals(fromO.scope) && parameter.equals(fromO.parameter);
+        return plantId.equals(fromO.plantId) && scope.equals(fromO.scope) && parameter.equals(fromO.parameter);
     }
 
     public int hashCode() {
-        return Objects.hash(scope, parameter);
+        return Objects.hash(plantId, scope, parameter);
     }
 
     @Override
     public String toString() {
-        return scope + ',' + parameter;
+        return plantId + ',' + scope + ',' + parameter;
     }
 
 }

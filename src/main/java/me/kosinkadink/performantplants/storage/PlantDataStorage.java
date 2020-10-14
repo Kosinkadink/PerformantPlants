@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.storage;
 
 import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScopeParameterPair;
+import me.kosinkadink.performantplants.scripting.ScopeParameterIdentifier;
 import me.kosinkadink.performantplants.scripting.ScopedPlantData;
 
 import java.util.HashSet;
@@ -14,7 +14,7 @@ public class PlantDataStorage {
 
     private final String plantId;
     private final ConcurrentHashMap<String, ScopedPlantData> scopeMap = new ConcurrentHashMap<>();
-    private final HashSet<ScopeParameterPair> pairsToDelete = new HashSet<>();
+    private final HashSet<ScopeParameterIdentifier> identifiersToDelete = new HashSet<>();
 
     public PlantDataStorage(String plantId) {
         this.plantId = plantId;
@@ -48,18 +48,36 @@ public class PlantDataStorage {
             // check if data is now equal to default, and if so, delete and mark for db deletion
             if (updatedPlantData.dataEquals(scopedPlantData.getDefaultPlantData())) {
                 scopedPlantData.removePlantData(parameter);
-                addScopeForRemoval(new ScopeParameterPair(scope, parameter));
+                addScopeForRemoval(new ScopeParameterIdentifier(plantId, scope, parameter));
             }
             else {
-                removeScopeFromRemoval(new ScopeParameterPair(scope, parameter));
+                removeScopeFromRemoval(new ScopeParameterIdentifier(plantId, scope, parameter));
             }
             return true;
         }
         return false;
     }
 
+    public boolean updateData(String scope, String parameter, PlantData plantData) {
+        ScopedPlantData scopedPlantData = getScopedPlantData(scope);
+        if (scopedPlantData != null) {
+            // update plant data
+            PlantData savedPlantData = scopedPlantData.getPlantData(parameter);
+            // initialize data if parameter not currently present
+            if (savedPlantData == null) {
+                savedPlantData = scopedPlantData.initializePlantData(parameter);
+            }
+            return savedPlantData.updateData(plantData);
+        }
+        return false;
+    }
+
     ScopedPlantData getScopedPlantData(String scope) {
         return scopeMap.get(scope);
+    }
+
+    public ConcurrentHashMap<String, ScopedPlantData> getScopeMap() {
+        return scopeMap;
     }
 
     public boolean addUnscopedPlantData(PlantData plantData) {
@@ -83,16 +101,16 @@ public class PlantDataStorage {
     }
 
     // removal
-    public void addScopeForRemoval(ScopeParameterPair pair) {
-        pairsToDelete.add(pair);
+    public void addScopeForRemoval(ScopeParameterIdentifier pair) {
+        identifiersToDelete.add(pair);
     }
 
-    public void removeScopeFromRemoval(ScopeParameterPair pair) {
-        pairsToDelete.remove(pair);
+    public void removeScopeFromRemoval(ScopeParameterIdentifier pair) {
+        identifiersToDelete.remove(pair);
     }
 
-    public HashSet<ScopeParameterPair> getScopesToDelete() {
-        return pairsToDelete;
+    public HashSet<ScopeParameterIdentifier> getScopesToDelete() {
+        return identifiersToDelete;
     }
 
 }

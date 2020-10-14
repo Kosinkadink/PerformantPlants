@@ -22,12 +22,14 @@ public class PlantData {
         return data.toString();
     }
 
-    public void updateData(PlantData plantData) {
+    public boolean updateData(PlantData plantData) {
         // updates values of data
         JSONObject newData = plantData.getData();
+        boolean updatedAnyVariable = false;
         for (Object key : newData.keySet()) {
-            updateVariable(key, newData.get(key));
+            updatedAnyVariable = updateVariable(key, newData.get(key)) || updatedAnyVariable;
         }
+        return updatedAnyVariable;
     }
 
     public JSONObject getData() {
