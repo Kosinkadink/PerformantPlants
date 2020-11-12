@@ -10,6 +10,7 @@ import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationChangeStage;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationConsumable;
 import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationInteract;
+import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationScheduleTask;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
@@ -29,13 +30,11 @@ import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperati
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomDouble;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomLong;
 import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
+import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.*;
-import me.kosinkadink.performantplants.util.BlockHelper;
-import me.kosinkadink.performantplants.util.EnchantmentLevel;
-import me.kosinkadink.performantplants.util.ScriptHelper;
-import me.kosinkadink.performantplants.util.TextHelper;
+import me.kosinkadink.performantplants.util.*;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockFace;
@@ -58,11 +57,13 @@ import java.util.*;
 
 public class ConfigurationManager {
 
-    private Main main;
-    private File configFile;
-    private YamlConfiguration config = new YamlConfiguration();
-    private HashMap<String, YamlConfiguration> plantConfigMap = new HashMap<>();
-    private ConfigSettings configSettings = new ConfigSettings();
+    private final Main main;
+    private final File configFile;
+    private final YamlConfiguration config = new YamlConfiguration();
+    private final HashMap<String, YamlConfiguration> plantConfigMap = new HashMap<>();
+    private final ConfigSettings configSettings = new ConfigSettings();
+
+    private ScriptTaskLoader currentTaskLoader = new ScriptTaskLoader();
 
     public ConfigurationManager(Main mainClass) {
         main = mainClass;
@@ -219,23 +220,47 @@ public class ConfigurationManager {
         PlantItem plantItem = new PlantItem(itemSettings.generatePlantItemStack(plantId));
         // set buy/sell prices
         addPricesToPlantItem(itemConfig, plantItem);
-        // add consumable behavior
-        if (itemConfig.isConfigurationSection("consumable")) {
-            PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("consumable"), null);
-            if (consumable != null) {
-                plantItem.setConsumableStorage(consumable);
-            }
-        }
-        if (itemConfig.isConfigurationSection("clickable")) {
-            PlantConsumableStorage clickable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("clickable"), null);
-            if (clickable != null) {
-                plantItem.setClickableStorage(clickable);
-            }
-        }
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
-        // if growing section is present, get seed item + stages
+        // get growing section
         ConfigurationSection growingConfig = plantConfig.getConfigurationSection("growing");
+        // if growing section is present, set plant data
+        if (growingConfig != null) {
+            // load plant data, if present
+            PlantData plantData = createPlantData(growingConfig, plant);
+            if (plantData != null) {
+                plant.setPlantData(plantData);
+            }
+        }
+        // load stored plant script blocks, if present
+        HashMap<String, ScriptBlock> scriptBlockHashMap = loadPlantScriptBlocks(
+                plantConfig,
+                "stored-script-blocks",
+                plant.getPlantData()
+        );
+        if (scriptBlockHashMap == null) {
+            main.getLogger().warning("Plant stored-script-blocks could not be registered for plant:" + plantId);
+            return;
+        }
+        for (Map.Entry<String, ScriptBlock> entry : scriptBlockHashMap.entrySet()) {
+            plant.addScriptBlock(entry.getKey(), entry.getValue());
+        }
+        // create empty PlantData to store plant
+        PlantData blankPlantData = new PlantData(new JSONObject());
+        blankPlantData.setPlant(plant);
+        // load plant tasks, if present
+        HashMap<String, ScriptTask> scriptTaskHashMap = loadPlantScriptTasks(
+                plantConfig,
+                "tasks",
+                plant.getPlantData(), blankPlantData);
+        if (scriptTaskHashMap == null) {
+            main.getLogger().warning("Plant tasks could not be registered for plant:" + plantId);
+            return;
+        }
+        for (Map.Entry<String, ScriptTask> entry : scriptTaskHashMap.entrySet()) {
+            plant.addScriptTask(entry.getKey(), entry.getValue());
+        }
+        // if growing section is present, get seed item + stages
         if (growingConfig != null) {
             ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
             if (seedConfig != null) {
@@ -281,24 +306,6 @@ public class ConfigurationManager {
                             return;
                         }
                     }
-                    // load plant data, if present
-                    PlantData plantData = createPlantData(growingConfig, plant);
-                    if (plantData != null) {
-                        plant.setPlantData(plantData);
-                    }
-                    // load stored plant script blocks, if present
-                    HashMap<String, ScriptBlock> scriptBlockHashMap = loadPlantScriptBlocks(
-                            growingConfig,
-                            "stored-script-blocks",
-                            plant.getPlantData()
-                    );
-                    if (scriptBlockHashMap == null) {
-                        main.getLogger().warning("Plant stored-script-blocks could not be registered for plant:" + plantId);
-                        return;
-                    }
-                    for (Map.Entry<String, ScriptBlock> entry : scriptBlockHashMap.entrySet()) {
-                        plant.addScriptBlock(entry.getKey(), entry.getValue());
-                    }
                     // load stored plant growths stage blocks, if present
                     List<GrowthStageBlock> plantStageBlocks = loadGrowthStageBlocks(
                             growingConfig,
@@ -334,7 +341,7 @@ public class ConfigurationManager {
                                 growthStage.setMaxGrowthTime(stageMaxGrowthTime);
                             }
                             // set drops and/or drop limit
-                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage(), plantData)) {
+                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage(), plant.getPlantData())) {
                                 return;
                             }
                             // set growth checkpoint, if present
@@ -399,6 +406,19 @@ public class ConfigurationManager {
                 main.getLogger().info("seedConfig was null for plant: " + plantId);
             }
         }
+        // add consumable behavior
+        if (itemConfig.isConfigurationSection("consumable")) {
+            PlantConsumableStorage consumable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("consumable"), blankPlantData);
+            if (consumable != null) {
+                plantItem.setConsumableStorage(consumable);
+            }
+        }
+        if (itemConfig.isConfigurationSection("clickable")) {
+            PlantConsumableStorage clickable = loadPlantConsumableStorage(itemConfig.getConfigurationSection("clickable"), blankPlantData);
+            if (clickable != null) {
+                plantItem.setClickableStorage(clickable);
+            }
+        }
         // load plant goods; failure here shouldn't abort plant loading
         if (plantConfig.isConfigurationSection("goods")) {
             ConfigurationSection goodsSection = plantConfig.getConfigurationSection("goods");
@@ -413,13 +433,13 @@ public class ConfigurationManager {
                     PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
                     addPricesToPlantItem(goodSection, goodItem);
                     if (goodSection.isConfigurationSection("consumable")) {
-                        PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection.getConfigurationSection("consumable"), null);
+                        PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection.getConfigurationSection("consumable"), blankPlantData);
                         if (goodConsumable != null) {
                             goodItem.setConsumableStorage(goodConsumable);
                         }
                     }
                     if (goodSection.isConfigurationSection("clickable")) {
-                        PlantConsumableStorage goodClickable = loadPlantConsumableStorage(goodSection.getConfigurationSection("clickable"), null);
+                        PlantConsumableStorage goodClickable = loadPlantConsumableStorage(goodSection.getConfigurationSection("clickable"), blankPlantData);
                         if (goodClickable != null) {
                             goodItem.setClickableStorage(goodClickable);
                         }
@@ -1665,6 +1685,9 @@ public class ConfigurationManager {
             case "command":
                 effect = createCommandEffect(section, data);
                 break;
+            case "script":
+                effect = createScriptEffect(section, data);
+                break;
             default:
                 break;
         }
@@ -2282,6 +2305,21 @@ public class ConfigurationManager {
         return effect;
     }
 
+    PlantScriptEffect createScriptEffect(ConfigurationSection section, PlantData data) {
+        PlantScriptEffect effect = new PlantScriptEffect();
+        if (!section.isSet("plant-script")) {
+            main.getLogger().warning("Script effect not added; plant-script section not present in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        if (scriptBlock == null) {
+            main.getLogger().warning("Script effect not added; plant-script must be a script block in section: " + section.getCurrentPath());
+            return null;
+        }
+        effect.setScriptBlock(scriptBlock);
+        return effect;
+    }
+
     void addDoIfAndDelayToEffect(ConfigurationSection section, PlantEffect effect, PlantData data) {
         // set do-if, if present
         if (section.isSet("do-if")) {
@@ -2690,6 +2728,96 @@ public class ConfigurationManager {
         return null;
     }
 
+    HashMap<String, ScriptTask> loadPlantScriptTasks(ConfigurationSection section, String subsectionName, PlantData data, PlantData blankData) {
+        if (section == null) {
+            return null;
+        }
+
+        HashMap<String, ScriptTask> scriptTaskHashMap = new HashMap<>();
+        if (section.isConfigurationSection(subsectionName)) {
+            ConfigurationSection scriptTasksSection = section.getConfigurationSection(subsectionName);
+            // load all task names
+            currentTaskLoader = new ScriptTaskLoader();
+            for (String taskId : scriptTasksSection.getKeys(false)) {
+                currentTaskLoader.addTaskName(taskId);
+            }
+            // parse each task section
+            for (String taskId : scriptTasksSection.getKeys(false)) {
+                ScriptTask scriptTask;
+                if (data != null) {
+                    scriptTask = createPlantScriptTask(scriptTasksSection, taskId, data);
+                } else {
+                    scriptTask = createPlantScriptTask(scriptTasksSection, taskId, blankData);
+                }
+                if (scriptTask == null) {
+                    main.getLogger().warning(String.format("Could not create script task '%s' in section: %s",
+                            taskId, scriptTasksSection.getCurrentPath()));
+                    continue;
+                }
+                scriptTaskHashMap.put(taskId, scriptTask);
+            }
+        }
+        return scriptTaskHashMap;
+    }
+
+    ScriptTask createPlantScriptTask(ConfigurationSection section, String subsectionName, PlantData data) {
+        ScriptTask scriptTask = new ScriptTask(data.getPlant().getId(), subsectionName);
+        ConfigurationSection taskSection = section.getConfigurationSection(subsectionName);
+        // check that task section exists
+        if (taskSection == null) {
+            return null;
+        }
+        // set script block
+        ScriptBlock scriptBlock = createPlantScript(taskSection, "plant-script", data);
+        if (scriptBlock == null) {
+            return null;
+        }
+        scriptTask.setTaskScriptBlock(scriptBlock);
+        // set delay, if present
+        if (taskSection.isSet("delay")) {
+            ScriptBlock delay = createPlantScript(taskSection, "delay", data);
+            if (delay == null || !ScriptHelper.isLong(delay)) {
+                main.getLogger().warning(String.format("Task's delay must be ScriptType LONG in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            scriptTask.setDelay(delay);
+        }
+        // set specific player id, if present
+        if (taskSection.isSet("player-id")) {
+            ScriptBlock playerId = createPlantScript(taskSection, "player-id", data);
+            if (playerId == null || !ScriptHelper.isString(playerId)) {
+                main.getLogger().warning(String.format("Task's player-id must be ScriptType STRING in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            scriptTask.setPlayerId(playerId);
+        }
+        // set current player, if present
+        if (taskSection.isSet("current-player")) {
+            ScriptBlock currentPlayer = createPlantScript(taskSection, "current-player", data);
+            if (currentPlayer == null || !ScriptHelper.isBoolean(currentPlayer)) {
+                main.getLogger().warning(String.format("Task's current-player must be ScriptType BOOLEAN in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            scriptTask.setCurrentPlayer(currentPlayer);
+        }
+        // set current block, if present
+        if (taskSection.isSet("current-block")) {
+            ScriptBlock currentBlock = createPlantScript(taskSection, "current-block", data);
+            if (currentBlock == null || !ScriptHelper.isBoolean(currentBlock)) {
+                main.getLogger().warning(String.format("Task's current-block must be ScriptType BOOLEAN in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            scriptTask.setCurrentBlock(currentBlock);
+        }
+        // TODO: add hooks
+        // return created script task
+        return scriptTask;
+    }
+
     HashMap<String, ScriptBlock> loadPlantScriptBlocks(ConfigurationSection section, String subsectionName, PlantData data) {
         if (section == null) {
             return null;
@@ -2861,6 +2989,8 @@ public class ConfigurationManager {
                     returned = createScriptOperationConsumable(blockSection, data); break;
                 case "createblocks":
                     returned = createScriptOperationCreatePlantBlocks(blockSection, data); break;
+                case "scheduletask":
+                    returned = createScriptOperationScheduleTask(blockSection, data); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, data); break;
@@ -3288,6 +3418,60 @@ public class ConfigurationManager {
     ScriptOperation createScriptOperationCreatePlantBlocks(ConfigurationSection section, PlantData data) {
         // TODO: fill out
         return null;
+    }
+    ScriptOperation createScriptOperationScheduleTask(ConfigurationSection section, PlantData data) {
+        // get task config id
+        String taskConfigId = section.getString("task");
+        if (taskConfigId == null || taskConfigId.isEmpty()) {
+            main.getLogger().warning("Task missing or empty in section: " + section.getCurrentPath());
+            return null;
+        }
+        // get stored plant task, if exists
+        ScriptTask scriptTask = data.getPlant().getScriptTask(taskConfigId);
+        if (scriptTask == null) {
+            main.getLogger().warning(String.format("Task '%s' not recognized for plant '%s' in section: '%s'",
+                    taskConfigId, data.getPlant().getId(), section.getCurrentPath()));
+            return null;
+        }
+        // get delay, if present
+        ScriptBlock delay = scriptTask.getDelay();
+        if (section.isSet("delay")) {
+            delay = createPlantScript(section, "delay", data);
+            if (delay == null || !ScriptHelper.isLong(delay)) {
+                main.getLogger().warning("Delay must be ScriptType LONG in section: " + section.getCurrentPath());
+                return null;
+            }
+        }
+        // get current player, if present
+        ScriptBlock currentPlayer = scriptTask.getCurrentPlayer();
+        if (section.isSet("current-player")) {
+            currentPlayer = createPlantScript(section, "current-player", data);
+            if (currentPlayer == null || !ScriptHelper.isBoolean(currentPlayer)) {
+                main.getLogger().warning("Current-player must be ScriptType BOOLEAN in section: " + section.getCurrentPath());
+                return null;
+            }
+        }
+        // get current block, if present
+        ScriptBlock currentBlock = scriptTask.getCurrentBlock();
+        if (section.isSet("current-block")) {
+            currentBlock = createPlantScript(section, "current-block", data);
+            if (currentBlock == null || !ScriptHelper.isBoolean(currentBlock)) {
+                main.getLogger().warning("Current-block must be ScriptType BOOLEAN in section: " + section.getCurrentPath());
+                return null;
+            }
+        }
+        // get player id, if present
+        ScriptBlock playerId = scriptTask.getPlayerId();
+        if (section.isSet("player-id")) {
+            playerId = createPlantScript(section, "player-id", data);
+            if (playerId == null || !ScriptHelper.isString(playerId)) {
+                main.getLogger().warning("Player-id must be ScriptType STRING in section: " + section.getCurrentPath());
+                return null;
+            }
+        }
+        // return operation
+        return new ScriptOperationScheduleTask(data.getPlant().getId(), taskConfigId, delay,
+                currentPlayer, currentBlock, playerId);
     }
 
     //random

@@ -3,8 +3,8 @@ package me.kosinkadink.performantplants.plants;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
@@ -17,13 +17,14 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
-    private String id;
-    private PlantItem plantItem;
+    private final String id;
+    private final PlantItem plantItem;
     private PlantItem plantSeedItem;
-    private HashMap<String, PlantItem> goods = new HashMap<>();
-    private HashMap<String, GrowthStageBlock> growthStageBlockMap = new HashMap<>();
-    private HashMap<String, ScriptBlock> scriptBlockMap = new HashMap<>();
-    private StageStorage stageStorage = new StageStorage();
+    private final HashMap<String, PlantItem> goods = new HashMap<>();
+    private final HashMap<String, GrowthStageBlock> growthStageBlockMap = new HashMap<>();
+    private final HashMap<String, ScriptBlock> scriptBlockMap = new HashMap<>();
+    private final HashMap<String, ScriptTask> scriptTaskMap = new HashMap<>();
+    private final StageStorage stageStorage = new StageStorage();
     private PlantData plantData;
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
@@ -126,6 +127,15 @@ public class Plant {
 
     public void addScriptBlock(String blockId, ScriptBlock scriptBlock) {
         scriptBlockMap.put(blockId, scriptBlock);
+    }
+
+    // plant task map
+    public ScriptTask getScriptTask(String taskId) {
+        return scriptTaskMap.get(taskId);
+    }
+
+    public void addScriptTask(String taskId, ScriptTask scriptTask) {
+        scriptTaskMap.put(taskId, scriptTask);
     }
 
     // requirements

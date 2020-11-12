@@ -24,6 +24,7 @@ public class Main extends JavaPlugin {
     private StatisticsManager statisticsManager;
     private RecipeManager recipeManager;
     private VanillaDropManager vanillaDropManager;
+    private TaskManager taskManager;
 
     @Override
     public void onEnable() {
@@ -82,6 +83,7 @@ public class Main extends JavaPlugin {
         plantTypeManager = new PlantTypeManager(this);
         recipeManager = new RecipeManager(this);
         vanillaDropManager = new VanillaDropManager(this);
+        taskManager = new TaskManager(this);
         configManager = new ConfigurationManager(this);
         statisticsManager = new StatisticsManager(this);
         databaseManager = new DatabaseManager(this);
@@ -163,5 +165,9 @@ public class Main extends JavaPlugin {
 
     public VanillaDropManager getVanillaDropManager() {
         return vanillaDropManager;
+    }
+
+    public TaskManager getTaskManager() {
+        return taskManager;
     }
 }
