@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TaskManager {
 
-    private Main main;
+    private final Main main;
 
     private final ConcurrentHashMap<String, PlantTask> taskMap = new ConcurrentHashMap<>();
     private final HashSet<UUID> taskIdsToDelete = new HashSet<>();

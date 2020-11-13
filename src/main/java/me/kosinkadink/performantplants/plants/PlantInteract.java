@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class PlantInteract {
 
-    private ScriptBlock giveBlockDrops = ScriptResult.FALSE;
+    private ScriptBlock giveBlockDrops = ScriptResult.NULL; // defaults to false from getter
     private ScriptBlock doIf;
     private ScriptBlock takeItem = ScriptResult.FALSE;
     private ScriptBlock onlyTakeItemOnDo = ScriptResult.FALSE;
@@ -75,11 +75,15 @@ public class PlantInteract {
 
     // block drops
     public boolean isGiveBlockDrops(Player player, PlantBlock plantBlock) {
-        return giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
+        return isGiveBlockDropsNull() ? false : giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
     }
 
     public void setGiveBlockDrops(ScriptBlock giveBlockDrops) {
         this.giveBlockDrops = giveBlockDrops;
+    }
+
+    public boolean isGiveBlockDropsNull() {
+        return giveBlockDrops == ScriptResult.NULL;
     }
 
     public boolean isOnlyDropOnDo(Player player, PlantBlock plantBlock) {

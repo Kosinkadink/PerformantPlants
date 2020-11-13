@@ -7,10 +7,7 @@ import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
-import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationChangeStage;
-import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationConsumable;
-import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationInteract;
-import me.kosinkadink.performantplants.scripting.operations.action.ScriptOperationScheduleTask;
+import me.kosinkadink.performantplants.scripting.operations.action.*;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
@@ -63,7 +60,7 @@ public class ConfigurationManager {
     private final HashMap<String, YamlConfiguration> plantConfigMap = new HashMap<>();
     private final ConfigSettings configSettings = new ConfigSettings();
 
-    private ScriptTaskLoader currentTaskLoader = new ScriptTaskLoader();
+    private ScriptTaskLoader currentTaskLoader = null;
 
     public ConfigurationManager(Main mainClass) {
         main = mainClass;
@@ -2737,7 +2734,7 @@ public class ConfigurationManager {
         if (section.isConfigurationSection(subsectionName)) {
             ConfigurationSection scriptTasksSection = section.getConfigurationSection(subsectionName);
             // load all task names
-            currentTaskLoader = new ScriptTaskLoader();
+            currentTaskLoader = new ScriptTaskLoader(main);
             for (String taskId : scriptTasksSection.getKeys(false)) {
                 currentTaskLoader.addTaskName(taskId);
             }
@@ -2752,10 +2749,15 @@ public class ConfigurationManager {
                 if (scriptTask == null) {
                     main.getLogger().warning(String.format("Could not create script task '%s' in section: %s",
                             taskId, scriptTasksSection.getCurrentPath()));
+                    currentTaskLoader.addFailedTask(taskId);
                     continue;
                 }
-                scriptTaskHashMap.put(taskId, scriptTask);
+                currentTaskLoader.addTask(taskId, scriptTask);
             }
+            // get final version of map after remove any tasks that could not be read from config
+            scriptTaskHashMap = currentTaskLoader.processTasksAndReturnMap(section);
+            // reset currentTaskLoader to null
+            currentTaskLoader = null;
         }
         return scriptTaskHashMap;
     }
@@ -2768,6 +2770,7 @@ public class ConfigurationManager {
             return null;
         }
         // set script block
+        currentTaskLoader.setCurrentTask(subsectionName);
         ScriptBlock scriptBlock = createPlantScript(taskSection, "plant-script", data);
         if (scriptBlock == null) {
             return null;
@@ -2991,6 +2994,8 @@ public class ConfigurationManager {
                     returned = createScriptOperationCreatePlantBlocks(blockSection, data); break;
                 case "scheduletask":
                     returned = createScriptOperationScheduleTask(blockSection, data); break;
+                case "canceltask":
+                    returned = createScriptOperationCancelTask(blockSection, data); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, data); break;
@@ -3426,12 +3431,28 @@ public class ConfigurationManager {
             main.getLogger().warning("Task missing or empty in section: " + section.getCurrentPath());
             return null;
         }
-        // get stored plant task, if exists
-        ScriptTask scriptTask = data.getPlant().getScriptTask(taskConfigId);
-        if (scriptTask == null) {
-            main.getLogger().warning(String.format("Task '%s' not recognized for plant '%s' in section: '%s'",
-                    taskConfigId, data.getPlant().getId(), section.getCurrentPath()));
-            return null;
+        // verify that stored plant task exists
+        // use plant's loaded tasks if not loading tasks right now
+        // otherwise use currentTaskLoader
+        ScriptTask scriptTask;
+        if (currentTaskLoader == null) {
+            scriptTask = data.getPlant().getScriptTask(taskConfigId);
+            if (scriptTask == null) {
+                main.getLogger().warning(String.format("Task '%s' not recognized for plant '%s' in section: '%s'",
+                        taskConfigId, data.getPlant().getId(), section.getCurrentPath()));
+                return null;
+            }
+        } else {
+            if (!currentTaskLoader.isTask(taskConfigId)) {
+                main.getLogger().warning(String.format("Task '%s' not recognized as valid task for plant '%s' in section '%s'",
+                        taskConfigId, data.getPlant().getId(), section.getCurrentPath()));
+                return null;
+            }
+            // if not a recursive call, add current task as dependent on task being scheduled
+            if (!currentTaskLoader.getCurrentTask().equals(taskConfigId)) {
+                currentTaskLoader.addTaskDependency(taskConfigId, currentTaskLoader.getCurrentTask());
+            }
+            scriptTask = new ScriptTask(data.getPlant().getId(), taskConfigId);
         }
         // get delay, if present
         ScriptBlock delay = scriptTask.getDelay();
@@ -3472,6 +3493,16 @@ public class ConfigurationManager {
         // return operation
         return new ScriptOperationScheduleTask(data.getPlant().getId(), taskConfigId, delay,
                 currentPlayer, currentBlock, playerId);
+    }
+
+    ScriptOperation createScriptOperationCancelTask(ConfigurationSection section, PlantData data) {
+        // get task id
+        ScriptBlock taskId = createPlantScript(section, "task-id", data);
+        if (taskId == null || !ScriptHelper.isString(taskId)) {
+            main.getLogger().warning("Task-id must be ScriptType STRING in section: " + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationCancelTask(taskId);
     }
 
     //random

@@ -106,7 +106,7 @@ public class PlantBlockEventListener implements Listener {
                 boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
                 boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
                 // see if drops should occur
-                giveBlockDrops = plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock());
+                giveBlockDrops = plantInteract.isGiveBlockDropsNull() || plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock());
                 // determine if block should be broken
                 if (!onlyBreakOnDo || shouldDo) {
                     if (!plantInteract.isBreakBlockNull() && !plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
