@@ -2,7 +2,9 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -15,10 +17,11 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
     private final String taskConfigId;
 
     public ScriptOperationScheduleTask(String plantId, String taskConfigId, ScriptBlock delay, ScriptBlock currentPlayer,
-                                       ScriptBlock currentBlock, ScriptBlock playerId) {
-        super(delay, currentPlayer, currentBlock, playerId);
+                                       ScriptBlock currentBlock, ScriptBlock playerId, ScriptBlock autostart) {
+        super(delay, currentPlayer, currentBlock, playerId, autostart);
         this.plantId = plantId;
         this.taskConfigId = taskConfigId;
+        // TODO: hooks?
     }
 
     public ScriptBlock getDelay() {
@@ -37,36 +40,32 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
         return inputs[3];
     }
 
+    public ScriptBlock getAutostart() {
+        return inputs[4];
+    }
+
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        PlantTask plantTask = new PlantTask(plantId, taskConfigId);
-        // set delay
-        long delay = getDelay().loadValue(plantBlock, player).getLongValue();
-        if (delay < 0) {
-            delay = 0;
+        Plant plant = Main.getInstance().getPlantTypeManager().getPlantById(plantId);
+        if (plant == null) {
+            return ScriptResult.EMPTY;
         }
-        plantTask.setDelay(delay);
-        // set offline player
-        String playerId = getPlayerId().loadValue(plantBlock, player).getStringValue();
-        boolean currentPlayer = getCurrentPlayer().loadValue(plantBlock, player).getBooleanValue();
-        OfflinePlayer offlinePlayer = null;
-        if (!playerId.isEmpty()) {
-            UUID playerUUID;
-            try {
-                playerUUID = UUID.fromString(playerId);
-                offlinePlayer = Main.getInstance().getServer().getOfflinePlayer(playerUUID);
-            } catch (IllegalArgumentException e) {
-                // assume the string is a direct name
-                offlinePlayer = Main.getInstance().getServer().getOfflinePlayer(playerId);
-            }
-        } else if (currentPlayer) {
-            offlinePlayer = player;
+        ScriptTask scriptTask = plant.getScriptTask(taskConfigId);
+        if (scriptTask == null) {
+            return ScriptResult.EMPTY;
         }
-        plantTask.setOfflinePlayer(offlinePlayer);
-        // set block location
-        boolean currentBlock = getCurrentBlock().loadValue(plantBlock, player).getBooleanValue();
-        if (currentBlock && plantBlock != null) {
-            plantTask.setBlockLocation(plantBlock.getLocation());
+        // clone task to avoid overriding stored default values
+        scriptTask = scriptTask.clone();
+        // set values with ones set in this operation
+        scriptTask.setDelay(getDelay());
+        scriptTask.setCurrentPlayer(getCurrentPlayer());
+        scriptTask.setPlayerId(getPlayerId());
+        scriptTask.setCurrentBlock(getCurrentBlock());
+        scriptTask.setAutostart(getAutostart());
+        // create plant task
+        PlantTask plantTask = scriptTask.createPlantTask(player, plantBlock);
+        if (plantTask == null) {
+            return ScriptResult.EMPTY;
         }
         // attempt to schedule task and return result
         if (Main.getInstance().getTaskManager().scheduleTask(plantTask)) {

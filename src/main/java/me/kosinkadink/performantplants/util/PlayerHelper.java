@@ -9,6 +9,10 @@ public class PlayerHelper {
         return player.getFoodLevel() < 20;
     }
 
+    public static boolean isAlive(Player player) {
+        return player.getHealth() > 0;
+    }
+
     public static EquipmentSlot oppositeHand(EquipmentSlot hand) {
         if (hand == EquipmentSlot.HAND) {
             return EquipmentSlot.OFF_HAND;

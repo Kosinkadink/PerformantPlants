@@ -96,6 +96,7 @@ public class Main extends JavaPlugin {
         pluginManager.registerEvents(new PlantBlockEventListener(this), this);
         pluginManager.registerEvents(new RecipeEventListener(this), this);
         pluginManager.registerEvents(new VanillaDropListener(this), this);
+        pluginManager.registerEvents(new HookListener(this), this);
     }
 
     private void registerCommands() {

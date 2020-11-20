@@ -1,13 +1,16 @@
 package me.kosinkadink.performantplants.scripting.storage;
 
+import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.hooks.PlantHook;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.storage.hooks.ScriptHook;
 import me.kosinkadink.performantplants.tasks.PlantTask;
-import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class ScriptTask {
@@ -16,11 +19,12 @@ public class ScriptTask {
     private final String taskConfigId;
 
     private ScriptBlock taskScriptBlock;
+    private ScriptBlock autostart = ScriptResult.TRUE;
     private ScriptBlock delay = ScriptResult.ZERO;
     private ScriptBlock currentPlayer = ScriptResult.TRUE;
     private ScriptBlock currentBlock = ScriptResult.TRUE;
     private ScriptBlock playerId = ScriptResult.EMPTY;
-    // TODO: add hooks
+    private final ArrayList<ScriptHook> hooks = new ArrayList<>();
 
 
     public ScriptTask(String plantId, String taskConfigId) {
@@ -28,29 +32,59 @@ public class ScriptTask {
         this.taskConfigId = taskConfigId;
     }
 
+    public ScriptTask clone() {
+        ScriptTask cloned = new ScriptTask(plantId, taskConfigId);
+        cloned.setTaskScriptBlock(taskScriptBlock);
+        cloned.setAutostart(autostart);
+        cloned.setDelay(delay);
+        cloned.setCurrentPlayer(currentPlayer);
+        cloned.setCurrentBlock(currentBlock);
+        cloned.setPlayerId(playerId);
+        for (ScriptHook hook : hooks) {
+            cloned.addHook(hook);
+        }
+        return cloned;
+    }
+
     public PlantTask createPlantTask(Player player, PlantBlock plantBlock) {
         PlantTask plantTask = new PlantTask(plantId, taskConfigId);
         // set delay
-        plantTask.setDelay(getDelayValue(player, plantBlock));
+        long delay = getDelayValue(player, plantBlock);
+        if (delay < 0) {
+            delay = 0;
+        }
+        plantTask.setDelay(delay);
         // set current block location, if true
-        if (getCurrentBlockValue(player, plantBlock)) {
+        boolean currentBlock = getCurrentBlockValue(player, plantBlock);
+        if (currentBlock && plantBlock != null) {
             plantTask.setBlockLocation(plantBlock.getLocation());
         }
         // if playerId explicitly set, try to get it
         if (playerId != ScriptResult.EMPTY) {
             OfflinePlayer offlinePlayer;
             String playerIdValue = getPlayerIdValue(player, plantBlock);
-            try {
-                UUID playerUUID = UUID.fromString(playerIdValue);
-                offlinePlayer = Bukkit.getOfflinePlayer(playerUUID);
-            } catch (IllegalArgumentException e) {
-                offlinePlayer = Bukkit.getOfflinePlayer(playerIdValue);
+            if (!playerIdValue.isEmpty()) {
+                try {
+                    UUID playerUUID = UUID.fromString(playerIdValue);
+                    offlinePlayer = Main.getInstance().getServer().getOfflinePlayer(playerUUID);
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+                plantTask.setOfflinePlayer(offlinePlayer);
             }
-            plantTask.setOfflinePlayer(offlinePlayer);
         }
         // otherwise, use current player
         else if (getCurrentPlayerValue(player, plantBlock)) {
             plantTask.setOfflinePlayer(player);
+        }
+        // set autostart
+        plantTask.setAutostart(getAutostartValue(player, plantBlock));
+        // add hooks
+        for (ScriptHook scriptHook : hooks) {
+            PlantHook plantHook = scriptHook.createPlantHook(plantTask.getTaskId(), player, plantBlock);
+            if (plantHook != null) {
+                plantTask.addHook(plantHook);
+            }
         }
         return plantTask;
     }
@@ -117,5 +151,25 @@ public class ScriptTask {
 
     public void setPlayerId(ScriptBlock playerId) {
         this.playerId = playerId;
+    }
+
+    public ArrayList<ScriptHook> getHooks() {
+        return hooks;
+    }
+
+    public void addHook(ScriptHook scriptHook) {
+        hooks.add(scriptHook);
+    }
+
+    public ScriptBlock getAutostart() {
+        return autostart;
+    }
+
+    public boolean getAutostartValue(Player player, PlantBlock plantBlock) {
+        return autostart.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setAutostart(ScriptBlock autostart) {
+        this.autostart = autostart;
     }
 }

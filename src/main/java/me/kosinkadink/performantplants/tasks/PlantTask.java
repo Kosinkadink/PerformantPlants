@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.tasks;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.hooks.PlantHook;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
@@ -9,6 +10,7 @@ import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class PlantTask {
@@ -16,34 +18,49 @@ public class PlantTask {
     private BukkitTask bukkitTask;
     private long taskStartTime;
     private boolean cancelled = false;
-    private boolean running = false;
+    private boolean paused = false;
 
     private final UUID taskId;
     private final String plantId;
     private final String taskConfigId;
 
+    private ScriptTask scriptTask = null;
+
     private OfflinePlayer offlinePlayer;
     private BlockLocation blockLocation;
     private long delay;
+    private boolean autostart = true;
+
+    private final ArrayList<PlantHook> hooks = new ArrayList<>();
+
+    public PlantTask(UUID taskId, String plantId, String taskConfigId) {
+        this.taskId = taskId;
+        this.plantId = plantId;
+        this.taskConfigId = taskConfigId;
+        setupScriptTask();
+    }
 
     public PlantTask(String plantId, String taskConfigId) {
         taskId = UUID.randomUUID();
         this.plantId = plantId;
         this.taskConfigId = taskConfigId;
+        setupScriptTask();
+    }
+
+    private void setupScriptTask() {
+        // get task based on plant and task config id
+        Plant plant = Main.getInstance().getPlantTypeManager().getPlantById(plantId);
+        if (plant != null) {
+            ScriptTask scriptTask = plant.getScriptTask(taskConfigId);
+            if (scriptTask != null) {
+                this.scriptTask = scriptTask;
+            }
+        }
     }
 
     public boolean startTask(Main main) {
         // if task already exists, do nothing
-        if (isCancelled() || bukkitTask != null) {
-            return false;
-        }
-        // get task based on plant and task config id
-        Plant plant = Main.getInstance().getPlantTypeManager().getPlantById(plantId);
-        if (plant == null) {
-            return false;
-        }
-        ScriptTask scriptTask = plant.getScriptTask(taskConfigId);
-        if (scriptTask == null) {
+        if (!isStartable()) {
             return false;
         }
         // set new start time
@@ -60,18 +77,17 @@ public class PlantTask {
                     } catch (Exception e) {
                         // do nothing
                     }
-                    running = false;
                     Main.getInstance().getTaskManager().cancelTask(taskId.toString());
                 }, delay);
-        running = true;
+        // mark not paused
+        paused = false;
         return true;
     }
 
     public void pauseTask() {
         // try to cancel task
-        if (bukkitTask != null && running) {
-            bukkitTask.cancel();
-            running = false;
+        if (isRunning()) {
+            stopRunning();
             // figure out remaining time
             long millisPassed = System.currentTimeMillis()-taskStartTime;
             // subtract ticks passed from delay
@@ -79,14 +95,27 @@ public class PlantTask {
             if (delay < 0) {
                 delay = 0;
             }
-            // set task to null
-            bukkitTask = null;
         }
+        // set paused to true
+        paused = true;
     }
 
     public void cancelTask() {
-        pauseTask();
+        stopRunning();
         cancelled = true;
+    }
+
+    public void freezeTask() {
+        // pause task but keep initial paused state
+        boolean initialPause = paused;
+        pauseTask();
+        paused = initialPause;
+    }
+
+    public void unfreezeTask(Main main) {
+        if (!isPaused()) {
+            startTask(main);
+        }
     }
 
     public UUID getTaskId() {
@@ -125,11 +154,47 @@ public class PlantTask {
         this.delay = delay;
     }
 
+    public boolean isAutostart() {
+        return autostart;
+    }
+
+    public void setAutostart(boolean autostart) {
+        this.autostart = autostart;
+    }
+
+    public boolean isRunning() {
+        return bukkitTask != null;
+    }
+
+    private void stopRunning() {
+        if (bukkitTask != null) {
+            bukkitTask.cancel();
+            bukkitTask = null;
+        }
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
     public boolean isCancelled() {
         return cancelled;
     }
 
-    public boolean isRunning() {
-        return running;
+    public boolean isStartable() {
+        return !isCancelled() && !isRunning() && isValid();
     }
+
+    public boolean isValid() {
+        return scriptTask != null;
+    }
+
+    public void addHook(PlantHook hook) {
+        hooks.add(hook);
+    }
+
+    public ArrayList<PlantHook> getHooks() {
+        return hooks;
+    }
+
 }

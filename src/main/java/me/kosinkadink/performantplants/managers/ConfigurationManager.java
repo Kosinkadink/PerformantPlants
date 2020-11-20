@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
 import me.kosinkadink.performantplants.effects.*;
+import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
@@ -28,6 +29,7 @@ import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperati
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomLong;
 import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
+import me.kosinkadink.performantplants.scripting.storage.hooks.*;
 import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.*;
@@ -2725,6 +2727,7 @@ public class ConfigurationManager {
         return null;
     }
 
+    //region Plant Script Tasks
     HashMap<String, ScriptTask> loadPlantScriptTasks(ConfigurationSection section, String subsectionName, PlantData data, PlantData blankData) {
         if (section == null) {
             return null;
@@ -2816,10 +2819,189 @@ public class ConfigurationManager {
             }
             scriptTask.setCurrentBlock(currentBlock);
         }
-        // TODO: add hooks
+        // set autostart, if present
+        if (taskSection.isSet("autostart")) {
+            ScriptBlock currentBlock = createPlantScript(taskSection, "autostart", data);
+            if (currentBlock == null || !ScriptHelper.isBoolean(currentBlock)) {
+                main.getLogger().warning(String.format("Task's autostart must be ScriptType BOOLEAN in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            scriptTask.setAutostart(currentBlock);
+        }
+        // add hooks
+        ArrayList<ScriptHook> hooks = createPlantScriptHooks(scriptTask, taskSection, "hooks", data);
+        if (hooks == null) {
+            main.getLogger().warning(String.format("Task's hooks had issue loading in section: %s",
+                    section.getCurrentPath()));
+            return null;
+        }
+        for (ScriptHook hook : hooks) {
+            scriptTask.addHook(hook);
+        }
         // return created script task
         return scriptTask;
     }
+    //endregion
+
+    //region Plant Script Hooks
+    ArrayList<ScriptHook> createPlantScriptHooks(ScriptTask scriptTask, ConfigurationSection section, String subsectionName, PlantData data) {
+        // if section exists
+        ArrayList<ScriptHook> hooks = new ArrayList<ScriptHook>();
+        if (section.isSet(subsectionName)) {
+            ConfigurationSection hooksSection = section.getConfigurationSection(subsectionName);
+            // create hooks with START action
+            if (hooksSection.isSet("start")) {
+                ConfigurationSection typeSection = hooksSection.getConfigurationSection("start");
+                for (String hookName : typeSection.getKeys(false)) {
+                    ScriptHook hook = createPlantScriptHook(HookAction.START, scriptTask, typeSection, hookName, data);
+                    if (hook == null) {
+                        main.getLogger().warning(String.format("Hook '%s' with action START not added in section: %s",
+                                hookName, typeSection.getCurrentPath()));
+                        return null;
+                    }
+                    hooks.add(hook);
+                }
+            }
+            // create hooks with PAUSE action
+            if (hooksSection.isSet("pause")) {
+                ConfigurationSection typeSection = hooksSection.getConfigurationSection("pause");
+                for (String hookName : typeSection.getKeys(false)) {
+                    ScriptHook hook = createPlantScriptHook(HookAction.PAUSE, scriptTask, typeSection, hookName, data);
+                    if (hook == null) {
+                        main.getLogger().warning(String.format("Hook '%s' with action PAUSE not added in section: %s",
+                                hookName, typeSection.getCurrentPath()));
+                        return null;
+                    }
+                    hooks.add(hook);
+                }
+            }
+            // create hooks with CANCEL action
+            if (hooksSection.isSet("cancel")) {
+                ConfigurationSection typeSection = hooksSection.getConfigurationSection("cancel");
+                for (String hookName : typeSection.getKeys(false)) {
+                    ScriptHook hook = createPlantScriptHook(HookAction.CANCEL, scriptTask, typeSection, hookName, data);
+                    if (hook == null) {
+                        main.getLogger().warning(String.format("Hook '%s' with action CANCEL not added in section: %s",
+                                hookName, typeSection.getCurrentPath()));
+                        return null;
+                    }
+                    hooks.add(hook);
+                }
+            }
+        }
+        // return list
+        return hooks;
+    }
+
+    ScriptHook createPlantScriptHook(HookAction action, ScriptTask task, ConfigurationSection section, String subsectionName, PlantData data) {
+        ConfigurationSection hookSection = section.getConfigurationSection(subsectionName);
+        if (hookSection == null) {
+            return null;
+        }
+        String type = hookSection.getString("type");
+        if (type == null) {
+            main.getLogger().warning(String.format("Type not set for hook in section: %s", hookSection.getCurrentPath()));
+            return null;
+        }
+        // create hook from matching type
+        ScriptHook scriptHook = null;
+        switch (type) {
+            case "player_alive":
+                scriptHook = createPlantScriptHookPlayerAlive(action, task, hookSection, data); break;
+            case "player_dead":
+                scriptHook = createPlantScriptHookPlayerDead(action, task, hookSection, data); break;
+            case "player_online":
+                scriptHook = createPlantScriptHookPlayerOnline(action, task, hookSection, data); break;
+            case "player_offline":
+                scriptHook = createPlantScriptHookPlayerOffline(action, task, hookSection, data); break;
+            default:
+                main.getLogger().warning(String.format("Type '%s' not recognized as a hook in section: %s",
+                        type, hookSection.getCurrentPath()));
+                return null;
+        }
+        return scriptHook;
+    }
+
+    ArrayList<ScriptBlock> createPlantScriptHookPlayerInputs(ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = new ArrayList<>();
+        // get current-player block, if set
+        if (section.isSet("current-player")) {
+            ScriptBlock currentPlayer = createPlantScript(section, "current-player", data);
+            if (currentPlayer == null || !ScriptHelper.isBoolean(currentPlayer)) {
+                main.getLogger().warning(String.format("Hook's current-player must be ScriptType BOOLEAN in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            playerHookInputs.add(currentPlayer);
+        } else {
+            // otherwise set to scriptTask's default value
+            playerHookInputs.add(task.getCurrentPlayer());
+        }
+        // get player-id block, if set
+        if (section.isSet("player-id")) {
+            ScriptBlock playerId = createPlantScript(section, "player-id", data);
+            if (playerId == null || !ScriptHelper.isString(playerId)) {
+                main.getLogger().warning(String.format("Hook's player-id must be ScriptType STRING in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            playerHookInputs.add(playerId);
+        } else {
+            // otherwise set to scriptTask's default value
+            playerHookInputs.add(task.getPlayerId());
+        }
+        // verify list of length 2 as expected
+        if (playerHookInputs.size() != 2) {
+            return null;
+        }
+        return playerHookInputs;
+    }
+
+    ScriptHookPlayerAlive createPlantScriptHookPlayerAlive(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = createPlantScriptHookPlayerInputs(task, section, data);
+        if (playerHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlayerAlive hook = new ScriptHookPlayerAlive(action);
+        hook.setCurrentPlayer(playerHookInputs.get(0));
+        hook.setPlayerId(playerHookInputs.get(1));
+        return hook;
+    }
+
+    ScriptHookPlayerDead createPlantScriptHookPlayerDead(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = createPlantScriptHookPlayerInputs(task, section, data);
+        if (playerHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlayerDead hook = new ScriptHookPlayerDead(action);
+        hook.setCurrentPlayer(playerHookInputs.get(0));
+        hook.setPlayerId(playerHookInputs.get(1));
+        return hook;
+    }
+
+    ScriptHookPlayerOnline createPlantScriptHookPlayerOnline(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = createPlantScriptHookPlayerInputs(task, section, data);
+        if (playerHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlayerOnline hook = new ScriptHookPlayerOnline(action);
+        hook.setCurrentPlayer(playerHookInputs.get(0));
+        hook.setPlayerId(playerHookInputs.get(1));
+        return hook;
+    }
+
+    ScriptHookPlayerOffline createPlantScriptHookPlayerOffline(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = createPlantScriptHookPlayerInputs(task, section, data);
+        if (playerHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlayerOffline hook = new ScriptHookPlayerOffline(action);
+        hook.setCurrentPlayer(playerHookInputs.get(0));
+        hook.setPlayerId(playerHookInputs.get(1));
+        return hook;
+    }
+    //endregion
 
     HashMap<String, ScriptBlock> loadPlantScriptBlocks(ConfigurationSection section, String subsectionName, PlantData data) {
         if (section == null) {
@@ -3490,9 +3672,18 @@ public class ConfigurationManager {
                 return null;
             }
         }
+        // get autostart, if present
+        ScriptBlock autostart = scriptTask.getAutostart();
+        if (section.isSet("autostart")) {
+            autostart = createPlantScript(section, "autostart", data);
+            if (autostart == null || !ScriptHelper.isBoolean(autostart)) {
+                main.getLogger().warning("Autostart must be ScriptType BOOLEAN in section: " + section.getCurrentPath());
+                return null;
+            }
+        }
         // return operation
         return new ScriptOperationScheduleTask(data.getPlant().getId(), taskConfigId, delay,
-                currentPlayer, currentBlock, playerId);
+                currentPlayer, currentBlock, playerId, autostart);
     }
 
     ScriptOperation createScriptOperationCancelTask(ConfigurationSection section, PlantData data) {
