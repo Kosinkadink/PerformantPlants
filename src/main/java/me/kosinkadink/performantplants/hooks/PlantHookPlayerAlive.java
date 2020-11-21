@@ -7,8 +7,8 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 
 public class PlantHookPlayerAlive extends PlantHookPlayer {
-    public PlantHookPlayerAlive(UUID taskId, HookAction action, OfflinePlayer offlinePlayer) {
-        super(taskId, action, offlinePlayer);
+    public PlantHookPlayerAlive(UUID taskId, HookAction action, String hookConfigId, OfflinePlayer offlinePlayer) {
+        super(taskId, action, hookConfigId, offlinePlayer);
     }
 
     @Override

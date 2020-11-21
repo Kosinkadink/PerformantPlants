@@ -16,6 +16,6 @@ public class ScriptHookPlayerAlive extends ScriptHookPlayer {
 
     @Override
     public PlantHook createPlantHook(UUID taskId, Player player, PlantBlock plantBlock) {
-        return new PlantHookPlayerAlive(taskId, action, createOfflinePlayer(player, plantBlock));
+        return new PlantHookPlayerAlive(taskId, action, hookConfigId, createOfflinePlayer(player, plantBlock));
     }
 }

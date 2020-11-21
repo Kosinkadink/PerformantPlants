@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.scripting.storage.hooks;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.hooks.PlantHook;
-import me.kosinkadink.performantplants.hooks.PlantHookPlayerAlive;
 import me.kosinkadink.performantplants.hooks.PlantHookPlayerOffline;
 import org.bukkit.entity.Player;
 
@@ -17,6 +16,6 @@ public class ScriptHookPlayerOffline extends ScriptHookPlayer {
 
     @Override
     public PlantHook createPlantHook(UUID taskId, Player player, PlantBlock plantBlock) {
-        return new PlantHookPlayerOffline(taskId, action, createOfflinePlayer(player, plantBlock));
+        return new PlantHookPlayerOffline(taskId, action, hookConfigId, createOfflinePlayer(player, plantBlock));
     }
 }

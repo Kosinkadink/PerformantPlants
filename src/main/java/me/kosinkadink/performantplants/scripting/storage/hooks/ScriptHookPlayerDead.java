@@ -16,6 +16,6 @@ public class ScriptHookPlayerDead extends ScriptHookPlayer {
 
     @Override
     public PlantHook createPlantHook(UUID taskId, Player player, PlantBlock plantBlock) {
-        return new PlantHookPlayerDead(taskId, action, createOfflinePlayer(player, plantBlock));
+        return new PlantHookPlayerDead(taskId, action, hookConfigId, createOfflinePlayer(player, plantBlock));
     }
 }

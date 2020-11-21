@@ -2920,6 +2920,8 @@ public class ConfigurationManager {
                         type, hookSection.getCurrentPath()));
                 return null;
         }
+        // set script block + config id, if applicable
+        scriptHook = createPlantScriptHookScriptBlockAndConfigId(scriptHook, action, hookSection, data);
         return scriptHook;
     }
 
@@ -2956,6 +2958,22 @@ public class ConfigurationManager {
             return null;
         }
         return playerHookInputs;
+    }
+
+    ScriptHook createPlantScriptHookScriptBlockAndConfigId(ScriptHook hook, HookAction action, ConfigurationSection section, PlantData data) {
+        if (hook == null) {
+            return null;
+        }
+        if (section.isSet("plant-script")) {
+            ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+            if (scriptBlock == null) {
+                main.getLogger().warning("Plant-script section is not valid plant script block in section: " + section.getCurrentPath());
+                return null;
+            }
+            hook.setHookConfigId(action.toString() + "." + section.getName());
+            hook.setHookScriptBlock(scriptBlock);
+        }
+        return hook;
     }
 
     ScriptHookPlayerAlive createPlantScriptHookPlayerAlive(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {

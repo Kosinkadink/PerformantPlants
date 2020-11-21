@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public class PlantHookPlayerDead extends PlantHookPlayer {
 
-    public PlantHookPlayerDead(UUID taskId, HookAction action, OfflinePlayer offlinePlayer) {
-        super(taskId, action, offlinePlayer);
+    public PlantHookPlayerDead(UUID taskId, HookAction action, String hookConfigId, OfflinePlayer offlinePlayer) {
+        super(taskId, action, hookConfigId, offlinePlayer);
     }
 
     @Override

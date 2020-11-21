@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.hooks;
 
 import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.tasks.PlantTask;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -11,16 +12,20 @@ public abstract class PlantHook {
     protected final UUID taskId;
     protected final HookAction action;
 
-    public PlantHook(UUID hookId, UUID taskId, HookAction action) {
+    protected String hookConfigId = "";
+
+    public PlantHook(UUID hookId, UUID taskId, HookAction action, String hookConfigId) {
         this.hookId = hookId;
         this.taskId = taskId;
         this.action = action;
+        this.hookConfigId = hookConfigId;
     }
 
-    public PlantHook(UUID taskId, HookAction action) {
+    public PlantHook(UUID taskId, HookAction action, String hookConfigId) {
         hookId = UUID.randomUUID();
         this.taskId = taskId;
         this.action = action;
+        this.hookConfigId = hookConfigId;
     }
 
     public UUID getTaskId() {
@@ -30,6 +35,19 @@ public abstract class PlantHook {
     public HookAction getAction() {
         return action;
     }
+
+    public String getHookConfigId() {
+        return hookConfigId;
+    }
+
+    public void setHookConfigId(String hookConfigId) {
+        if (hookConfigId == null) {
+            hookConfigId = "";
+        }
+        this.hookConfigId = hookConfigId;
+    }
+
+    public abstract boolean performScriptBlock(PlantTask task);
 
     /**
      * @return false if task got cancelled, true otherwise
@@ -48,13 +66,13 @@ public abstract class PlantHook {
     private boolean doActionOnTask() {
         switch(action) {
             case START:
-                Main.getInstance().getTaskManager().resumeTask(taskId.toString());
+                Main.getInstance().getTaskManager().resumeTask(taskId.toString(), this);
                 return true;
             case PAUSE:
-                Main.getInstance().getTaskManager().pauseTask(taskId.toString());
+                Main.getInstance().getTaskManager().pauseTask(taskId.toString(), this);
                 return true;
             case CANCEL:
-                Main.getInstance().getTaskManager().cancelTask(taskId.toString());
+                Main.getInstance().getTaskManager().cancelTask(taskId.toString(), this);
                 return false;
             default:
                 return false;

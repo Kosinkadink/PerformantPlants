@@ -22,7 +22,7 @@ public class ScriptOperationCancelTask extends ScriptOperation {
             return ScriptResult.FALSE;
         }
         // return whether cancellation was successful
-        return new ScriptResult(Main.getInstance().getTaskManager().cancelTask(taskId));
+        return new ScriptResult(Main.getInstance().getTaskManager().cancelTask(taskId, null));
     }
 
     @Override

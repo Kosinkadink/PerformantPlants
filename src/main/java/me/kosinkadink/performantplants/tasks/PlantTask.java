@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.hooks.PlantHook;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
+import me.kosinkadink.performantplants.util.PlayerHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitTask;
@@ -58,6 +59,10 @@ public class PlantTask {
         }
     }
 
+    public ScriptTask getScriptTask() {
+        return scriptTask;
+    }
+
     public boolean startTask(Main main) {
         // if task already exists, do nothing
         if (!isStartable()) {
@@ -68,23 +73,21 @@ public class PlantTask {
         // start script task
         bukkitTask = Main.getInstance().getServer().getScheduler().runTaskLater(Main.getInstance(),
                 () -> {
-                    PlantBlock plantBlock = null;
-                    if (blockLocation != null) {
-                        plantBlock = Main.getInstance().getPlantManager().getPlantBlock(blockLocation);
-                    }
                     try {
-                        scriptTask.getTaskScriptBlock().loadValue(plantBlock, offlinePlayer.getPlayer());
+                        scriptTask.getTaskScriptBlock().loadValue(getPlantBlock(), PlayerHelper.getFreshPlayer(offlinePlayer));
                     } catch (Exception e) {
                         // do nothing
                     }
-                    Main.getInstance().getTaskManager().cancelTask(taskId.toString());
+                    Main.getInstance().getTaskManager().cancelTask(taskId.toString(), null);
                 }, delay);
         // mark not paused
         paused = false;
         return true;
     }
 
-    public void pauseTask() {
+    public boolean pauseTask() {
+        // set paused to true
+        paused = true;
         // try to cancel task
         if (isRunning()) {
             stopRunning();
@@ -95,14 +98,18 @@ public class PlantTask {
             if (delay < 0) {
                 delay = 0;
             }
+            return true;
         }
-        // set paused to true
-        paused = true;
+        return false;
     }
 
-    public void cancelTask() {
-        stopRunning();
-        cancelled = true;
+    public boolean cancelTask() {
+        if (!isCancelled()) {
+            stopRunning();
+            cancelled = true;
+            return true;
+        }
+        return false;
     }
 
     public void freezeTask() {
@@ -144,6 +151,14 @@ public class PlantTask {
 
     public void setBlockLocation(BlockLocation blockLocation) {
         this.blockLocation = blockLocation;
+    }
+
+    public PlantBlock getPlantBlock() {
+        PlantBlock plantBlock = null;
+        if (blockLocation != null) {
+            plantBlock = Main.getInstance().getPlantManager().getPlantBlock(blockLocation);
+        }
+        return plantBlock;
     }
 
     public long getDelay() {

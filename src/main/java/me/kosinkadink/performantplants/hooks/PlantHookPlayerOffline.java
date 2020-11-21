@@ -6,8 +6,8 @@ import java.util.UUID;
 
 public class PlantHookPlayerOffline extends PlantHookPlayer {
 
-    public PlantHookPlayerOffline(UUID taskId, HookAction action, OfflinePlayer offlinePlayer) {
-        super(taskId, action, offlinePlayer);
+    public PlantHookPlayerOffline(UUID taskId, HookAction action, String hookConfigId, OfflinePlayer offlinePlayer) {
+        super(taskId, action, hookConfigId, offlinePlayer);
     }
 
     @Override

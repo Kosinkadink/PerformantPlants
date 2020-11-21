@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.Main;
 import me.kosinkadink.performantplants.hooks.*;
+import me.kosinkadink.performantplants.scripting.storage.hooks.ScriptHook;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 import org.bukkit.entity.Player;
 
@@ -38,7 +39,7 @@ public class TaskManager {
                 boolean startedTask = task.startTask(main);
                 // if failed to start, cancel task and return false
                 if (!startedTask) {
-                    cancelTask(task.getTaskId().toString());
+                    cancelTask(task.getTaskId().toString(), null);
                     return false;
                 }
             } else {
@@ -59,13 +60,18 @@ public class TaskManager {
         return false;
     }
 
-    public boolean resumeTask(String taskId) {
+    public boolean resumeTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
             if (main.getConfigManager().getConfigSettings().isDebug()) {
                 main.getLogger().info("Resuming task with id: " + taskId);
             }
-            return plantTask.startTask(main);
+            boolean started = plantTask.startTask(main);
+            if (started) {
+                // perform hook script block
+                performHookScriptBlock(hook, plantTask);
+            }
+            return started;
         }
         return false;
     }
@@ -76,25 +82,34 @@ public class TaskManager {
         }
     }
 
-    public boolean pauseTask(String taskId) {
+    public boolean pauseTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
             if (main.getConfigManager().getConfigSettings().isDebug()) {
                 main.getLogger().info("Pausing task with id: " + taskId);
             }
-            plantTask.pauseTask();
+            boolean paused = plantTask.pauseTask();
+            if (paused) {
+                // perform hook script block
+                performHookScriptBlock(hook, plantTask);
+            }
             return true;
         }
         return false;
     }
 
-    public boolean cancelTask(String taskId) {
+    public boolean cancelTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
             if (main.getConfigManager().getConfigSettings().isDebug()) {
                 main.getLogger().info("Cancelling task with id: " + taskId);
             }
-            plantTask.cancelTask();
+            boolean cancelled = plantTask.cancelTask();
+            if (cancelled) {
+                // perform hook script block
+                performHookScriptBlock(hook, plantTask);
+            }
+            // remove task
             removeTaskId(taskId);
             return true;
         }
@@ -170,14 +185,21 @@ public class TaskManager {
         for (PlantHook hook : hookIdSet) {
             switch(hook.getAction()) {
                 case START:
-                    return resumeTask(hook.getTaskId().toString());
+                    return resumeTask(hook.getTaskId().toString(), hook);
                 case PAUSE:
-                    return pauseTask(hook.getTaskId().toString());
+                    return pauseTask(hook.getTaskId().toString(), hook);
                 case CANCEL:
-                    return cancelTask(hook.getTaskId().toString());
+                    return cancelTask(hook.getTaskId().toString(), hook);
             }
         }
         return true;
+    }
+
+    private boolean performHookScriptBlock(PlantHook hook, PlantTask task) {
+        if (hook != null) {
+            return hook.performScriptBlock(task);
+        }
+        return false;
     }
     //endregion
 

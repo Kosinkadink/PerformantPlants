@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptTask {
 
@@ -25,6 +26,7 @@ public class ScriptTask {
     private ScriptBlock currentBlock = ScriptResult.TRUE;
     private ScriptBlock playerId = ScriptResult.EMPTY;
     private final ArrayList<ScriptHook> hooks = new ArrayList<>();
+    private final ConcurrentHashMap<String, ScriptHook> hookMap = new ConcurrentHashMap<>();
 
 
     public ScriptTask(String plantId, String taskConfigId) {
@@ -159,6 +161,21 @@ public class ScriptTask {
 
     public void addHook(ScriptHook scriptHook) {
         hooks.add(scriptHook);
+        if (!scriptHook.getHookConfigId().isEmpty()) {
+            hookMap.put(scriptHook.getHookConfigId(), scriptHook);
+        }
+    }
+
+    public ScriptHook getHook(String hookConfigId) {
+        return hookMap.get(hookConfigId);
+    }
+
+    public ScriptBlock getHookScriptBlock(String hookConfigId) {
+        ScriptHook hook = getHook(hookConfigId);
+        if (hook != null) {
+            return hook.getHookScriptBlock();
+        }
+        return null;
     }
 
     public ScriptBlock getAutostart() {
