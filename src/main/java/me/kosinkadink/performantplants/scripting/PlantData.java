@@ -61,7 +61,7 @@ public class PlantData {
             if (!data.containsKey(key)) {
                 return false;
             }
-            if (data.get(key) != otherPlantData.data.get(key)) {
+            if (!data.get(key).equals(otherPlantData.data.get(key))) {
                 return false;
             }
         }

@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.tasks;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.hooks.PlantHook;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -50,7 +50,7 @@ public class PlantTask {
 
     private void setupScriptTask() {
         // get task based on plant and task config id
-        Plant plant = Main.getInstance().getPlantTypeManager().getPlantById(plantId);
+        Plant plant = PerformantPlants.getInstance().getPlantTypeManager().getPlantById(plantId);
         if (plant != null) {
             ScriptTask scriptTask = plant.getScriptTask(taskConfigId);
             if (scriptTask != null) {
@@ -63,7 +63,7 @@ public class PlantTask {
         return scriptTask;
     }
 
-    public boolean startTask(Main main) {
+    public boolean startTask(PerformantPlants performantPlants) {
         // if task already exists, do nothing
         if (!isStartable()) {
             return false;
@@ -71,14 +71,14 @@ public class PlantTask {
         // set new start time
         taskStartTime = System.currentTimeMillis();
         // start script task
-        bukkitTask = Main.getInstance().getServer().getScheduler().runTaskLater(Main.getInstance(),
+        bukkitTask = PerformantPlants.getInstance().getServer().getScheduler().runTaskLater(PerformantPlants.getInstance(),
                 () -> {
                     try {
                         scriptTask.getTaskScriptBlock().loadValue(getPlantBlock(), PlayerHelper.getFreshPlayer(offlinePlayer));
                     } catch (Exception e) {
                         // do nothing
                     }
-                    Main.getInstance().getTaskManager().cancelTask(taskId.toString(), null);
+                    PerformantPlants.getInstance().getTaskManager().cancelTask(taskId.toString(), null);
                 }, delay);
         // mark not paused
         paused = false;
@@ -119,9 +119,9 @@ public class PlantTask {
         paused = initialPause;
     }
 
-    public void unfreezeTask(Main main) {
+    public void unfreezeTask(PerformantPlants performantPlants) {
         if (!isPaused()) {
-            startTask(main);
+            startTask(performantPlants);
         }
     }
 
@@ -156,7 +156,7 @@ public class PlantTask {
     public PlantBlock getPlantBlock() {
         PlantBlock plantBlock = null;
         if (blockLocation != null) {
-            plantBlock = Main.getInstance().getPlantManager().getPlantBlock(blockLocation);
+            plantBlock = PerformantPlants.getInstance().getPlantManager().getPlantBlock(blockLocation);
         }
         return plantBlock;
     }

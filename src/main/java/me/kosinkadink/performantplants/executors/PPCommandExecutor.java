@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.executors;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.commands.PPCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,10 +11,10 @@ import java.util.Arrays;
 
 public class PPCommandExecutor implements CommandExecutor {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PPCommandExecutor(Main mainClass) {
-        main = mainClass;
+    public PPCommandExecutor(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     @Override
@@ -26,7 +26,7 @@ public class PPCommandExecutor implements CommandExecutor {
         }
         // find if args match a set of command words
         boolean matches;
-        for (PPCommand ppCommand : main.getCommandManager().getRegisteredCommands()) {
+        for (PPCommand ppCommand : performantPlants.getCommandManager().getRegisteredCommands()) {
             matches = true;
             // if command words are longer than args, go to next command
             if (ppCommand.getCommandNameWords().length > args.length) {

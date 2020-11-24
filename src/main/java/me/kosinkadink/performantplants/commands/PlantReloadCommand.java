@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -8,31 +8,31 @@ import java.util.List;
 
 public class PlantReloadCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantReloadCommand(Main mainClass) {
+    public PlantReloadCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "reload" },
                 "Reloads plant configs and all plant blocks.",
                 "/pp reload",
                 "performantplants.reload",
                 0,
                 0);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         // send start message
         String startMessage = "Reloading PerformantPlants, this might take a bit...";
-        main.getLogger().info(startMessage);
+        performantPlants.getLogger().info(startMessage);
         if (commandSender instanceof Player) {
             commandSender.sendMessage(startMessage);
         }
         // perform reload
-        main.manualReload();
+        performantPlants.manualReload();
         // send end message
         String endMessage = "PerformantPlants reload completed.";
-        main.getLogger().info(endMessage);
+        performantPlants.getLogger().info(endMessage);
         if (commandSender instanceof Player) {
             commandSender.sendMessage(endMessage);
         }

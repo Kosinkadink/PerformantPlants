@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants.storage;
 
-import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.builders.PlantItemBuilder;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.block.BlockFace;
@@ -37,7 +36,7 @@ public class PlantInteractStorage {
             if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
                 if (plantInteract.isMatchMaterial()) {
                     if (itemStack.getType() != plantInteract.getItemStack().getType() ||
-                            Main.getInstance().getPlantTypeManager().isPlantItemStack(itemStack)) {
+                            PerformantPlants.getInstance().getPlantTypeManager().isPlantItemStack(itemStack)) {
                         continue;
                     }
                 }

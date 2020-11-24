@@ -85,7 +85,7 @@ public class TestScriptHelper {
         PlantBlock plantBlock = new PlantBlock(blockLocation, plant, false);
         plantBlock.setPlantData(new PlantData(jsonObject));
         // create expectations
-        String replaceMultipleDifferent = "There are $amount$ apples in $playerName$'s inventory at coords: ($_x$,$_y$,$_z$) in world: $_world$ with plant id: $_plantId$.";
+        String replaceMultipleDifferent = "There are $amount$ apples in $playerName$'s inventory at coords: ($_x$,$_y$,$_z$) in world: $_world$ with plant id: $_plant_id$.";
         String replaceMultipleDifferentExpected = "There are 24 apples in TESTPLAYER's inventory at coords: (25,50,75) in world: Test with plant id: testPlant.";
         assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(plantBlock, replaceMultipleDifferent));
     }

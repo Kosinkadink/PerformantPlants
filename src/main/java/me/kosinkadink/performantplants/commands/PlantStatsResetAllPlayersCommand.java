@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.InvocationTargetException;
@@ -10,25 +10,25 @@ import java.util.List;
 
 public class PlantStatsResetAllPlayersCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
     private HashMap<String, Method> statMethodMap = new HashMap<>();
 
-    public PlantStatsResetAllPlayersCommand(Main mainClass) {
+    public PlantStatsResetAllPlayersCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "stats", "resetallplayers" },
                 "Resets specific stat for all players.",
                 "/pp stats resetallplayers <stat>",
                 "performantplants.stats.resetallplayers",
                 1,
                 1);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
         fillInStatMethodMap();
     }
 
     void fillInStatMethodMap() {
         try {
             statMethodMap.put("sold",
-                    main.getStatisticsManager().getClass().getMethod("resetAllPlantItemsSoldForAllPlayers"));
+                    performantPlants.getStatisticsManager().getClass().getMethod("resetAllPlantItemsSoldForAllPlayers"));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -42,7 +42,7 @@ public class PlantStatsResetAllPlayersCommand extends PPCommand {
         Method method = statMethodMap.get(stat);
         if (method != null) {
             try {
-                method.invoke(main.getStatisticsManager());
+                method.invoke(performantPlants.getStatisticsManager());
                 commandSender.sendMessage(String.format("Stat '%s' reset for all players", stat));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();

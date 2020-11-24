@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -54,7 +54,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
                     if (MetadataHelper.hasPlantBlockMetadata(absoluteBlock) && !growthStageBlock.isReplacePlantBlock()) {
                         continue;
                     } else {
-                        BlockHelper.destroyPlantBlock(Main.getInstance(),absoluteBlock, false);
+                        BlockHelper.destroyPlantBlock(PerformantPlants.getInstance(),absoluteBlock, false);
                     }
                     if (!absoluteBlock.isEmpty() && !growthStageBlock.isReplaceVanillaBlock()) {
                         continue;
@@ -74,7 +74,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
                 // set parent to be effectivePlantBlock
                 newPlantBlock.setParentLocation(effectivePlantBlock.getLocation());
                 // add plant block via plantManager
-                Main.getInstance().getPlantManager().addPlantBlock(newPlantBlock);
+                PerformantPlants.getInstance().getPlantManager().addPlantBlock(newPlantBlock);
                 // if has childOf set, add to blocksAdded
                 if (growthStageBlock.hasChildOf()) {
                     blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
@@ -88,7 +88,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
             // get guardian location
             BlockLocation guardianLocation = effectivePlantBlock.getLocation().getLocationFromRelative(growthStageBlock.getChildOf());
             // get guardian block
-            PlantBlock guardianBlock = Main.getInstance().getPlantManager().getPlantBlock(guardianLocation);
+            PlantBlock guardianBlock = PerformantPlants.getInstance().getPlantManager().getPlantBlock(guardianLocation);
             if (guardianBlock != null) {
                 // add guardian to plant block
                 newPlantBlock.setGuardianLocation(guardianLocation);

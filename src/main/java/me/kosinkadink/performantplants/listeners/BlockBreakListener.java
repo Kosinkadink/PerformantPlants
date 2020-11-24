@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.listeners;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBreakEvent;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -10,10 +10,10 @@ import org.bukkit.event.block.BlockBreakEvent;
 
 public class BlockBreakListener implements Listener {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public BlockBreakListener(Main mainClass) {
-        main = mainClass;
+    public BlockBreakListener(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     @EventHandler
@@ -22,16 +22,16 @@ public class BlockBreakListener implements Listener {
         if (!event.isCancelled() &&
                 MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
-            PlantBlock plantBlock = main.getPlantManager().getPlantBlock(event.getBlock());
+            PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(event.getBlock());
             // if plant block is registered, call plant break event
             if (plantBlock != null) {
-                main.getServer().getPluginManager().callEvent(
+                performantPlants.getServer().getPluginManager().callEvent(
                         new PlantBreakEvent(event.getPlayer(), plantBlock, event.getBlock())
                 );
             }
             // otherwise, remove faulty metadata
             else {
-                MetadataHelper.removePlantBlockMetadata(main, event.getBlock());
+                MetadataHelper.removePlantBlockMetadata(performantPlants, event.getBlock());
             }
         }
     }

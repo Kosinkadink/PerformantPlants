@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import org.bukkit.command.CommandSender;
 
@@ -9,16 +9,16 @@ import java.util.List;
 
 public class PlantTagAddCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantTagAddCommand(Main mainClass) {
+    public PlantTagAddCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "tag", "add" },
                 "Add plant ids to existing tag.",
                 "/pp tag add <tag-id> <plant-ids,comma,separated>",
                 "performantplants.tag.add",
                 2,
                 2);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class PlantTagAddCommand extends PPCommand {
             return;
         }
         // see if tag exists
-        StatisticsTagStorage storage = main.getStatisticsManager().getPlantTag(tagId);
+        StatisticsTagStorage storage = performantPlants.getStatisticsManager().getPlantTag(tagId);
         if (storage == null) {
             commandSender.sendMessage(String.format("Tag '%s' does not exist", tagId));
             return;
@@ -44,8 +44,8 @@ public class PlantTagAddCommand extends PPCommand {
         ArrayList<String> plantIdsAdded = new ArrayList<>();
         ArrayList<String> plantIdsNotAdded = new ArrayList<>();
         for (String plantId : plantIdList) {
-            if (main.getPlantTypeManager().getPlantById(plantId) != null) {
-                main.getStatisticsManager().addPlantId(tagId, plantId);
+            if (performantPlants.getPlantTypeManager().getPlantById(plantId) != null) {
+                performantPlants.getStatisticsManager().addPlantId(tagId, plantId);
                 plantIdsAdded.add(plantId);
             } else {
                 plantIdsNotAdded.add(plantId);

@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
@@ -19,7 +19,7 @@ public class PlayerHelper {
         if (offlinePlayer == null) {
             return null;
         }
-        return Main.getInstance().getServer().getOfflinePlayer(offlinePlayer.getUniqueId());
+        return PerformantPlants.getInstance().getServer().getOfflinePlayer(offlinePlayer.getUniqueId());
     }
 
     public static Player getFreshPlayer(OfflinePlayer offlinePlayer) {

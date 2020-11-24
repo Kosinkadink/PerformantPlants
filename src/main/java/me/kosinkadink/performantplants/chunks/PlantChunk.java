@@ -1,11 +1,10 @@
 package me.kosinkadink.performantplants.chunks;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantChunk {
@@ -66,17 +65,17 @@ public class PlantChunk {
         return location.getChunk().isLoaded();
     }
 
-    public void load(Main main) {
+    public void load(PerformantPlants performantPlants) {
         // start up task for each plantBlock
-        plantBlocks.forEach((blockLocation, plantBlock) -> main.getPlantManager().startGrowthTask(plantBlock));
+        plantBlocks.forEach((blockLocation, plantBlock) -> performantPlants.getPlantManager().startGrowthTask(plantBlock));
         loaded = true;
         // mark as loaded since save
         loadedSinceSave = true;
     }
 
-    public void unload(Main main) {
+    public void unload(PerformantPlants performantPlants) {
         // pause task for each plantBlock
-        plantBlocks.forEach((blockLocation, plantBlock) -> main.getPlantManager().pauseGrowthTask(plantBlock));
+        plantBlocks.forEach((blockLocation, plantBlock) -> performantPlants.getPlantManager().pauseGrowthTask(plantBlock));
         loaded = false;
     }
 

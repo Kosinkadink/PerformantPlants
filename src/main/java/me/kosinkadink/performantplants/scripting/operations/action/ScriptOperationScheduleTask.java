@@ -1,15 +1,12 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-
-import java.util.UUID;
 
 public class ScriptOperationScheduleTask extends ScriptOperation {
 
@@ -46,7 +43,7 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
 
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        Plant plant = Main.getInstance().getPlantTypeManager().getPlantById(plantId);
+        Plant plant = PerformantPlants.getInstance().getPlantTypeManager().getPlantById(plantId);
         if (plant == null) {
             return ScriptResult.EMPTY;
         }
@@ -68,7 +65,7 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
             return ScriptResult.EMPTY;
         }
         // attempt to schedule task and return result
-        if (Main.getInstance().getTaskManager().scheduleTask(plantTask)) {
+        if (PerformantPlants.getInstance().getTaskManager().scheduleTask(plantTask)) {
             return new ScriptResult(plantTask.getTaskId().toString());
         }
         return ScriptResult.EMPTY;

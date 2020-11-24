@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.PlantRecipe;
 import org.bukkit.inventory.*;
 
@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 public class RecipeManager {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
     private HashMap<String, PlantRecipe> shapedRecipeMap = new HashMap<>();
     private HashMap<String, PlantRecipe> shapelessRecipeMap = new HashMap<>();
@@ -18,8 +18,8 @@ public class RecipeManager {
     private HashMap<String, CampfireRecipe> campfireRecipeMap = new HashMap<>();
     private HashMap<String, StonecuttingRecipe> stonecuttingRecipeMap = new HashMap<>();
 
-    public RecipeManager(Main main) {
-        this.main = main;
+    public RecipeManager(PerformantPlants performantPlants) {
+        this.performantPlants = performantPlants;
     }
 
     public boolean isRecipe(Recipe recipe) {
@@ -138,25 +138,25 @@ public class RecipeManager {
     private void clearRecipe(Recipe recipe) {
         if (recipe instanceof ShapedRecipe) {
             ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof ShapelessRecipe) {
             ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof FurnaceRecipe) {
             FurnaceRecipe convertedRecipe = (FurnaceRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof BlastingRecipe) {
             BlastingRecipe convertedRecipe = (BlastingRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof SmokingRecipe) {
             SmokingRecipe convertedRecipe = (SmokingRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof CampfireRecipe) {
             CampfireRecipe convertedRecipe = (CampfireRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         } else if (recipe instanceof StonecuttingRecipe) {
             StonecuttingRecipe convertedRecipe = (StonecuttingRecipe) recipe;
-            main.getServer().removeRecipe(convertedRecipe.getKey());
+            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
         }
     }
 

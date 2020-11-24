@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.storage;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -14,20 +14,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantChunkStorage {
 
-    private Main main;
+    private PerformantPlants performantPlants;
     private String world;
     private ConcurrentHashMap<ChunkLocation, PlantChunk> plantChunks = new ConcurrentHashMap<>();
     private HashSet<BlockLocation> blockLocationsToDelete = new HashSet<>();
 
-    public PlantChunkStorage(Main mainClass, String world) {
-        main = mainClass;
+    public PlantChunkStorage(PerformantPlants performantPlantsClass, String world) {
+        performantPlants = performantPlantsClass;
         this.world = world;
     }
 
     public void unloadAll() {
         for (PlantChunk plantChunk : plantChunks.values()) {
             if (plantChunk.isLoaded()) {
-                plantChunk.unload(main);
+                plantChunk.unload(performantPlants);
             }
         }
     }
@@ -48,7 +48,7 @@ public class PlantChunkStorage {
         // add plantBlock to plantChunk
         plantChunk.addPlantBlock(block);
         // add metadata to block
-        MetadataHelper.setPlantBlockMetadata(main, block);
+        MetadataHelper.setPlantBlockMetadata(performantPlants, block);
         // remove block from removal set
         removeBlockFromRemoval(block);
     }
@@ -64,8 +64,8 @@ public class PlantChunkStorage {
             // add block to removal set
             addBlockForRemoval(block);
             // remove metadata from block
-            MetadataHelper.removePlantBlockMetadata(main, block.getBlock());
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removed PlantBlock: " + block.toString()+ " from world: "
+            MetadataHelper.removePlantBlockMetadata(performantPlants, block.getBlock());
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removed PlantBlock: " + block.toString()+ " from world: "
                     + getWorldName()
             );
             // if no more plant blocks in plantChunk, remove plantChunk
@@ -99,7 +99,7 @@ public class PlantChunkStorage {
 
     public void addPlantChunk(PlantChunk chunk) {
         if (chunk.isChunkLoaded() && !chunk.isLoaded()) {
-            chunk.load(main);
+            chunk.load(performantPlants);
         }
         plantChunks.put(chunk.getLocation(), chunk);
         //if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Added PlantChunk: " + chunk.toString());
@@ -107,7 +107,7 @@ public class PlantChunkStorage {
 
     public void removePlantChunk(PlantChunk chunk) {
         plantChunks.remove(chunk.getLocation());
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removed PlantChunk: " + chunk.toString());
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removed PlantChunk: " + chunk.toString());
     }
 
     void addBlockForRemoval(PlantBlock block) {

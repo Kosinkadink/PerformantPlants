@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.scripting.storage;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.hooks.PlantHook;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
@@ -68,7 +68,7 @@ public class ScriptTask {
             if (!playerIdValue.isEmpty()) {
                 try {
                     UUID playerUUID = UUID.fromString(playerIdValue);
-                    offlinePlayer = Main.getInstance().getServer().getOfflinePlayer(playerUUID);
+                    offlinePlayer = PerformantPlants.getInstance().getServer().getOfflinePlayer(playerUUID);
                 } catch (IllegalArgumentException e) {
                     return null;
                 }

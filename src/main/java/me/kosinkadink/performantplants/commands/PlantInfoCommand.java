@@ -1,32 +1,30 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.clip.placeholderapi.PlaceholderAPI;
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.Plant;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
 public class PlantInfoCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantInfoCommand(Main mainClass) {
+    public PlantInfoCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "info" },
                 "Show plant info.",
                 "/pp info <plant-id>",
                 "performantplants.info",
                 1,
                 1);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         String plantId = argList.get(0);
         // get plant
-        Plant plant = main.getPlantTypeManager().getPlantById(plantId);
+        Plant plant = performantPlants.getPlantTypeManager().getPlantById(plantId);
         if (plant == null) {
             commandSender.sendMessage(String.format("Plant '%s' not recognized", plantId));
             return;

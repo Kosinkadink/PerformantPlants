@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import org.bukkit.command.CommandSender;
 
@@ -9,16 +9,16 @@ import java.util.List;
 
 public class PlantTagRemoveCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantTagRemoveCommand(Main mainClass) {
+    public PlantTagRemoveCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "tag", "remove" },
                 "Removes plant ids from tag; unregisters tag if no plant ids remaining.",
                 "/pp tag remove <tag-id> <plant-ids,comma,separated>",
                 "performantplants.tag.remove",
                 2,
                 2);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class PlantTagRemoveCommand extends PPCommand {
             return;
         }
         // see if tag exists
-        StatisticsTagStorage storage = main.getStatisticsManager().getPlantTag(tagId);
+        StatisticsTagStorage storage = performantPlants.getStatisticsManager().getPlantTag(tagId);
         if (storage == null) {
             commandSender.sendMessage(String.format("Tag '%s' does not exist", tagId));
             return;
@@ -44,7 +44,7 @@ public class PlantTagRemoveCommand extends PPCommand {
         ArrayList<String> plantIdsRemoved = new ArrayList<>();
         ArrayList<String> plantIdsNotRemoved = new ArrayList<>();
         for (String plantId : plantIdList) {
-            if (main.getStatisticsManager().removePlantId(tagId, plantId) != null) {
+            if (performantPlants.getStatisticsManager().removePlantId(tagId, plantId) != null) {
                 plantIdsRemoved.add(plantId);
             } else {
                 plantIdsNotRemoved.add(plantId);
@@ -54,7 +54,7 @@ public class PlantTagRemoveCommand extends PPCommand {
             commandSender.sendMessage("None of the plant ids were found stored in the tag; none removed");
             return;
         }
-        boolean allRemoved = main.getStatisticsManager().getPlantTag(tagId) == null;
+        boolean allRemoved = performantPlants.getStatisticsManager().getPlantTag(tagId) == null;
         if (allRemoved) {
             commandSender.sendMessage("Successfully removed plant ids; no plant ids left in tag, tag is now unregistered");
             return;

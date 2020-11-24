@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -28,15 +28,15 @@ import java.util.UUID;
 
 public class DatabaseManager {
 
-    private final Main main;
+    private final PerformantPlants performantPlants;
     private String storageDir = "storage/";
     private final HashMap<String, File> databaseFiles = new HashMap<>();
     private File statisticsDatabaseFile;
     private File globalDataDatabaseFile;
     private BukkitTask saveTask;
 
-    public DatabaseManager(Main mainClass) {
-        main = mainClass;
+    public DatabaseManager(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
         loadDatabases();
         // start up async background task to autosave blocks in db without the need to stop server
         startTask();
@@ -46,11 +46,11 @@ public class DatabaseManager {
 
     void loadDatabases() {
         // load per-world plant dbs
-        main.getLogger().info("Loading plant databases...");
+        performantPlants.getLogger().info("Loading plant databases...");
         for (World world : Bukkit.getWorlds()) {
             // check if db for world exists
             String worldName = world.getName();
-            File file = new File(main.getDataFolder(),storageDir + worldName);
+            File file = new File(performantPlants.getDataFolder(),storageDir + worldName);
             if (!file.exists()) {
                 // if doesn't exist, make sure directories are created
                 file.getParentFile().mkdirs();
@@ -61,15 +61,15 @@ public class DatabaseManager {
                 databaseFiles.put(worldName, file);
             }
         }
-        main.getLogger().info("Loaded plant databases");
+        performantPlants.getLogger().info("Loaded plant databases");
         // load statistics db; also created db file if doesn't already exist
-        File file = new File(main.getDataFolder(), storageDir + "statistics");
+        File file = new File(performantPlants.getDataFolder(), storageDir + "statistics");
         boolean loaded = loadStatisticsDatabase(file);
         if (loaded) {
             statisticsDatabaseFile = file;
         }
         // load global plant data db; also created db file if doesn't already exist
-        file = new File(main.getDataFolder(), storageDir + "global_data");
+        file = new File(performantPlants.getDataFolder(), storageDir + "global_data");
         loaded = loadGlobalDataDatabase(file);
         if (loaded) {
             globalDataDatabaseFile = file;
@@ -106,7 +106,7 @@ public class DatabaseManager {
         }
 
         // all done now
-        main.getLogger().info("Successfully loaded plant db at url: " + url);
+        performantPlants.getLogger().info("Successfully loaded plant db at url: " + url);
         return true;
     }
 
@@ -129,7 +129,7 @@ public class DatabaseManager {
             return false;
         }
         // all done now
-        main.getLogger().info("Successfully loaded statistics db at url: " + url);
+        performantPlants.getLogger().info("Successfully loaded statistics db at url: " + url);
         return true;
     }
 
@@ -147,7 +147,7 @@ public class DatabaseManager {
             return false;
         }
         // add done now
-        main.getLogger().info("Successfully loaded global data db at url: " + url);
+        performantPlants.getLogger().info("Successfully loaded global data db at url: " + url);
         return true;
     }
 
@@ -156,11 +156,11 @@ public class DatabaseManager {
     //region Save Data
 
     public void saveDatabases() {
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Saving plants into databases...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Saving plants into databases...");
         for (Map.Entry<String, File> entry : databaseFiles.entrySet()) {
             saveDatabase(entry.getValue(), entry.getKey());
         }
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Saved plants into databases");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Saved plants into databases");
         // save statistics db
         if (statisticsDatabaseFile != null) {
             saveStatisticsDatabase(statisticsDatabaseFile);
@@ -189,16 +189,16 @@ public class DatabaseManager {
         createTableGuardians(conn);
         createTableData(conn);
         // get plantChunkStorage for current world
-        PlantChunkStorage plantChunkStorage = main.getPlantManager().getPlantChunkStorage(worldName);
+        PlantChunkStorage plantChunkStorage = performantPlants.getPlantManager().getPlantChunkStorage(worldName);
         // remove any blocks set for removal
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing blocks from db for world: " + worldName + "...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing blocks from db for world: " + worldName + "...");
         ArrayList<BlockLocation> blocksToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
         for (BlockLocation blockLocation : new ArrayList<>(plantChunkStorage.getBlockLocationsToDelete())) {
             boolean success = removeBlockLocationFromTablePlantBlocks(conn, blockLocation);
@@ -214,7 +214,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
         // remove cached removal blocks from being removed next time
@@ -222,15 +222,15 @@ public class DatabaseManager {
             plantChunkStorage.removeBlockFromRemoval(blockLocation);
         }
         blocksToRemoveCache.clear();
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing blocks from db for world: " + worldName);
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing blocks from db for world: " + worldName);
         // add/update all blocks for each chunk
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating blocks in db for world: " + worldName + "...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating blocks in db for world: " + worldName + "...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
         int chunksSaved = 0;
         for (PlantChunk plantChunk : plantChunkStorage.getPlantChunks().values()) {
@@ -264,10 +264,10 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
         return true;
     }
 
@@ -290,16 +290,16 @@ public class DatabaseManager {
         //////////////////////////////////////////
         // PLANTS SOLD
         // remove any plantsSold set for removal
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing plantsSold from db for world...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing plantsSold from db for world...");
         ArrayList<StatisticsAmount> plantsSoldToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (StatisticsAmount plantsSold : new ArrayList<>(main.getStatisticsManager().getStatisticsAmountsToDelete())) {
+        for (StatisticsAmount plantsSold : new ArrayList<>(performantPlants.getStatisticsManager().getStatisticsAmountsToDelete())) {
             boolean success = removeStatisticsAmountFromTablePlantsSold(conn, plantsSold);
             // if deleted from db, remove from StatisticsManager
             if (success) {
@@ -310,24 +310,24 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
         // remove cached removal blocks from being removed next time
         for (StatisticsAmount plantsSold : plantsSoldToRemoveCache) {
-            main.getStatisticsManager().removeStatisticsAmountFromRemoval(plantsSold);
+            performantPlants.getStatisticsManager().removeStatisticsAmountFromRemoval(plantsSold);
         }
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing plantsSold from db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing plantsSold from db");
         // add/update all plantsSold entries
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating plantsSold in db...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating plantsSold in db...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (StatisticsAmountStorage storage : main.getStatisticsManager().getPlantItemsSoldStorageMap().values()) {
+        for (StatisticsAmountStorage storage : performantPlants.getStatisticsManager().getPlantItemsSoldStorageMap().values()) {
             for (StatisticsAmount statisticsAmount : storage.getStatisticsAmountMap().values()) {
                 insertStatisticsAmountIntoTablePlantsSold(conn, statisticsAmount);
             }
@@ -336,25 +336,25 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating plantsSold in db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating plantsSold in db");
         //////////////////////////////////////////
 
         //////////////////////////////////////////
         // PLANT TAGS
         // remove any tag items set for removal
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing plantTags from db for world...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing plantTags from db for world...");
         ArrayList<StatisticsTagItem> plantTagsToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (StatisticsTagItem tagItem : main.getStatisticsManager().getStatisticsTagToDeleteItem()) {
+        for (StatisticsTagItem tagItem : performantPlants.getStatisticsManager().getStatisticsTagToDeleteItem()) {
             boolean success = removeStatisticsTagItemFromTablePlantsSold(conn, tagItem);
             // if deleted from db, remove from StatisticsManager
             if (success) {
@@ -365,24 +365,24 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
         // remove cached removal blocks from being removed next time
         for (StatisticsTagItem tagItem : plantTagsToRemoveCache) {
-            main.getStatisticsManager().removeStatisticTagFromRemoval(tagItem);
+            performantPlants.getStatisticsManager().removeStatisticTagFromRemoval(tagItem);
         }
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing plantTags from db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing plantTags from db");
         // add/update all plantTags entries
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating plantTags in db...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating plantTags in db...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (StatisticsTagStorage storage : main.getStatisticsManager().getPlantTagStorageMap().values()) {
+        for (StatisticsTagStorage storage : performantPlants.getStatisticsManager().getPlantTagStorageMap().values()) {
             for (StatisticsTagItem statisticsTagItem : storage.getStatisticsTagMap().values()) {
                 insertStatisticsTagItemIntoTablePlantTags(conn, statisticsTagItem);
             }
@@ -391,10 +391,10 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating plantTags in db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating plantTags in db");
         //////////////////////////////////////////
         return true;
     }
@@ -415,16 +415,16 @@ public class DatabaseManager {
         createTableGlobalPlantData(conn);
         ////////////////////////////////////////////////////////
         // remove any ScopeParameterIdentifiers set for removal
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Removing scopedPlantData from db...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing scopedPlantData from db...");
         ArrayList<ScopeParameterIdentifier> identifiersToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (PlantDataStorage plantDataStorage : main.getPlantTypeManager().getPlantDataStorageMap().values()) {
+        for (PlantDataStorage plantDataStorage : performantPlants.getPlantTypeManager().getPlantDataStorageMap().values()) {
             for (ScopeParameterIdentifier identifier : plantDataStorage.getScopesToDelete()) {
                 boolean success = removeScopedPlantDataFromTableGlobalPlantData(conn, identifier);
                 if (success) {
@@ -436,31 +436,31 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
         // remove cached removal identifiers from being removed next time
         for (ScopeParameterIdentifier identifier : identifiersToRemoveCache) {
-            PlantDataStorage plantDataStorage = main.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
+            PlantDataStorage plantDataStorage = performantPlants.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
             if (plantDataStorage != null) {
                 plantDataStorage.removeScopeFromRemoval(identifier);
             }
         }
         identifiersToRemoveCache.clear();
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done removing scopedPlantData from db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing scopedPlantData from db");
         /////////////////////////////////////////////////////////////
 
         /////////////////////////////////////
         // add/update all plantTags entries
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Updating scopedPlantData in db...");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating scopedPlantData in db...");
         // =========== TRANSACTION START
         try {
             Statement stmt = conn.createStatement();
             stmt.execute("BEGIN;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
         }
-        for (PlantDataStorage plantDataStorage : main.getPlantTypeManager().getPlantDataStorageMap().values()) {
+        for (PlantDataStorage plantDataStorage : performantPlants.getPlantTypeManager().getPlantDataStorageMap().values()) {
             for (ScopedPlantData scopedPlantData : plantDataStorage.getScopeMap().values()) {
                 for (Map.Entry<String, PlantData> entry : scopedPlantData.getPlantDataMap().entrySet()) {
                     String parameter = entry.getKey();
@@ -479,10 +479,10 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute("COMMIT;");
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
         }
         // =========== TRANSACTION END
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Done updating scopedPlantData in db");
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating scopedPlantData in db");
         //////////////////////////////////////////
         return true;
     }
@@ -515,7 +515,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'plantblocks'; " + e.toString()
             );
             return false;
@@ -546,7 +546,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert PlantBlock into plantblocks: " + block.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert PlantBlock into plantblocks: " + block.toString() + "; " + e.toString());
             return false;
         }
         //main.getLogger().info("Stored PlantBlock in plantblocks in db: " + block.toString());
@@ -566,7 +566,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove BlockLocation from plantblocks: " + blockLocation.toString() + "; " + e.toString()
             );
             return false;
@@ -592,7 +592,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'data'; " + e.toString()
             );
             return false;
@@ -612,7 +612,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
             return false;
         }
         //main.getLogger().info("Stored PlantBlock in data in db: " + block.toString());
@@ -632,7 +632,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove BlockLocation from data: " + blockLocation.toString() + "; " + e.toString()
             );
             return false;
@@ -658,7 +658,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'globalPlantData'; " + e.toString()
             );
             return false;
@@ -679,7 +679,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(String.format("Could not insert ScopedPlantData into " +
+            performantPlants.getLogger().warning(String.format("Could not insert ScopedPlantData into " +
                     "globalPlantData: %s,%s,%s; %s", plantId, scope, parameter, e.toString())
             );
             return false;
@@ -700,7 +700,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(String.format("Could not remove ScopedPlantData from " +
+            performantPlants.getLogger().warning(String.format("Could not remove ScopedPlantData from " +
                     "globalPlantData: %s; %s",
                     scopeParameterIdentifier.toString(),
                     e.toString()
@@ -729,7 +729,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'parents'; " + e.toString()
             );
             return false;
@@ -751,7 +751,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert PlantBlock into parents: " + block.toString() + "; " + e.toString());
             return false;
         }
         //main.getLogger().info("Stored PlantBlock in parents in db: " + block.toString());
@@ -771,7 +771,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove BlockLocation from parents: " + blockLocation.toString() + "; " + e.toString()
             );
             return false;
@@ -799,7 +799,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'guardians'; " + e.toString()
             );
             return false;
@@ -821,7 +821,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert PlantBlock into guardians: " + block.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert PlantBlock into guardians: " + block.toString() + "; " + e.toString());
             return false;
         }
         //main.getLogger().info("Stored PlantBlock in guardians in db: " + block.toString());
@@ -841,7 +841,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove BlockLocation from guardians: " + blockLocation.toString() + "; " + e.toString()
             );
             return false;
@@ -866,7 +866,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'plantsSold'; " + e.toString()
             );
             return false;
@@ -885,7 +885,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + sold.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + sold.toString() + "; " + e.toString());
             return false;
         }
         return true;
@@ -902,7 +902,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove StatisticsAmount from plantsSold: " + sold.getPlayerUUID().toString() + ","
                             + sold.getId() + "; " + e.toString()
             );
@@ -926,7 +926,7 @@ public class DatabaseManager {
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
         } catch (SQLException e) {
-            main.getLogger().severe(
+            performantPlants.getLogger().severe(
                     "Exception occurred creating table 'plantTags'; " + e.toString()
             );
             return false;
@@ -944,7 +944,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + item.toString() + "; " + e.toString());
+            performantPlants.getLogger().warning("Could not insert StatisticsAmount into plantsSold: " + item.toString() + "; " + e.toString());
             return false;
         }
         return true;
@@ -961,7 +961,7 @@ public class DatabaseManager {
             // execute
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            main.getLogger().warning(
+            performantPlants.getLogger().warning(
                     "Could not remove StatisticsAmount from plantsSold: " + item.getId() + ","
                             + item.getPlantId() + "; " + e.toString()
             );
@@ -987,7 +987,7 @@ public class DatabaseManager {
                 addPlantBlockFromResultSet(rs, worldName);
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading plants from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading plants from url: " + url + "; " + e.toString());
             return false;
         }
         return true;
@@ -1001,7 +1001,7 @@ public class DatabaseManager {
                     rs.getInt("y"),
                     rs.getInt("z"),
                     worldName);
-            Plant plant = main.getPlantTypeManager().getPlantById(rs.getString("plant"));
+            Plant plant = performantPlants.getPlantTypeManager().getPlantById(rs.getString("plant"));
             // if plant does not exist, do nothing
             if (plant == null) {
                 return;
@@ -1028,9 +1028,9 @@ public class DatabaseManager {
             // set duration
             plantBlock.setDuration(rs.getLong("duration"));
             // add plantBlock to plantManager
-            main.getPlantManager().addPlantBlock(plantBlock);
+            performantPlants.getPlantManager().addPlantBlock(plantBlock);
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load plant; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load plant; " + e.toString());
         }
     }
 
@@ -1056,7 +1056,7 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
             return false;
         }
         // remove locations to be removed
@@ -1066,7 +1066,7 @@ public class DatabaseManager {
                 Statement stmt = conn.createStatement();
                 stmt.execute("BEGIN;");
             } catch (SQLException e) {
-                main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+                performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
             }
             for (BlockLocation blockLocation : blockLocationsToRemove) {
                 removeBlockLocationFromTableData(conn, blockLocation);
@@ -1075,7 +1075,7 @@ public class DatabaseManager {
                 Statement stmt = conn.createStatement();
                 stmt.execute("COMMIT;");
             } catch (SQLException e) {
-                main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+                performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
             }
             // =========== TRANSACTION END
         }
@@ -1093,7 +1093,7 @@ public class DatabaseManager {
             // get plant data
             PlantData plantData = new PlantData(rs.getString("json_data"));
             // get plant block at location
-            PlantBlock plantBlock = main.getPlantManager().getPlantBlock(blockLocation);
+            PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockLocation);
             // forcefully initialize plant data if block has no parent (and therefore is a parent)
             if (!plantBlock.hasParent()) {
                 plantBlock.forcefullyInitializePlantData();
@@ -1106,7 +1106,7 @@ public class DatabaseManager {
             // otherwise, plant no longer uses data and it should be deleted from db
             return blockLocation;
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load data; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load data; " + e.toString());
         }
         return null;
     }
@@ -1132,7 +1132,7 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading globalPlantData from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading globalPlantData from url: " + url + "; " + e.toString());
             return false;
         }
         // remove identifiers to be removed
@@ -1142,7 +1142,7 @@ public class DatabaseManager {
                 Statement stmt = conn.createStatement();
                 stmt.execute("BEGIN;");
             } catch (SQLException e) {
-                main.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+                performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
             }
             for (ScopeParameterIdentifier identifier : identifiersToRemove) {
                 removeScopedPlantDataFromTableGlobalPlantData(conn, identifier);
@@ -1151,7 +1151,7 @@ public class DatabaseManager {
                 Statement stmt = conn.createStatement();
                 stmt.execute("COMMIT;");
             } catch (SQLException e) {
-                main.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+                performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
             }
             // =========== TRANSACTION END
         }
@@ -1169,7 +1169,7 @@ public class DatabaseManager {
             // get plant data
             PlantData plantData = new PlantData(rs.getString("json_data"));
             // get plant data storage
-            PlantDataStorage plantDataStorage = main.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
+            PlantDataStorage plantDataStorage = performantPlants.getPlantTypeManager().getPlantDataStorage(identifier.getPlantId());
             // if plant id shouldn't have any global data, then return identifier for removal
             if (plantDataStorage == null) {
                 return identifier;
@@ -1182,7 +1182,7 @@ public class DatabaseManager {
                 return identifier;
             }
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load globalPlantData; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load globalPlantData; " + e.toString());
         }
         return null;
     }
@@ -1204,7 +1204,7 @@ public class DatabaseManager {
                 addParentFromResultSet(rs, worldName);
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading parents from url: " + url + "; " + e.toString());
             return false;
         }
         return true;
@@ -1225,17 +1225,17 @@ public class DatabaseManager {
                     rs.getInt("pz"),
                     worldName);
             // add parent to child block
-            PlantBlock childPlantBlock = main.getPlantManager().getPlantBlock(childLocation);
+            PlantBlock childPlantBlock = performantPlants.getPlantManager().getPlantBlock(childLocation);
             if (childPlantBlock != null) {
                 childPlantBlock.setParentLocation(parentLocation);
             }
             // add child to parent block
-            PlantBlock parentPlantBlock = main.getPlantManager().getPlantBlock(parentLocation);
+            PlantBlock parentPlantBlock = performantPlants.getPlantManager().getPlantBlock(parentLocation);
             if (parentPlantBlock != null) {
                 parentPlantBlock.addChildLocation(childLocation);
             }
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load parent; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load parent; " + e.toString());
         }
     }
 
@@ -1256,7 +1256,7 @@ public class DatabaseManager {
                 addGuardiansFromResultSet(rs, worldName);
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading guardians from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading guardians from url: " + url + "; " + e.toString());
             return false;
         }
         return true;
@@ -1277,17 +1277,17 @@ public class DatabaseManager {
                     rs.getInt("gz"),
                     worldName);
             // add guardian to child block
-            PlantBlock childPlantBlock = main.getPlantManager().getPlantBlock(childLocation);
+            PlantBlock childPlantBlock = performantPlants.getPlantManager().getPlantBlock(childLocation);
             if (childPlantBlock != null) {
                 childPlantBlock.setGuardianLocation(guardianLocation);
             }
             // add child to guardian block
-            PlantBlock guardianPlantBlock = main.getPlantManager().getPlantBlock(guardianLocation);
+            PlantBlock guardianPlantBlock = performantPlants.getPlantManager().getPlantBlock(guardianLocation);
             if (guardianPlantBlock != null) {
                 guardianPlantBlock.addChildLocation(childLocation);
             }
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
         }
     }
 
@@ -1308,7 +1308,7 @@ public class DatabaseManager {
                 addPlantsSoldFromResultSet(rs);
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading plantsSold from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading plantsSold from url: " + url + "; " + e.toString());
             return false;
         }
         return true;
@@ -1323,9 +1323,9 @@ public class DatabaseManager {
                     rs.getInt("amount")
             );
             // add to StatisticsManager
-            main.getStatisticsManager().addPlantItemsSold(statisticsAmount);
+            performantPlants.getStatisticsManager().addPlantItemsSold(statisticsAmount);
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load plantsSold; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load plantsSold; " + e.toString());
         }
     }
 
@@ -1346,7 +1346,7 @@ public class DatabaseManager {
                 addPlantTagsFromResultSet(rs);
             }
         } catch (SQLException e) {
-            main.getLogger().severe("Exception occurred loading plantTags from url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Exception occurred loading plantTags from url: " + url + "; " + e.toString());
             return false;
         }
         return true;
@@ -1360,9 +1360,9 @@ public class DatabaseManager {
                     rs.getString("plantItemId")
             );
             // add to StatisticsManager
-            main.getStatisticsManager().registerPlantTag(statisticsTagItem);
+            performantPlants.getStatisticsManager().registerPlantTag(statisticsTagItem);
         } catch (SQLException e) {
-            main.getLogger().warning("SQLException occurred trying to load plantTags; " + e.toString());
+            performantPlants.getLogger().warning("SQLException occurred trying to load plantTags; " + e.toString());
         }
     }
 
@@ -1374,7 +1374,7 @@ public class DatabaseManager {
         try {
             conn = DriverManager.getConnection(url);
         } catch (SQLException e) {
-            main.getLogger().severe("Could not connect to url: " + url + "; " + e.toString());
+            performantPlants.getLogger().severe("Could not connect to url: " + url + "; " + e.toString());
         }
         return conn;
     }
@@ -1384,9 +1384,9 @@ public class DatabaseManager {
     }
 
     public void startTask() {
-        saveTask = main.getServer().getScheduler().runTaskTimerAsynchronously(main, this::saveDatabases,
-                TimeHelper.minutesToTicks(main.getConfigManager().getConfigSettings().getSaveDelayMinutes()),
-                TimeHelper.minutesToTicks(main.getConfigManager().getConfigSettings().getSaveDelayMinutes()));
+        saveTask = performantPlants.getServer().getScheduler().runTaskTimerAsynchronously(performantPlants, this::saveDatabases,
+                TimeHelper.minutesToTicks(performantPlants.getConfigManager().getConfigSettings().getSaveDelayMinutes()),
+                TimeHelper.minutesToTicks(performantPlants.getConfigManager().getConfigSettings().getSaveDelayMinutes()));
     }
 
     public void cancelTask() {

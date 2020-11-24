@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.listeners;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
@@ -21,15 +21,15 @@ import org.bukkit.inventory.ItemStack;
 
 public class VanillaDropListener implements Listener {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public VanillaDropListener(Main mainClass) {
-        main = mainClass;
+    public VanillaDropListener(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
-        PlantInteractStorage storage = main.getVanillaDropManager().getInteract(event.getEntityType());
+        PlantInteractStorage storage = performantPlants.getVanillaDropManager().getInteract(event.getEntityType());
         if (storage != null) {
             Player player = event.getEntity().getKiller();
             ItemStack heldItem;
@@ -67,7 +67,7 @@ public class VanillaDropListener implements Listener {
         }
         Block block = event.getBlock();
         // otherwise, check if have custom drops
-        PlantInteractStorage storage = main.getVanillaDropManager().getInteract(block);
+        PlantInteractStorage storage = performantPlants.getVanillaDropManager().getInteract(block);
         if (storage != null) {
             Player player = event.getPlayer();
             ItemStack heldItem = player.getInventory().getItemInMainHand();

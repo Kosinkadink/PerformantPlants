@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class ScriptTaskLoader {
-    Main main;
+    PerformantPlants performantPlants;
 
     private final HashSet<String> taskNames = new HashSet<>();
     private final HashMap<String, ArrayList<String>> taskDependencies = new HashMap<>();
@@ -19,8 +19,8 @@ public class ScriptTaskLoader {
 
     private final HashMap<String, ScriptTask> taskHashMap = new HashMap<>();
 
-    public ScriptTaskLoader(Main main) {
-        this.main = main;
+    public ScriptTaskLoader(PerformantPlants performantPlants) {
+        this.performantPlants = performantPlants;
     }
 
     public void addTaskName(String name) {
@@ -40,7 +40,7 @@ public class ScriptTaskLoader {
             for (String failedTask : failedTasks) {
                 ArrayList<String> dependencies = taskDependencies.get(failedTask);
                 if (dependencies != null && !dependencies.isEmpty()) {
-                    main.getLogger().warning(String.format("Task '%s' failed to load, so all tasks depending on it (%s) " +
+                    performantPlants.getLogger().warning(String.format("Task '%s' failed to load, so all tasks depending on it (%s) " +
                             "will be unloaded in section %s",
                             failedTask, dependencies.toString(), section.getCurrentPath()));
                     // remove dependent tasks from map

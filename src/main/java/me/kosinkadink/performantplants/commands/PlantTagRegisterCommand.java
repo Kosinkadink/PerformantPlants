@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -8,16 +8,16 @@ import java.util.List;
 
 public class PlantTagRegisterCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantTagRegisterCommand(Main mainClass) {
+    public PlantTagRegisterCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "tag", "register" },
                 "Register tag with initial plant ids; adds plant ids to existing tag if applicable.",
                 "/pp tag register <tag-id> <plant-ids,comma,separated>",
                 "performantplants.tag.register",
                 2,
                 2);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
@@ -37,8 +37,8 @@ public class PlantTagRegisterCommand extends PPCommand {
         ArrayList<String> plantIdsAdded = new ArrayList<>();
         ArrayList<String> plantIdsNotAdded = new ArrayList<>();
         for (String plantId : plantIdList) {
-            if (main.getPlantTypeManager().getPlantById(plantId) != null) {
-                main.getStatisticsManager().addPlantId(tagId, plantId, true);
+            if (performantPlants.getPlantTypeManager().getPlantById(plantId) != null) {
+                performantPlants.getStatisticsManager().addPlantId(tagId, plantId, true);
                 plantIdsAdded.add(plantId);
             } else {
                 plantIdsNotAdded.add(plantId);

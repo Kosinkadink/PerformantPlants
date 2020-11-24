@@ -36,6 +36,17 @@ public class PlantDataStorage {
         return null;
     }
 
+    public boolean removeScopeParameter(String scope, String parameter) {
+        ScopedPlantData scopedPlantData = getScopedPlantData(scope);
+        if (scopedPlantData != null) {
+            // remove data for parameter and add to removal
+            scopedPlantData.removePlantData(parameter);
+            addScopeForRemoval(new ScopeParameterIdentifier(plantId, scope, parameter));
+            return true;
+        }
+        return false;
+    }
+
     public boolean updateVariable(String scope, String parameter, String variableName, Object value) {
         ScopedPlantData scopedPlantData = getScopedPlantData(scope);
         if (scopedPlantData != null) {

@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.entity.Player;
@@ -22,7 +22,7 @@ public class ScriptOperationCancelTask extends ScriptOperation {
             return ScriptResult.FALSE;
         }
         // return whether cancellation was successful
-        return new ScriptResult(Main.getInstance().getTaskManager().cancelTask(taskId, null));
+        return new ScriptResult(PerformantPlants.getInstance().getTaskManager().cancelTask(taskId, null));
     }
 
     @Override

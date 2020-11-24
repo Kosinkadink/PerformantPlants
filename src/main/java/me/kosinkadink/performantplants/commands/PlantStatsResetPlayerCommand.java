@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -13,25 +13,25 @@ import java.util.UUID;
 
 public class PlantStatsResetPlayerCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
     private HashMap<String, Method> statMethodMap = new HashMap<>();
 
-    public PlantStatsResetPlayerCommand(Main mainClass) {
+    public PlantStatsResetPlayerCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "stats", "resetplayer" },
                 "Resets specific stat for specific players.",
                 "/pp stats resetplayer <stat> <player>",
                 "performantplants.stats.resetplayer",
                 2,
                 2);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
         fillInStatMethodMap();
     }
 
     void fillInStatMethodMap() {
         try {
             statMethodMap.put("sold",
-                    main.getStatisticsManager().getClass().getMethod("resetAllPlantItemsSoldForPlayer", UUID.class));
+                    performantPlants.getStatisticsManager().getClass().getMethod("resetAllPlantItemsSoldForPlayer", UUID.class));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -45,11 +45,11 @@ public class PlantStatsResetPlayerCommand extends PPCommand {
         String playerString = argList.get(1);
         UUID playerUUID = null;
         // check if player is online
-        Player player = main.getServer().getPlayer(playerString);
+        Player player = performantPlants.getServer().getPlayer(playerString);
         if (player == null) {
             //get list of offline players, see if name matches
             boolean found = false;
-            for (OfflinePlayer offlinePlayer : main.getServer().getOfflinePlayers()) {
+            for (OfflinePlayer offlinePlayer : performantPlants.getServer().getOfflinePlayers()) {
                 if (playerString.equalsIgnoreCase(offlinePlayer.getName())
                         || playerString.equalsIgnoreCase(offlinePlayer.getUniqueId().toString())) {
                     playerUUID = offlinePlayer.getUniqueId();
@@ -68,7 +68,7 @@ public class PlantStatsResetPlayerCommand extends PPCommand {
         Method method = statMethodMap.get(stat);
         if (method != null) {
             try {
-                method.invoke(main.getStatisticsManager(), playerUUID);
+                method.invoke(performantPlants.getStatisticsManager(), playerUUID);
                 commandSender.sendMessage(String.format("Stat '%s' reset for player %s", stat, playerString));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();

@@ -10,8 +10,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Main extends JavaPlugin {
-    private static Main main;
+public class PerformantPlants extends JavaPlugin {
+    private static PerformantPlants performantPlants;
 
     private Economy economy;
 
@@ -28,7 +28,7 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        main = this;
+        performantPlants = this;
         setupEconomy();
         registerManagers();
         registerListeners();
@@ -61,8 +61,8 @@ public class Main extends JavaPlugin {
         registerCommands();
     }
 
-    public static Main getInstance() {
-        return main;
+    public static PerformantPlants getInstance() {
+        return performantPlants;
     }
 
     private void setupEconomy() {

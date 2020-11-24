@@ -2,7 +2,7 @@ package me.kosinkadink.performantplants.expansions;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class PerformantPlantExpansion extends PlaceholderExpansion {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
     private final Pattern BUYPRICE_PATTERN = Pattern.compile("^buyprice_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern SELLPRICE_PATTERN = Pattern.compile("^sellprice_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
@@ -24,8 +24,8 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
     private final Pattern SOLD_PATTERN = Pattern.compile("^sold_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern SOLDTAG_PATTERN = Pattern.compile("^soldtag_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantTag>[a-zA-Z0-9_.\\-]+)$");
 
-    public PerformantPlantExpansion(Main main) {
-        this.main = main;
+    public PerformantPlantExpansion(PerformantPlants performantPlants) {
+        this.performantPlants = performantPlants;
     }
 
     /**
@@ -53,12 +53,12 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
 
     @Override
     public String getAuthor() {
-        return main.getDescription().getAuthors().toString();
+        return performantPlants.getDescription().getAuthors().toString();
     }
 
     @Override
     public String getVersion() {
-        return main.getDescription().getVersion();
+        return performantPlants.getDescription().getVersion();
     }
 
     @Override
@@ -76,7 +76,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
         Matcher matcher = BUYPRICE_PATTERN.matcher(identifier);
         if (matcher.find()) {
             String plantId = matcher.group("plantItemId");
-            PlantItem plantItem = main.getPlantTypeManager().getPlantItemById(plantId);
+            PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemById(plantId);
             if (plantItem != null) {
                 return String.format("%.2f", plantItem.getBuyPrice());
             }
@@ -89,7 +89,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
         matcher = SELLPRICE_PATTERN.matcher(identifier);
         if (matcher.find()) {
             String plantId = matcher.group("plantItemId");
-            PlantItem plantItem = main.getPlantTypeManager().getPlantItemById(plantId);
+            PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemById(plantId);
             if (plantItem != null) {
                 return String.format("%.2f", plantItem.getSellPrice());
             }
@@ -102,7 +102,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
         matcher = HASSEED_PATTERN.matcher(identifier);
         if (matcher.find()) {
             String plantId = matcher.group("plantId");
-            Plant plant = main.getPlantTypeManager().getPlantById(plantId);
+            Plant plant = performantPlants.getPlantTypeManager().getPlantById(plantId);
             if (plant != null) {
                 return String.format("%b", plant.hasSeed());
             }
@@ -117,7 +117,7 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
         if (matcher.find()) {
             String playerUUID = matcher.group("playerUUID");
             String plantId = matcher.group("plantItemId");
-            StatisticsAmount plantItemsSold = main.getStatisticsManager()
+            StatisticsAmount plantItemsSold = performantPlants.getStatisticsManager()
                     .getPlantItemsSold(UUID.fromString(playerUUID), plantId);
             int amount = 0;
             if (plantItemsSold != null) {
@@ -135,12 +135,12 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             String playerUUID = matcher.group("playerUUID");
             String plantTag = matcher.group("plantTag");
             // get tag, if exists
-            StatisticsTagStorage storage = main.getStatisticsManager().getPlantTag(plantTag);
+            StatisticsTagStorage storage = performantPlants.getStatisticsManager().getPlantTag(plantTag);
             int amount = 0;
             if (storage != null) {
                 ArrayList<String> plantIds = storage.getAllPlantIds();
                 for (String plantId : plantIds) {
-                    StatisticsAmount plantItemsSold = main.getStatisticsManager()
+                    StatisticsAmount plantItemsSold = performantPlants.getStatisticsManager()
                             .getPlantItemsSold(UUID.fromString(playerUUID), plantId);
                     if (plantItemsSold != null) {
                         amount += plantItemsSold.getAmount();

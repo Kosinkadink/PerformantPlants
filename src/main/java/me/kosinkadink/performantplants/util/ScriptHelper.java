@@ -1,11 +1,12 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import org.bukkit.entity.Player;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -60,7 +61,16 @@ public class ScriptHelper {
         return scriptBlock == null || scriptBlock.getType() == ScriptType.NULL;
     }
 
+    public static boolean isSupportedType(ScriptType scriptType) {
+        return scriptType == ScriptType.BOOLEAN || scriptType == ScriptType.STRING
+                || scriptType == ScriptType.LONG || scriptType == ScriptType.DOUBLE;
+    }
+
     public static String setVariables(PlantBlock plantBlock, String text) {
+        return setVariables(plantBlock, null, text);
+    }
+
+    public static String setVariables(PlantBlock plantBlock, Player player, String text) {
         PlantData plantData = null;
         if (plantBlock != null) {
             plantData = plantBlock.getEffectivePlantData();
@@ -71,7 +81,7 @@ public class ScriptHelper {
         while (matcher.find()) {
             String variableName = matcher.group(1);
             // see if variable is recognized;
-            String value = getVariableValue(plantBlock, plantData, variableName);
+            String value = getVariableValue(plantBlock, player, plantData, variableName);
             if (value == null) {
                 matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement("$"+variableName+"$"));
             } else {
@@ -87,7 +97,7 @@ public class ScriptHelper {
         if (variableName.contains(".")) {
             String[] variableParts = getVariableNameParts(variableName);
             if (variableParts != null) {
-                return Main.getInstance().getPlantTypeManager().updateVariable(
+                return PerformantPlants.getInstance().getPlantTypeManager().updateVariable(
                         variableParts[0],
                         variableParts[1],
                         variableParts[2],
@@ -109,7 +119,7 @@ public class ScriptHelper {
         if (variableName.contains(".")) {
             String[] variableParts = getVariableNameParts(variableName);
             if (variableParts != null) {
-                return Main.getInstance().getPlantTypeManager().getVariable(
+                return PerformantPlants.getInstance().getPlantTypeManager().getVariable(
                         variableParts[0],
                         variableParts[1],
                         variableParts[2],
@@ -135,46 +145,85 @@ public class ScriptHelper {
         return null;
     }
 
-    private static String getVariableValue(PlantBlock plantBlock, PlantData plantData, String variableName) {
+    private static String getVariableValue(PlantBlock plantBlock, Player player, PlantData plantData, String variableName) {
         // check if it is a property name
         if (variableName.startsWith("_")) {
             if ("_random_uuid".equals(variableName)) {
                 return UUID.randomUUID().toString();
             }
-            String relevantVariableName = variableName;
-            PlantBlock relevantPlantBlock = plantBlock;
-            if (variableName.startsWith("_parent")) {
-                if (plantBlock.hasParent()) {
-                    PlantBlock parentBlock = Main.getInstance().getPlantManager().getPlantBlock(plantBlock.getParentLocation());
-                    if (parentBlock != null) {
-                        relevantPlantBlock = parentBlock;
-                    }
-                }
+            // check for player-related properties
+            if (player != null && variableName.startsWith("_player")) {
+                String relevantVariableName;
                 try {
-                    relevantVariableName = variableName.substring("_parent".length());
+                    relevantVariableName = variableName.substring("_player".length());
                 } catch (IndexOutOfBoundsException e) {
                     relevantVariableName = "";
                 }
+                switch(relevantVariableName) {
+                    case "_x":
+                        return Double.toString(player.getLocation().getX());
+                    case "_y":
+                        return Double.toString(player.getLocation().getY());
+                    case "_z":
+                        return Double.toString(player.getLocation().getZ());
+                    case "_block_x":
+                        return Double.toString(player.getLocation().getBlockX());
+                    case "_block_y":
+                        return Double.toString(player.getLocation().getBlockY());
+                    case "_block_z":
+                        return Double.toString(player.getLocation().getBlockZ());
+                    case "_world":
+                        try {
+                            return player.getLocation().getWorld().getName();
+                        } catch (NullPointerException e) {
+                            return null;
+                        }
+                    case "_uuid":
+                        return player.getUniqueId().toString();
+                    default:
+                        return null;
+                }
             }
-            switch (relevantVariableName) {
-                case "_x":
-                    return Integer.toString(relevantPlantBlock.getLocation().getX());
-                case "_y":
-                    return Integer.toString(relevantPlantBlock.getLocation().getY());
-                case "_z":
-                    return Integer.toString(relevantPlantBlock.getLocation().getZ());
-                case "_x_center":
-                    return Double.toString(relevantPlantBlock.getLocation().getX() + 0.5);
-                case "_y_center":
-                    return Double.toString(relevantPlantBlock.getLocation().getY() + 0.5);
-                case "_z_center":
-                    return Double.toString(relevantPlantBlock.getLocation().getZ() + 0.5);
-                case "_world":
-                    return relevantPlantBlock.getLocation().getWorldName();
-                case "_plantId":
-                    return relevantPlantBlock.getPlant().getId();
-                default:
-                    return null;
+            // check for block-related properties
+            if (plantBlock != null) {
+                String relevantVariableName = variableName;
+                PlantBlock relevantPlantBlock = plantBlock;
+                // try to use parent block, if specified
+                if (variableName.startsWith("_parent")) {
+                    if (plantBlock.hasParent()) {
+                        PlantBlock parentBlock = PerformantPlants.getInstance().getPlantManager().getPlantBlock(plantBlock.getParentLocation());
+                        if (parentBlock != null) {
+                            relevantPlantBlock = parentBlock;
+                        }
+                    }
+                    try {
+                        relevantVariableName = variableName.substring("_parent".length());
+                    } catch (IndexOutOfBoundsException e) {
+                        relevantVariableName = "";
+                    }
+                }
+                switch (relevantVariableName) {
+                    case "_x":
+                        return Integer.toString(relevantPlantBlock.getLocation().getX());
+                    case "_y":
+                        return Integer.toString(relevantPlantBlock.getLocation().getY());
+                    case "_z":
+                        return Integer.toString(relevantPlantBlock.getLocation().getZ());
+                    case "_x_center":
+                        return Double.toString(relevantPlantBlock.getLocation().getX() + 0.5);
+                    case "_y_center":
+                        return Double.toString(relevantPlantBlock.getLocation().getY() + 0.5);
+                    case "_z_center":
+                        return Double.toString(relevantPlantBlock.getLocation().getZ() + 0.5);
+                    case "_world":
+                        return relevantPlantBlock.getLocation().getWorldName();
+                    case "_plant_id":
+                        return relevantPlantBlock.getPlant().getId();
+                    case "_plant_uuid":
+                        return relevantPlantBlock.getPlantUUID().toString();
+                    default:
+                        return null;
+                }
             }
         }
         // check if variable exists in plant block data

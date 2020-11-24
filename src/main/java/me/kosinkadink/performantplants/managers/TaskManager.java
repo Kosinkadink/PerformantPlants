@@ -1,8 +1,7 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.hooks.*;
-import me.kosinkadink.performantplants.scripting.storage.hooks.ScriptHook;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 import org.bukkit.entity.Player;
 
@@ -12,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TaskManager {
 
-    private final Main main;
+    private final PerformantPlants performantPlants;
 
     private final ConcurrentHashMap<String, PlantTask> taskMap = new ConcurrentHashMap<>();
     private final HashSet<UUID> taskIdsToDelete = new HashSet<>();
@@ -24,19 +23,19 @@ public class TaskManager {
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerAliveMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerDeadMap = new ConcurrentHashMap<>();
 
-    public TaskManager(Main main) {
-        this.main = main;
+    public TaskManager(PerformantPlants performantPlants) {
+        this.performantPlants = performantPlants;
     }
 
     public boolean scheduleTask(PlantTask task) {
         if (task.isStartable()) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) {
-                main.getLogger().info("Scheduling task with id: " + task.getTaskId());
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
+                performantPlants.getLogger().info("Scheduling task with id: " + task.getTaskId());
             }
             addTaskToMap(task);
             // if autostart, then start task
             if (task.isAutostart()) {
-                boolean startedTask = task.startTask(main);
+                boolean startedTask = task.startTask(performantPlants);
                 // if failed to start, cancel task and return false
                 if (!startedTask) {
                     cancelTask(task.getTaskId().toString(), null);
@@ -63,10 +62,10 @@ public class TaskManager {
     public boolean resumeTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) {
-                main.getLogger().info("Resuming task with id: " + taskId);
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
+                performantPlants.getLogger().info("Resuming task with id: " + taskId);
             }
-            boolean started = plantTask.startTask(main);
+            boolean started = plantTask.startTask(performantPlants);
             if (started) {
                 // perform hook script block
                 performHookScriptBlock(hook, plantTask);
@@ -85,8 +84,8 @@ public class TaskManager {
     public boolean pauseTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) {
-                main.getLogger().info("Pausing task with id: " + taskId);
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
+                performantPlants.getLogger().info("Pausing task with id: " + taskId);
             }
             boolean paused = plantTask.pauseTask();
             if (paused) {
@@ -101,8 +100,8 @@ public class TaskManager {
     public boolean cancelTask(String taskId, PlantHook hook) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) {
-                main.getLogger().info("Cancelling task with id: " + taskId);
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
+                performantPlants.getLogger().info("Cancelling task with id: " + taskId);
             }
             boolean cancelled = plantTask.cancelTask();
             if (cancelled) {
@@ -134,7 +133,7 @@ public class TaskManager {
     public boolean unfreezeTask(String taskId) {
         PlantTask plantTask = getTask(taskId);
         if (plantTask != null) {
-            plantTask.unfreezeTask(main);
+            plantTask.unfreezeTask(performantPlants);
             return true;
         }
         return false;

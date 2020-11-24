@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -11,30 +11,30 @@ import java.util.List;
 
 public class PlantSellCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantSellCommand(Main mainClass) {
+    public PlantSellCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "sell" },
                 "Sell plant item for player.",
                 "/pp sell <player> <plant-id> <amount>",
                 "performantplants.sell",
                 2,
                 3);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         // get player
         String playerName = argList.get(0);
-        Player player = main.getServer().getPlayer(playerName);
+        Player player = performantPlants.getServer().getPlayer(playerName);
         if (player == null) {
             commandSender.sendMessage("Player " + playerName + " not found");
             return;
         }
         String plantId = argList.get(1);
         // get plant item
-        PlantItem requestedItem = main.getPlantTypeManager().getPlantItemById(plantId);
+        PlantItem requestedItem = performantPlants.getPlantTypeManager().getPlantItemById(plantId);
         // if item not found, inform sender and stop
         if (requestedItem == null) {
             commandSender.sendMessage(String.format("Plant item '%s' not recognized", plantId));
@@ -71,7 +71,7 @@ public class PlantSellCommand extends PPCommand {
         }
         // take proper amount of money
         double totalWorth = requestedItem.getSellPrice()*takenAmount;
-        main.getEconomy().depositPlayer(player, totalWorth);
+        performantPlants.getEconomy().depositPlayer(player, totalWorth);
         // show message to seller
         if (amount != 0 && takenAmount == 0) {
             player.sendMessage("Sold 0 of " + plantId + " due to none found in inventory");
@@ -86,7 +86,7 @@ public class PlantSellCommand extends PPCommand {
                         playerName, takenAmount, plantId, totalWorth));
             }
             // add sale to StatisticsManager
-            main.getStatisticsManager().addPlantItemsSold(player.getUniqueId(), plantId, takenAmount);
+            performantPlants.getStatisticsManager().addPlantItemsSold(player.getUniqueId(), plantId, takenAmount);
         }
     }
 }

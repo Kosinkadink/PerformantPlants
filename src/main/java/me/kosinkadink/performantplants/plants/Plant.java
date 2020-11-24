@@ -10,6 +10,7 @@ import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ public class Plant {
         this.id = id;
         this.plantItem = plantItem;
         this.plantItem.setId(this.id);
+        plantData = new PlantData(new JSONObject());
+        plantData.setPlant(this);
     }
 
     public String getId() {
@@ -129,6 +132,10 @@ public class Plant {
         scriptBlockMap.put(blockId, scriptBlock);
     }
 
+    public void removeAllScriptBlocks() {
+        scriptBlockMap.clear();
+    }
+
     // plant task map
     public ScriptTask getScriptTask(String taskId) {
         return scriptTaskMap.get(taskId);
@@ -201,7 +208,7 @@ public class Plant {
     //endregion
 
     public boolean hasPlantData() {
-        return plantData != null;
+        return plantData != null && !plantData.getData().isEmpty();
     }
 
     public boolean hasSeed() {

@@ -25,7 +25,7 @@ public abstract class ScriptOperation extends ScriptBlock {
     @Override
     public boolean containsVariable() {
         for (ScriptBlock input : inputs) {
-            if (input.containsVariable()) {
+            if (input.containsVariable() || !input.shouldOptimize()) {
                 return true;
             }
         }

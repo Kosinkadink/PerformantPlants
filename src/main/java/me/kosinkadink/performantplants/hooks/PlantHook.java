@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.hooks;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 
 import java.util.Objects;
@@ -66,13 +66,13 @@ public abstract class PlantHook {
     private boolean doActionOnTask() {
         switch(action) {
             case START:
-                Main.getInstance().getTaskManager().resumeTask(taskId.toString(), this);
+                PerformantPlants.getInstance().getTaskManager().resumeTask(taskId.toString(), this);
                 return true;
             case PAUSE:
-                Main.getInstance().getTaskManager().pauseTask(taskId.toString(), this);
+                PerformantPlants.getInstance().getTaskManager().pauseTask(taskId.toString(), this);
                 return true;
             case CANCEL:
-                Main.getInstance().getTaskManager().cancelTask(taskId.toString(), this);
+                PerformantPlants.getInstance().getTaskManager().cancelTask(taskId.toString(), this);
                 return false;
             default:
                 return false;

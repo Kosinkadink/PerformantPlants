@@ -1,30 +1,28 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
-import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class PlantTagListCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantTagListCommand(Main mainClass) {
+    public PlantTagListCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "tag", "list" },
                 "Show list of all registered tags.",
                 "/pp tag list",
                 "performantplants.tag.list",
                 0,
                 0);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
-        ArrayList<String> tags = main.getStatisticsManager().getAllPlantTags();
+        ArrayList<String> tags = performantPlants.getStatisticsManager().getAllPlantTags();
         if (tags.isEmpty()) {
             commandSender.sendMessage("No tags have been registered.");
             return;

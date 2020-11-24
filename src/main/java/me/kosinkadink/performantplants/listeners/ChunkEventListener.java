@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.listeners;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -10,20 +10,20 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 
 public class ChunkEventListener implements Listener {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public ChunkEventListener(Main mainClass) {
-        main = mainClass;
+    public ChunkEventListener(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         // check if player logged in at plant chunk
-        main.getServer().getScheduler().runTaskLaterAsynchronously(main, () -> {
-            PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getPlayer().getLocation().getChunk());
+        performantPlants.getServer().getScheduler().runTaskLaterAsynchronously(performantPlants, () -> {
+            PlantChunk plantChunk = performantPlants.getPlantManager().getPlantChunk(event.getPlayer().getLocation().getChunk());
             if (plantChunk != null) {
                 // load plantChunk
-                plantChunk.load(main);
+                plantChunk.load(performantPlants);
             }
         }, 5);
     }
@@ -32,12 +32,12 @@ public class ChunkEventListener implements Listener {
     public void onChunkLoad(ChunkLoadEvent event) {
         // check if not new chunk
         if (!event.isNewChunk()) {
-            main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+            performantPlants.getServer().getScheduler().runTaskAsynchronously(performantPlants, () -> {
                 // check if plant chunk
-                PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getChunk());
+                PlantChunk plantChunk = performantPlants.getPlantManager().getPlantChunk(event.getChunk());
                 if (plantChunk != null) {
                     // load plantChunk
-                    plantChunk.load(main);
+                    plantChunk.load(performantPlants);
                 }
             });
         }
@@ -45,12 +45,12 @@ public class ChunkEventListener implements Listener {
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
-        main.getServer().getScheduler().runTaskAsynchronously(main, () -> {
+        performantPlants.getServer().getScheduler().runTaskAsynchronously(performantPlants, () -> {
             // get plantChunk
-            PlantChunk plantChunk = main.getPlantManager().getPlantChunk(event.getChunk());
+            PlantChunk plantChunk = performantPlants.getPlantManager().getPlantChunk(event.getChunk());
             if (plantChunk != null) {
                 // unload plantChunk
-                plantChunk.unload(main);
+                plantChunk.unload(performantPlants);
             }
         });
     }

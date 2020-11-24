@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -8,34 +8,33 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PlantBuyCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantBuyCommand(Main mainClass) {
+    public PlantBuyCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "buy" },
                 "Buy plant item for player.",
                 "/pp buy <player> <plant-id> <amount>",
                 "performantplants.buy",
                 2,
                 3);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         // get player
         String playerName = argList.get(0);
-        Player player = main.getServer().getPlayer(playerName);
+        Player player = performantPlants.getServer().getPlayer(playerName);
         if (player == null) {
             commandSender.sendMessage("Player " + playerName + " not found");
             return;
         }
         String plantId = argList.get(1);
         // get plant item
-        PlantItem requestedItem = main.getPlantTypeManager().getPlantItemById(plantId);
+        PlantItem requestedItem = performantPlants.getPlantTypeManager().getPlantItemById(plantId);
         // if item not found, inform sender and stop
         if (requestedItem == null) {
             commandSender.sendMessage(String.format("Plant item '%s' not recognized", plantId));
@@ -63,7 +62,7 @@ public class PlantBuyCommand extends PPCommand {
         }
         // check if player has necessary funds
         double totalWorth = requestedItem.getBuyPrice()*amount;
-        if (!main.getEconomy().has(player, totalWorth)) {
+        if (!performantPlants.getEconomy().has(player, totalWorth)) {
             commandSender.sendMessage(String.format("Player %s does not have the required %.2f to purchase %d of %s",
                     playerName, totalWorth, amount, plantId));
             return;
@@ -79,7 +78,7 @@ public class PlantBuyCommand extends PPCommand {
         }
         // take proper amount of money
         totalWorth = requestedItem.getBuyPrice()*givenAmount;
-        main.getEconomy().withdrawPlayer(player, totalWorth);
+        performantPlants.getEconomy().withdrawPlayer(player, totalWorth);
         // show message to buyer
         if (amount != 0 && givenAmount == 0) {
             player.sendMessage("Bought 0 of " + plantId + " due to full inventory");
