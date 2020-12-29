@@ -28,7 +28,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class PlayerInteractListener implements Listener {
 
-    private PerformantPlants performantPlants;
+    private final PerformantPlants performantPlants;
 
     public PlayerInteractListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;

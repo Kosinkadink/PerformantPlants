@@ -29,7 +29,7 @@ import java.util.UUID;
 public class DatabaseManager {
 
     private final PerformantPlants performantPlants;
-    private String storageDir = "storage/";
+    private final String storageDir = "storage/";
     private final HashMap<String, File> databaseFiles = new HashMap<>();
     private File statisticsDatabaseFile;
     private File globalDataDatabaseFile;

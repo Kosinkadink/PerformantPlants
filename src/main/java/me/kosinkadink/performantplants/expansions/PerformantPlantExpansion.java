@@ -5,6 +5,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import org.bukkit.OfflinePlayer;
@@ -23,6 +24,9 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
     private final Pattern HASSEED_PATTERN = Pattern.compile("^hasseed_(?<plantId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern SOLD_PATTERN = Pattern.compile("^sold_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantItemId>[a-zA-Z0-9_.\\-]+)$");
     private final Pattern SOLDTAG_PATTERN = Pattern.compile("^soldtag_(?<playerUUID>[a-zA-Z0-9\\-]{36})_(?<plantTag>[a-zA-Z0-9_.\\-]+)$");
+
+    private final Pattern GETSCOPEPARAMETER_PATTERN = Pattern.compile("^getscope_(?<plantId>[a-zA-Z0-9_.\\-]+),(?<scope>[a-zA-Z0-9_.\\-]+),(?<parameter>[a-zA-Z0-9_.\\-]+),(?<variable>[a-zA-Z0-9_.\\-]+)$");
+    private final Pattern SETSCOPEPARAMETER_PATTERN = Pattern.compile("^setscope_(?<plantId>[a-zA-Z0-9_.\\-]+),(?<scope>[a-zA-Z0-9_.\\-]+),(?<parameter>[a-zA-Z0-9_.\\-]+),(?<variable>[a-zA-Z0-9_.\\-]+),(?<value>[a-zA-Z0-9_., \\-]*)$");
 
     public PerformantPlantExpansion(PerformantPlants performantPlants) {
         this.performantPlants = performantPlants;
@@ -149,6 +153,23 @@ public class PerformantPlantExpansion extends PlaceholderExpansion {
             }
             // add up sold statistic for each plant in tag
             return String.format("%d", amount);
+        }
+
+        // %performantplants_getscope_<plantId>,<scope>,<parameter>,<variable>% -> variable value
+        // Examples:
+        //   %performantplants_getscope_corn,player,{player_uuid},planted%
+        matcher = GETSCOPEPARAMETER_PATTERN.matcher(identifier);
+        if (matcher.find()) {
+            String plantId = matcher.group("plantId");
+            String scope = matcher.group("scope");
+            String parameter = matcher.group("parameter");
+            String variable = matcher.group("variable");
+            // get variable, if exists
+            Object value = performantPlants.getPlantTypeManager().getVariable(plantId, scope, parameter, variable);
+            if (value == null) {
+                return "";
+            }
+            return new ScriptResult(value).getStringValue();
         }
 
         // return null if invalid placeholder provided
