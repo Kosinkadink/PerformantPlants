@@ -10,14 +10,32 @@ public class RandomHelper {
     }
 
     public static int generateRandomIntInRange(int min, int max) {
+        if (min == max) {
+            return min;
+        }
+        else if (min > max) {
+            return ThreadLocalRandom.current().nextInt(max, min);
+        }
         return ThreadLocalRandom.current().nextInt(min, max);
     }
 
     public static long generateRandomLongInRange(long min, long max) {
+        if (min == max) {
+            return min;
+        }
+        else if (min > max) {
+            return ThreadLocalRandom.current().nextLong(max, min);
+        }
         return ThreadLocalRandom.current().nextLong(min, max);
     }
 
     public static double generateRandomDoubleInRange(double min, double max) {
+        if (min == max) {
+            return min;
+        }
+        else if (min > max) {
+            return ThreadLocalRandom.current().nextDouble(max, min);
+        }
         return ThreadLocalRandom.current().nextDouble(min, max);
     }
 

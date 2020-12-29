@@ -193,7 +193,8 @@ public class BlockHelper {
     public static boolean isInteractable(Block block) {
         return block.getType().isInteractable() &&
                 block.getType() != Material.PISTON_HEAD &&
-                !block.getType().toString().endsWith("STAIRS");
+                !block.getType().toString().endsWith("STAIRS") &&
+                !block.getType().toString().endsWith("FENCE");
     }
 
     public static Location getCenter(Block block) {

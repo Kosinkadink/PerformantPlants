@@ -19,12 +19,7 @@ public class ScriptOperationRandomDouble extends ScriptOperationBinary {
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
         ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
         ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
-        // if left value is greater or equal to right value,
-        // prevent error from occurring and just return 0.0
-        if (leftInstance.getDoubleValue() >= rightInstance.getDoubleValue()) {
-            return new ScriptResult(0.0);
-        }
-        // otherwise go ahead and perform the random generation
+        // perform the random generation
         return new ScriptResult(RandomHelper.generateRandomDoubleInRange(
                 leftInstance.getDoubleValue(), rightInstance.getDoubleValue()
         ));

@@ -19,12 +19,7 @@ public class ScriptOperationRandomLong extends ScriptOperationBinary {
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
         ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
         ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
-        // if left value is greater or equal to right value,
-        // prevent error from occurring and just return 0L
-        if (leftInstance.getLongValue() >= rightInstance.getLongValue()) {
-            return new ScriptResult(0L);
-        }
-        // otherwise go ahead and perform the random generation
+        // perform the random generation
         return new ScriptResult(RandomHelper.generateRandomLongInRange(
                 leftInstance.getLongValue(), rightInstance.getLongValue()
         ));
