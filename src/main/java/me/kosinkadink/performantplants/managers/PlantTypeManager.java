@@ -47,6 +47,14 @@ public class PlantTypeManager {
         return false;
     }
 
+    public boolean containsScopeParameter(String plantId, String scope, String parameter) {
+        PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
+        if (plantDataStorage != null) {
+            return plantDataStorage.containsScopeParameter(scope, parameter);
+        }
+        return false;
+    }
+
     public boolean removeScopeParameter(String plantId, String scope, String parameter) {
         PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
         if (plantDataStorage != null) {

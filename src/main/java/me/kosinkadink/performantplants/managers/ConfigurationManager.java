@@ -3039,18 +3039,23 @@ public class ConfigurationManager {
         try {
             if (section == null) {
                 return null;
-            } else if (section.isBoolean(subsectionName)) {
-                return new ScriptResult(section.getBoolean(subsectionName));
-            } else if (section.isInt(subsectionName)) {
-                return new ScriptResult(section.getInt(subsectionName));
-            } else if (section.isLong(subsectionName)) {
-                return new ScriptResult(section.getLong(subsectionName));
-            } else if (section.isDouble(subsectionName)) {
-                return new ScriptResult(section.getDouble(subsectionName));
-            } else if (section.isString(subsectionName)) {
-                return new ScriptResult(section.getString(subsectionName));
+            }
+            else if (subsectionName != null) {
+                if (section.isBoolean(subsectionName)) {
+                    return new ScriptResult(section.getBoolean(subsectionName));
+                } else if (section.isInt(subsectionName)) {
+                    return new ScriptResult(section.getInt(subsectionName));
+                } else if (section.isLong(subsectionName)) {
+                    return new ScriptResult(section.getLong(subsectionName));
+                } else if (section.isDouble(subsectionName)) {
+                    return new ScriptResult(section.getDouble(subsectionName));
+                } else if (section.isString(subsectionName)) {
+                    return new ScriptResult(section.getString(subsectionName));
+                } else {
+                    return createPlantScriptSpecific(section.getConfigurationSection(subsectionName), data);
+                }
             } else {
-                return createPlantScriptSpecific(section.getConfigurationSection(subsectionName), data);
+                return null;
             }
         } catch (IllegalArgumentException e) {
             performantPlants.getLogger().warning(String.format("IllegalArgumentException loading PlantScript in section '%s' for " +
@@ -3066,13 +3071,11 @@ public class ConfigurationManager {
             return null;
         }
         for (String blockName : section.getKeys(false)) {
+            boolean directValue = false;
             ConfigurationSection blockSection = section.getConfigurationSection(blockName);
             if (blockSection == null) {
-                if (blockName.toLowerCase().equals("variable") || blockName.toLowerCase().equals("value") || blockName.toLowerCase().equals("call")) {
-                    blockSection = section;
-                } else {
-                    break;
-                }
+                blockSection = section;
+                directValue = true;
             }
             ScriptBlock returned = null;
             switch (blockName.toLowerCase()) {
@@ -3086,131 +3089,136 @@ public class ConfigurationManager {
                     returned = createScriptOperationWithNoArguments(blockSection, data); break;
                 // reference to defined stored-script-block in plant
                 case "stored":
-                    returned = getStoredScriptBlock(blockSection, data); break;
+                    returned = getStoredScriptBlock(blockSection, directValue, blockName, data); break;
                 // math
                 case "+":
                 case "add":
-                    returned = createScriptOperationAdd(blockSection, data); break;
+                    returned = createScriptOperationAdd(blockSection, directValue, data); break;
                 case "+=":
                 case "addto":
-                    returned = createScriptOperationAddTo(blockSection, data); break;
+                    returned = createScriptOperationAddTo(blockSection, directValue, data); break;
                 case "-":
                 case "subtract":
-                    returned = createScriptOperationSubtract(blockSection, data); break;
+                    returned = createScriptOperationSubtract(blockSection, directValue, data); break;
                 case "-=":
                 case "subtractfrom":
-                    returned = createScriptOperationSubtractFrom(blockSection, data); break;
+                    returned = createScriptOperationSubtractFrom(blockSection, directValue, data); break;
                 case "*":
                 case "multiply":
-                    returned = createScriptOperationMultiply(blockSection, data); break;
+                    returned = createScriptOperationMultiply(blockSection, directValue, data); break;
                 case "*=":
                 case "multiplyby":
-                    returned = createScriptOperationMultiplyBy(blockSection, data); break;
+                    returned = createScriptOperationMultiplyBy(blockSection, directValue, data); break;
                 case "/":
                 case "divide":
-                    returned = createScriptOperationDivide(blockSection, data); break;
+                    returned = createScriptOperationDivide(blockSection, directValue, data); break;
                 case "/=":
                 case "divideby":
-                    returned = createScriptOperationDivideBy(blockSection, data); break;
+                    returned = createScriptOperationDivideBy(blockSection, directValue, data); break;
                 case "%":
                 case "modulus":
-                    returned = createScriptOperationModulus(blockSection, data); break;
+                    returned = createScriptOperationModulus(blockSection, directValue, data); break;
                 case "%=":
                 case "modulusof":
-                    returned = createScriptOperationModulusOf(blockSection, data); break;
+                    returned = createScriptOperationModulusOf(blockSection, directValue, data); break;
                 case "**":
                 case "power":
-                    returned = createScriptOperationPower(blockSection, data); break;
+                    returned = createScriptOperationPower(blockSection, directValue, data); break;
                 case "**=":
                 case "powerof":
-                    returned = createScriptOperationPowerOf(blockSection, data); break;
+                    returned = createScriptOperationPowerOf(blockSection, directValue, data); break;
                 // logic
                 case "&&":
                 case "and":
-                    returned = createScriptOperationAnd(blockSection, data); break;
+                    returned = createScriptOperationAnd(blockSection, directValue, data); break;
                 case "||":
                 case "or":
-                    returned = createScriptOperationOr(blockSection, data); break;
+                    returned = createScriptOperationOr(blockSection, directValue, data); break;
                 case "!":
                 case "not":
-                    returned = createScriptOperationNot(blockSection, data); break;
+                    returned = createScriptOperationNot(blockSection, directValue, blockName, data); break;
                 // compare
                 case "==":
                 case "equal":
-                    returned = createScriptOperationEqual(blockSection, data); break;
+                case "equals":
+                    returned = createScriptOperationEqual(blockSection, directValue, data); break;
                 case "!=":
                 case "notequal":
-                    returned = createScriptOperationNotEqual(blockSection, data); break;
+                case "notequals":
+                    returned = createScriptOperationNotEqual(blockSection, directValue, data); break;
                 case ">":
                 case "greaterthan":
-                    returned = createScriptOperationGreaterThan(blockSection, data); break;
+                    returned = createScriptOperationGreaterThan(blockSection, directValue, data); break;
                 case ">=":
                 case "greaterthanorequalto":
-                    returned = createScriptOperationGreaterThanOrEqualTo(blockSection, data); break;
+                    returned = createScriptOperationGreaterThanOrEqualTo(blockSection, directValue, data); break;
                 case "<":
                 case "lessthan":
-                    returned = createScriptOperationLessThan(blockSection, data); break;
+                    returned = createScriptOperationLessThan(blockSection, directValue, data); break;
                 case "<=":
                 case "lessthanorequalto":
-                    returned = createScriptOperationLessThanOrEqualTo(blockSection, data); break;
+                    returned = createScriptOperationLessThanOrEqualTo(blockSection, directValue, data); break;
                 // cast
                 case "(boolean)":
                 case "toboolean":
-                    returned = createScriptOperationToBoolean(blockSection, data); break;
+                    returned = createScriptOperationToBoolean(blockSection, directValue, blockName, data); break;
                 case "(double)":
                 case "todouble":
-                    returned = createScriptOperationToDouble(blockSection, data); break;
+                    returned = createScriptOperationToDouble(blockSection, directValue, blockName, data); break;
                 case "(long)":
                 case "tolong":
-                    returned = createScriptOperationToLong(blockSection, data); break;
+                    returned = createScriptOperationToLong(blockSection, directValue, blockName, data); break;
                 case "(string)":
                 case "tostring":
-                    returned = createScriptOperationToString(blockSection, data); break;
+                    returned = createScriptOperationToString(blockSection, directValue, blockName, data); break;
                 // functions
                 case "contains":
-                    returned = createScriptOperationContains(blockSection, data); break;
+                    returned = createScriptOperationContains(blockSection, directValue, data); break;
                 case "length":
-                    returned = createScriptOperationLength(blockSection, data); break;
+                    returned = createScriptOperationLength(blockSection, directValue, blockName, data); break;
                 case "=":
                 case "setvalue":
-                    returned = createScriptOperationSetValue(blockSection, data); break;
+                    returned = createScriptOperationSetValue(blockSection, directValue, data); break;
                 case "setvaluescope":
                 case "setvaluescopeparameter":
-                    returned = createScriptOperationSetValueScopeParameter(blockSection, data); break;
+                    returned = createScriptOperationSetValueScopeParameter(blockSection, directValue, data); break;
                 case "getvaluescope":
                 case "getvaluescopeparameter":
-                    returned = createScriptOperationGetValueScopeParameter(blockSection, data); break;
+                    returned = createScriptOperationGetValueScopeParameter(blockSection, directValue, data); break;
                 case "removescope":
                 case "removescopeparameter":
-                    returned = createScriptOperationRemoveScopeParameter(blockSection, data); break;
+                    returned = createScriptOperationRemoveScopeParameter(blockSection, directValue, data); break;
+                case "containsscope":
+                case "containsscopeparameter":
+                    returned = createScriptOperationContainsScopeParameter(blockSection, directValue, data); break;
                 // flow
                 case "if":
-                    returned = createScriptOperationIf(blockSection, data); break;
+                    returned = createScriptOperationIf(blockSection, directValue, data); break;
                 case "func":
                 case "function":
-                    returned = createScriptOperationFunction(blockSection, data); break;
+                    returned = createScriptOperationFunction(blockSection, directValue, data); break;
                 // action
                 case "changestage":
-                    returned = createScriptOperationChangeStage(blockSection, data); break;
+                    returned = createScriptOperationChangeStage(blockSection, directValue, data); break;
                 case "interact":
-                    returned = createScriptOperationInteract(blockSection, data); break;
+                    returned = createScriptOperationInteract(blockSection, directValue, data); break;
                 case "consumable":
-                    returned = createScriptOperationConsumable(blockSection, data); break;
+                    returned = createScriptOperationConsumable(blockSection, directValue, data); break;
                 case "createblocks":
-                    returned = createScriptOperationCreatePlantBlocks(blockSection, data); break;
+                    returned = createScriptOperationCreatePlantBlocks(blockSection, directValue, data); break;
                 case "scheduletask":
-                    returned = createScriptOperationScheduleTask(blockSection, data); break;
+                    returned = createScriptOperationScheduleTask(blockSection, directValue, data); break;
                 case "canceltask":
-                    returned = createScriptOperationCancelTask(blockSection, data); break;
+                    returned = createScriptOperationCancelTask(blockSection, directValue, data); break;
                 // random
                 case "chance":
-                    returned = createScriptOperationChance(blockSection, data); break;
+                    returned = createScriptOperationChance(blockSection, directValue, blockName, data); break;
                 case "choice":
-                    returned = createScriptOperationChoice(blockSection, data); break;
+                    returned = createScriptOperationChoice(blockSection, directValue, data); break;
                 case "randomdouble":
-                    returned = createScriptOperationRandomDouble(blockSection, data); break;
+                    returned = createScriptOperationRandomDouble(blockSection, directValue, data); break;
                 case "randomlong":
-                    returned = createScriptOperationRandomLong(blockSection, data); break;
+                    returned = createScriptOperationRandomLong(blockSection, directValue, data); break;
                 // not recognized
                 default:
                     performantPlants.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
@@ -3300,15 +3308,19 @@ public class ConfigurationManager {
     }
 
     // types - helpful
-    ScriptBlock createScriptOperationUnary(ConfigurationSection section, PlantData data) {
-        if (!section.isSet("input")) {
-            performantPlants.getLogger().warning("Input operand missing in section: " + section.getCurrentPath());
-            return null;
+    ScriptBlock createScriptOperationUnary(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        if (!directValue) {
+            return createPlantScript(section.getParent(), sectionName, data);
         }
-        return createPlantScript(section, "input", data);
+        return createPlantScript(section, sectionName, data);
     }
 
-    ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, PlantData data) {
+    ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationBinary in section: %s", section.getCurrentPath()));
+            return null;
+        }
         if (!section.isSet("left") || !section.isSet("right")) {
             performantPlants.getLogger().warning("Left or right operand missing in section: " + section.getCurrentPath());
             return null;
@@ -3328,11 +3340,11 @@ public class ConfigurationManager {
     }
 
     // stored script block
-    ScriptBlock getStoredScriptBlock(ConfigurationSection section, PlantData data) {
+    ScriptBlock getStoredScriptBlock(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
         if (data == null || data.getPlant() == null) {
             return null;
         }
-        ScriptBlock scriptBlockName = createScriptOperationUnary(section, data);
+        ScriptBlock scriptBlockName = createScriptOperationUnary(section, directValue, sectionName, data);
         if (scriptBlockName == null) {
             performantPlants.getLogger().warning("Name of script block name could not be parsed in section: " +
                     section.getCurrentPath());
@@ -3354,85 +3366,85 @@ public class ConfigurationManager {
     }
 
     // math
-    ScriptOperation createScriptOperationAdd(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationAdd(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationAdd(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationAddTo(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationAddTo(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationAddTo(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationSubtract(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationSubtract(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationSubtract(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationSubtractFrom(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationSubtractFrom(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationSubtractFrom(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationMultiply(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationMultiply(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationMultiply(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationMultiplyBy(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationMultiplyBy(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationMultiplyBy(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationDivide(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationDivide(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationDivide(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationDivideBy(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationDivideBy(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationDivideBy(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationModulus(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationModulus(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationModulus(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationModulusOf(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationModulusOf(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationModulusOf(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationPower(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationPower(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationPower(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationPowerOf(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationPowerOf(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
@@ -3440,22 +3452,22 @@ public class ConfigurationManager {
     }
     
     //logic
-    ScriptOperation createScriptOperationAnd(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationAnd(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationAnd(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationOr(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationOr(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationOr(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationNot(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationNot(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
@@ -3463,43 +3475,43 @@ public class ConfigurationManager {
     }
     
     //compare
-    ScriptOperation createScriptOperationEqual(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationEqual(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationEqual(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationNotEqual(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationNotEqual(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationNotEqual(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationGreaterThan(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationGreaterThan(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationGreaterThan(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationGreaterThanOrEqualTo(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationGreaterThanOrEqualTo(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationGreaterThanOrEqualTo(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationLessThan(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationLessThan(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationLessThan(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationLessThanOrEqualTo(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationLessThanOrEqualTo(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
@@ -3507,29 +3519,29 @@ public class ConfigurationManager {
     }
 
     // cast
-    ScriptOperation createScriptOperationToBoolean(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationToBoolean(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationToBoolean(operand);
     }
-    ScriptOperation createScriptOperationToDouble(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationToDouble(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationToDouble(operand);
     }
-    ScriptOperation createScriptOperationToLong(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationToLong(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationToLong(operand);
     }
-    ScriptOperation createScriptOperationToString(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationToString(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
@@ -3537,28 +3549,33 @@ public class ConfigurationManager {
     }
 
     // functions
-    ScriptOperation createScriptOperationContains(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationContains(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationContains(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationLength(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationLength(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationLength(operand);
     }
-    ScriptOperation createScriptOperationSetValue(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationSetValue(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationSetValue(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationRemoveScopeParameter(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationRemoveScopeParameter(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationRemoveScopeParameter in section: %s", section.getCurrentPath()));
+            return null;
+        }
         String plantIdString = "plant-id";
         String scopeString = "scope";
         String parameterString = "parameter";
@@ -3591,7 +3608,50 @@ public class ConfigurationManager {
         }
         return new ScriptOperationRemoveScopeParameter(plantId, scope, parameter);
     }
-    ScriptOperation createScriptOperationSetValueScopeParameter(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationContainsScopeParameter(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationContainsScopeParameter in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        String plantIdString = "plant-id";
+        String scopeString = "scope";
+        String parameterString = "parameter";
+        // set plantId
+        if (!section.isSet(plantIdString)) {
+            performantPlants.getLogger().warning("plant-id operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock plantId = createPlantScript(section, plantIdString, data);
+        if (plantId == null) {
+            return null;
+        }
+        // set scope
+        if (!section.isSet(scopeString)) {
+            performantPlants.getLogger().warning("scope operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock scope = createPlantScript(section, scopeString, data);
+        if (scope == null) {
+            return null;
+        }
+        // set parameter
+        if (!section.isSet(parameterString)) {
+            performantPlants.getLogger().warning("parameter operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock parameter = createPlantScript(section, parameterString, data);
+        if (parameter == null) {
+            return null;
+        }
+        return new ScriptOperationContainsScopeParameter(plantId, scope, parameter);
+    }
+    ScriptOperation createScriptOperationSetValueScopeParameter(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationSetValueScopeParameter in section: %s", section.getCurrentPath()));
+            return null;
+        }
         String plantIdString = "plant-id";
         String scopeString = "scope";
         String parameterString = "parameter";
@@ -3644,7 +3704,12 @@ public class ConfigurationManager {
         }
         return new ScriptOperationSetValueScopeParameter(plantId, scope, parameter, variableName, value);
     }
-    ScriptOperation createScriptOperationGetValueScopeParameter(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationGetValueScopeParameter(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationGetValueScopeParameter in section: %s", section.getCurrentPath()));
+            return null;
+        }
         String plantIdString = "plant-id";
         String scopeString = "scope";
         String parameterString = "parameter";
@@ -3701,7 +3766,12 @@ public class ConfigurationManager {
     }
 
     //flow
-    ScriptOperation createScriptOperationIf(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationIf(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationIf in section: %s", section.getCurrentPath()));
+            return null;
+        }
         String conditionString = "condition";
         String ifTrueString = "if-true";
         String ifFalseString = "if-false";
@@ -3726,7 +3796,12 @@ public class ConfigurationManager {
         }
         return new ScriptOperationIf(condition, ifTrue, ifFalse);
     }
-    ScriptOperation createScriptOperationFunction(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationFunction(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationFunction in section: %s", section.getCurrentPath()));
+            return null;
+        }
         int index = 0;
         ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
         for (String placeholder : section.getKeys(false)) {
@@ -3751,7 +3826,12 @@ public class ConfigurationManager {
     }
 
     //action
-    ScriptOperation createScriptOperationInteract(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationInteract(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationInteract in section: %s", section.getCurrentPath()));
+            return null;
+        }
         PlantInteractStorage plantInteractStorage = loadPlantInteractStorage(section, data);
         if (plantInteractStorage == null) {
             performantPlants.getLogger().warning("Could not load interact section to generate PlantScript Interact in section: " +
@@ -3765,7 +3845,12 @@ public class ConfigurationManager {
         }
         return new ScriptOperationInteract(plantInteractStorage, useMainHand);
     }
-    ScriptOperation createScriptOperationConsumable(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationConsumable(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationConsumable in section: %s", section.getCurrentPath()));
+            return null;
+        }
         PlantConsumableStorage plantConsumableStorage = loadPlantConsumableStorage(section, data);
         if (plantConsumableStorage == null) {
             performantPlants.getLogger().warning("Could not load consumable section to generate PlantScript Consumable in " +
@@ -3779,7 +3864,12 @@ public class ConfigurationManager {
         }
         return new ScriptOperationConsumable(plantConsumableStorage, useMainHand);
     }
-    ScriptOperation createScriptOperationChangeStage(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationChangeStage(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationChangeStage in section: %s", section.getCurrentPath()));
+            return null;
+        }
         String stageString = "go-to-stage";
         String ifNextString = "go-to-next";
         if (!section.isSet(stageString) && !section.isSet(ifNextString)) {
@@ -3796,11 +3886,21 @@ public class ConfigurationManager {
         }
         return new ScriptOperationChangeStage(performantPlants, stage, ifNext);
     }
-    ScriptOperation createScriptOperationCreatePlantBlocks(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationCreatePlantBlocks(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationCreatePlantBlocks in section: %s", section.getCurrentPath()));
+            return null;
+        }
         // TODO: fill out
         return null;
     }
-    ScriptOperation createScriptOperationScheduleTask(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationScheduleTask(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationScheduleTask in section: %s", section.getCurrentPath()));
+            return null;
+        }
         // get task config id
         String taskConfigId = section.getString("task");
         if (taskConfigId == null || taskConfigId.isEmpty()) {
@@ -3880,7 +3980,12 @@ public class ConfigurationManager {
                 currentPlayer, currentBlock, playerId, autostart);
     }
 
-    ScriptOperation createScriptOperationCancelTask(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationCancelTask(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationCancelTask in section: %s", section.getCurrentPath()));
+            return null;
+        }
         // get task id
         ScriptBlock taskId = createPlantScript(section, "task-id", data);
         if (taskId == null || !ScriptHelper.isString(taskId)) {
@@ -3891,14 +3996,19 @@ public class ConfigurationManager {
     }
 
     //random
-    ScriptOperation createScriptOperationChance(ConfigurationSection section, PlantData data) {
-        ScriptBlock operand = createScriptOperationUnary(section, data);
+    ScriptOperation createScriptOperationChance(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationChance(operand);
     }
-    ScriptOperation createScriptOperationChoice(ConfigurationSection section, PlantData data) {
+    ScriptOperation createScriptOperationChoice(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationChoice in section: %s", section.getCurrentPath()));
+            return null;
+        }
         int index = 0;
         ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
         for (String placeholder : section.getKeys(false)) {
@@ -3921,15 +4031,15 @@ public class ConfigurationManager {
         }
         return new ScriptOperationChoice(scriptBlocks);
     }
-    ScriptOperation createScriptOperationRandomDouble(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationRandomDouble(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationRandomDouble(operands.get(0), operands.get(1));
     }
-    ScriptOperation createScriptOperationRandomLong(ConfigurationSection section, PlantData data) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, data);
+    ScriptOperation createScriptOperationRandomLong(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }

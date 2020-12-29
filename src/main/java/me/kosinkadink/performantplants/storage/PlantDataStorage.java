@@ -36,6 +36,14 @@ public class PlantDataStorage {
         return null;
     }
 
+    public boolean containsScopeParameter(String scope, String parameter) {
+        ScopedPlantData scopedPlantData = getScopedPlantData(scope);
+        if (scopedPlantData != null) {
+            return scopedPlantData.getPlantDataMap().containsKey(parameter);
+        }
+        return false;
+    }
+
     public boolean removeScopeParameter(String scope, String parameter) {
         ScopedPlantData scopedPlantData = getScopedPlantData(scope);
         if (scopedPlantData != null) {
