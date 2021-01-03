@@ -1,28 +1,21 @@
 package me.kosinkadink.performantplants.hooks;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
 import me.kosinkadink.performantplants.tasks.PlantTask;
+import org.json.simple.JSONObject;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public abstract class PlantHook {
 
-    protected final UUID hookId;
     protected final UUID taskId;
     protected final HookAction action;
 
     protected String hookConfigId = "";
 
-    public PlantHook(UUID hookId, UUID taskId, HookAction action, String hookConfigId) {
-        this.hookId = hookId;
-        this.taskId = taskId;
-        this.action = action;
-        this.hookConfigId = hookConfigId;
-    }
-
     public PlantHook(UUID taskId, HookAction action, String hookConfigId) {
-        hookId = UUID.randomUUID();
         this.taskId = taskId;
         this.action = action;
         this.hookConfigId = hookConfigId;
@@ -46,6 +39,10 @@ public abstract class PlantHook {
         }
         this.hookConfigId = hookConfigId;
     }
+
+    public abstract String createJsonString();
+
+    public abstract void loadValuesFromJsonString(String jsonString) throws PlantHookJsonParseException;
 
     public abstract boolean performScriptBlock(PlantTask task);
 
@@ -89,11 +86,11 @@ public abstract class PlantHook {
             return false;
         PlantHook fromO = (PlantHook)o;
         // true if hookId and taskId match
-        return hookId == fromO.hookId && taskId == fromO.taskId;
+        return taskId == fromO.taskId && hookConfigId.equals(fromO.hookConfigId);
     }
 
     public int hashCode() {
-        return Objects.hash(hookId, taskId);
+        return Objects.hash(taskId, hookConfigId);
     }
 
 }

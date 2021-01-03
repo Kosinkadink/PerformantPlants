@@ -46,6 +46,7 @@ public class PerformantPlants extends JavaPlugin {
     public void onDisable() {
         plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
         configManager.getConfigSettings().setDebug(true); // enable debug mode to get extra logging on shutdown
+        taskManager.freezeAllTasks(); // freeze tasks so that they can be properly saved in the db
         databaseManager.cancelTask(); // cancel queued up save task, to prevent possible double-run
         databaseManager.saveDatabases(); // save all plant blocks
     }

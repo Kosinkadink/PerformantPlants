@@ -2838,7 +2838,7 @@ public class ConfigurationManager {
     //region Plant Script Hooks
     ArrayList<ScriptHook> createPlantScriptHooks(ScriptTask scriptTask, ConfigurationSection section, String subsectionName, PlantData data) {
         // if section exists
-        ArrayList<ScriptHook> hooks = new ArrayList<ScriptHook>();
+        ArrayList<ScriptHook> hooks = new ArrayList<>();
         if (section.isSet(subsectionName)) {
             ConfigurationSection hooksSection = section.getConfigurationSection(subsectionName);
             // create hooks with START action
@@ -2961,9 +2961,9 @@ public class ConfigurationManager {
                 performantPlants.getLogger().warning("Plant-script section is not valid plant script block in section: " + section.getCurrentPath());
                 return null;
             }
-            hook.setHookConfigId(action.toString() + "." + section.getName());
             hook.setHookScriptBlock(scriptBlock);
         }
+        hook.setHookConfigId(action.toString() + "." + section.getName());
         return hook;
     }
 

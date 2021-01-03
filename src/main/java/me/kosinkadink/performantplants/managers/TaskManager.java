@@ -27,6 +27,10 @@ public class TaskManager {
         this.performantPlants = performantPlants;
     }
 
+    public ConcurrentHashMap<String, PlantTask> getTaskMap() {
+        return taskMap;
+    }
+
     public boolean scheduleTask(PlantTask task) {
         if (task.isStartable()) {
             if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
@@ -44,6 +48,35 @@ public class TaskManager {
             } else {
                 // otherwise pause it
                 task.pauseTask();
+            }
+            // check hooks
+            for (PlantHook hook : task.getHooks()) {
+                // if performStartup results in a cancel action (returned false), return false since it got cancelled
+                if (!hook.performStartup()) {
+                    return false;
+                }
+                // register hook
+                registerHook(hook);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean scheduleFrozenTask(PlantTask task) {
+        if (task.isStartable()) {
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) {
+                performantPlants.getLogger().info("Scheduling FROZEN task with id: " + task.getTaskId());
+            }
+            addTaskToMap(task);
+            // if not paused, then start to unfreeze
+            if (!task.isPaused()) {
+                boolean startedTask = task.startTask(performantPlants);
+                // if failed to start, cancel task and return false
+                if (!startedTask) {
+                    cancelTask(task.getTaskId().toString(), null);
+                    return false;
+                }
             }
             // check hooks
             for (PlantHook hook : task.getHooks()) {

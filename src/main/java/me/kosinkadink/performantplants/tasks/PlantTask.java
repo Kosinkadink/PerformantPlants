@@ -192,6 +192,10 @@ public class PlantTask {
         return paused;
     }
 
+    public void setInitialPausedValue(boolean paused) {
+        this.paused = paused;
+    }
+
     public boolean isCancelled() {
         return cancelled;
     }

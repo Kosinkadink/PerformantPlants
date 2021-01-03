@@ -3,28 +3,32 @@ package me.kosinkadink.performantplants.managers;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
+import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
+import me.kosinkadink.performantplants.hooks.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScopeParameterIdentifier;
 import me.kosinkadink.performantplants.scripting.ScopedPlantData;
+import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
+import me.kosinkadink.performantplants.scripting.storage.hooks.*;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.statistics.StatisticsTagItem;
 import me.kosinkadink.performantplants.storage.PlantChunkStorage;
 import me.kosinkadink.performantplants.storage.PlantDataStorage;
 import me.kosinkadink.performantplants.storage.StatisticsAmountStorage;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
+import me.kosinkadink.performantplants.tasks.PlantTask;
+import me.kosinkadink.performantplants.util.TaskAndHooksHolder;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class DatabaseManager {
 
@@ -33,6 +37,7 @@ public class DatabaseManager {
     private final HashMap<String, File> databaseFiles = new HashMap<>();
     private File statisticsDatabaseFile;
     private File globalDataDatabaseFile;
+    private File taskSchedulingDatabaseFile;
     private BukkitTask saveTask;
 
     public DatabaseManager(PerformantPlants performantPlantsClass) {
@@ -55,24 +60,30 @@ public class DatabaseManager {
                 // if doesn't exist, make sure directories are created
                 file.getParentFile().mkdirs();
             }
-            // load db; also created db file if doesn't already exist
+            // load db; also create db file if doesn't already exist
             boolean loaded = loadDatabase(file, worldName);
             if (loaded) {
                 databaseFiles.put(worldName, file);
             }
         }
         performantPlants.getLogger().info("Loaded plant databases");
-        // load statistics db; also created db file if doesn't already exist
+        // load statistics db; also create db file if doesn't already exist
         File file = new File(performantPlants.getDataFolder(), storageDir + "statistics");
         boolean loaded = loadStatisticsDatabase(file);
         if (loaded) {
             statisticsDatabaseFile = file;
         }
-        // load global plant data db; also created db file if doesn't already exist
+        // load global plant data db; also create db file if doesn't already exist
         file = new File(performantPlants.getDataFolder(), storageDir + "global_data");
         loaded = loadGlobalDataDatabase(file);
         if (loaded) {
             globalDataDatabaseFile = file;
+        }
+        // load task scheduling db; also create db file if doesn't already exist
+        file = new File(performantPlants.getDataFolder(), storageDir + "task_scheduling");
+        loaded = loadTaskSchedulingDatabase(file);
+        if (loaded) {
+            taskSchedulingDatabaseFile = file;
         }
     }
 
@@ -151,6 +162,23 @@ public class DatabaseManager {
         return true;
     }
 
+    boolean loadTaskSchedulingDatabase(File file) {
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        String url = getUrlFromFile(file);
+        // Load tasks from tasks
+        boolean success = addTasksAndHooksFromDatabase(conn, url);
+        if (!success) {
+            return false;
+        }
+        performantPlants.getLogger().info("Successfully loaded tasks db at url: " + url);
+        return true;
+    }
+
     //endregion
 
     //region Save Data
@@ -168,6 +196,10 @@ public class DatabaseManager {
         // save global data db
         if (globalDataDatabaseFile != null) {
             saveGlobalPlantDataDatabase(globalDataDatabaseFile);
+        }
+        // save task scheduling db
+        if (taskSchedulingDatabaseFile != null) {
+            saveTaskSchedulingDatabase(taskSchedulingDatabaseFile);
         }
     }
 
@@ -451,7 +483,7 @@ public class DatabaseManager {
         /////////////////////////////////////////////////////////////
 
         /////////////////////////////////////
-        // add/update all plantTags entries
+        // add/update all scopedPlantData entries
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating scopedPlantData in db...");
         // =========== TRANSACTION START
         try {
@@ -484,6 +516,86 @@ public class DatabaseManager {
         // =========== TRANSACTION END
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating scopedPlantData in db");
         //////////////////////////////////////////
+        return true;
+    }
+
+    boolean saveTaskSchedulingDatabase(File file) {
+        // Create dirs if file does not exist
+        if (!file.exists()) {
+            // if doesn't exist, make sure directories are created
+            file.getParentFile().mkdirs();
+        }
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        // Create tables if don't already exist
+        createTableTasks(conn);
+        createTableHooks(conn);
+        ////////////////////////////////////////////////////////
+        // remove any tasks/hooks set for removal
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing tasks and hooks from db...");
+        ArrayList<UUID> tasksToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        // remove tasks marked for deletion
+        for (UUID taskToDelete : performantPlants.getTaskManager().getTaskIdsToDelete()) {
+            boolean success = removePlantTaskFromTableTasks(conn, taskToDelete.toString());
+            if (success) {
+                tasksToRemoveCache.add(taskToDelete);
+                // remove task's hooks
+                removePlantHooksFromTableHooks(conn, taskToDelete.toString());
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        // remove cached removal identifiers from being removed next time
+        for (UUID taskUUID : tasksToRemoveCache) {
+            performantPlants.getTaskManager().removeTaskIdFromRemoval(taskUUID);
+        }
+        tasksToRemoveCache.clear();
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing tasks and hooks from db");
+        ////////////////////////////////////////////////////////
+
+        /////////////////////////////////////
+        // add/update all task/hook entries
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating tasks and hooks in db...");
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (PlantTask task : performantPlants.getTaskManager().getTaskMap().values()) {
+            boolean success = insertPlantTaskIntoTableTasks(conn, task);
+            if (success) {
+                for (PlantHook hook : task.getHooks()) {
+                    insertPlantHookIntoTableHooks(conn, hook);
+                }
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating tasks and hooks in db");
+        /////////////////////////////////////
         return true;
     }
 
@@ -711,6 +823,180 @@ public class DatabaseManager {
     }
 
     //endregion
+
+    // region Task and Hooks Tables
+
+    boolean createTableTasks(Connection conn) {
+        String sql = "CREATE TABLE IF NOT EXISTS tasks (\n"
+                + "    taskUUID TEXT NOT NULL,\n"
+                + "    plant TEXT NOT NULL,\n"
+                + "    taskConfigId TEXT NOT NULL,\n"
+                + "    playerUUID text,\n"
+                + "    x INTEGER,\n"
+                + "    y INTEGER,\n"
+                + "    z INTEGER,\n"
+                + "    world TEXT,\n"
+                + "    delay INTEGER,\n"
+                + "    paused BOOLEAN,\n"
+                + "    PRIMARY KEY (taskUUID)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe(
+                    "Exception occurred creating table 'parents'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertPlantTaskIntoTableTasks(Connection conn, PlantTask task) {
+        String sql = "REPLACE INTO tasks(taskUUID, plant, taskConfigId, playerUUID, x, y, z, world, delay, paused)\n"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // get player uuid
+            String playerUUID = null;
+            if (task.getOfflinePlayer() != null) {
+                playerUUID = task.getOfflinePlayer().getUniqueId().toString();
+            }
+            // get block location
+            int x = 0;
+            int y = 0;
+            int z = 0;
+            String world = null;
+            if (task.getBlockLocation() != null) {
+                x = task.getBlockLocation().getX();
+                y = task.getBlockLocation().getY();
+                z = task.getBlockLocation().getZ();
+                world = task.getBlockLocation().getWorldName();
+            }
+            // set values; index starts at 1
+            pstmt.setString(  1, task.getTaskId().toString());
+            pstmt.setString(  2, task.getPlantId());
+            pstmt.setString(  3, task.getTaskConfigId());
+            pstmt.setString(  4, playerUUID);
+            pstmt.setInt(     5, x);
+            pstmt.setInt(     6, y);
+            pstmt.setInt(     7, z);
+            pstmt.setString(  8, world);
+            pstmt.setLong(    9, task.getDelay());
+            pstmt.setBoolean(10, task.isPaused());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(String.format("Could not insert PlantTask into " +
+                    "tasks: %s,%s,%s; %s",
+                    task.getTaskId(), task.getPlantId(), task.getTaskConfigId(), e.toString())
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean removePlantTaskFromTableTasks(Connection conn, String taskUUID) {
+        String sql = "DELETE FROM tasks\n"
+                + "    WHERE taskUUID = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, taskUUID);
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(String.format("Could not remove PlantTask from " +
+                            "tasks: %s; %s",
+                    taskUUID,
+                    e.toString()
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    boolean createTableHooks(Connection conn) {
+        String sql = "CREATE TABLE IF NOT EXISTS hooks (\n"
+                + "    taskUUID TEXT NOT NULL,\n"
+                + "    hookConfigId TEXT NOT NULL,\n"
+                + "    action TEXT NOT NULL,\n"
+                + "    json_data TEXT,\n"
+                + "    PRIMARY KEY (taskUUID, hookConfigId)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe(
+                    "Exception occurred creating table 'parents'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertPlantHookIntoTableHooks(Connection conn, PlantHook hook) {
+        String sql = "REPLACE INTO hooks(taskUUID, hookConfigId, action, json_data)\n"
+                + "VALUES(?,?,?,?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, hook.getTaskId().toString());
+            pstmt.setString(2, hook.getHookConfigId());
+            pstmt.setString(3, hook.getAction().toString());
+            pstmt.setString(4, hook.createJsonString());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(String.format("Could not insert PlantHook into " +
+                    "hooks: %s,%s,%s; %s",
+                    hook.getHookConfigId(), hook.getTaskId(), hook.getAction().toString(), e.toString())
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean removePlantHookFromTableHooks(Connection conn, HookIdentifier hookIdentifier) {
+        String sql = "DELETE FROM hooks\n"
+                + "    WHERE taskUUID = ?"
+                + "    AND hookConfigId = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, hookIdentifier.getTaskUUID());
+            pstmt.setString(2, hookIdentifier.getHookConfigId());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(String.format("Could not remove PlantHook from " +
+                            "hooks: %s,%s; %s",
+                    hookIdentifier.getTaskUUID(),
+                    hookIdentifier.getHookConfigId(),
+                    e.toString()
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    boolean removePlantHooksFromTableHooks(Connection conn, String taskUUID) {
+        String sql = "DELETE FROM hooks\n"
+                + "    WHERE taskUUID = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, taskUUID);
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(String.format("Could not remove PlantHook from " +
+                            "hooks: %s; %s",
+                    taskUUID,
+                    e.toString()
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    // endregion
 
     //region Parents Table
 
@@ -1116,7 +1402,7 @@ public class DatabaseManager {
     //region Add Global Plant Data
 
     boolean addGlobalPlantDataFromDatabase(Connection conn, String url) {
-        // Create table if doesn't already exist
+        // create table if doesn't already exist
         createTableGlobalPlantData(conn);
         // create list of identifiers to remove, if data is no longer necessary to be kept in db
         ArrayList<ScopeParameterIdentifier> identifiersToRemove = new ArrayList<>();
@@ -1185,6 +1471,277 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load globalPlantData; " + e.toString());
         }
         return null;
+    }
+
+    //end region
+
+    //region Add Tasks
+
+    boolean addTasksAndHooksFromDatabase(Connection conn, String url) {
+        // create tasks table if doesn't already exist
+        createTableTasks(conn);
+        // create hooks table if doesn't already exist
+        createTableHooks(conn);
+        // create list of tasks to remove, if tasks are no longer needed/valid
+        ArrayList<String> tasksToRemove = new ArrayList<>();
+        // create list of hooks to remove, if they are no longer needed for a task
+        ArrayList<HookIdentifier> hooksToRemove = new ArrayList<>();
+        // get and load all tasks stored in db
+        String sql = "SELECT taskUUID, plant, taskConfigId, playerUUID, x, y, z, world, delay, paused FROM tasks;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                TaskAndHooksHolder toRemove = addTaskAndHooksFromResultSet(conn, rs);
+                if (toRemove != null) {
+                    if (toRemove.getTaskUUID() != null) {
+                        tasksToRemove.add(toRemove.getTaskUUID());
+                    }
+                    if (toRemove.getHookIdentifiers() != null) {
+                        hooksToRemove.addAll(toRemove.getHookIdentifiers());
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred loading tasks from url: " + url + "; " + e.toString());
+            return false;
+        }
+        // remove tasks and hooks to be removed
+        if (!tasksToRemove.isEmpty() || !hooksToRemove.isEmpty()) {
+            // =========== TRANSACTION START
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("BEGIN;");
+            } catch (SQLException e) {
+                performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+            }
+            for (String taskUUID : tasksToRemove) {
+                removePlantTaskFromTableTasks(conn, taskUUID);
+            }
+            for (HookIdentifier hookIdentifier : hooksToRemove) {
+                removePlantHookFromTableHooks(conn, hookIdentifier);
+            }
+            try {
+                Statement stmt = conn.createStatement();
+                stmt.execute("COMMIT;");
+            } catch (SQLException e) {
+                performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+            }
+            // =========== TRANSACTION END
+        }
+        return true;
+    }
+
+    TaskAndHooksHolder addTaskAndHooksFromResultSet(Connection conn, ResultSet rs) {
+        try {
+            // create task from result set
+            PlantTask task = new PlantTask(
+                    UUID.fromString(rs.getString("taskUUID")),
+                    rs.getString("plant"),
+                    rs.getString("taskConfigId")
+            );
+            // add OfflinePlayer, if playerUUID present
+            String playerUUIDString = rs.getString("playerUUID");
+            if (playerUUIDString != null && !playerUUIDString.isEmpty()) {
+                UUID playerUUID = UUID.fromString(playerUUIDString);
+                task.setOfflinePlayer(performantPlants.getServer().getOfflinePlayer(playerUUID));
+            }
+            // add BlockLocation, if world present
+            String world = rs.getString("world");
+            if (world != null && !world.isEmpty()) {
+                task.setBlockLocation(new BlockLocation(
+                        rs.getInt("x"),
+                        rs.getInt("y"),
+                        rs.getInt("z"),
+                        world
+                ));
+            }
+            // add delay and initial paused value
+            task.setDelay(rs.getLong("delay"));
+            task.setInitialPausedValue(rs.getBoolean("paused"));
+            // now that task is loaded, load/create corresponding hooks
+            // first, get plant
+            Plant plant = performantPlants.getPlantTypeManager().getPlantById(task.getPlantId());
+            if (plant == null) {
+                return new TaskAndHooksHolder(task.getTaskId().toString());
+            }
+            // get script corresponding script task
+            ScriptTask scriptTask = plant.getScriptTask(task.getTaskConfigId());
+            if (scriptTask == null) {
+                return new TaskAndHooksHolder(task.getTaskId().toString());
+            }
+            // if there are no ScriptHooks defined for task, mark all saved hooks for deletion
+            if (scriptTask.getHooks().isEmpty()) {
+                return new TaskAndHooksHolder(
+                        getHookIdentifiersForTaskFromTableHooks(conn, task.getTaskId().toString())
+                );
+            }
+            // try to generate list of hooks for task
+            ArrayList<HookIdentifier> hooksToRemove = new ArrayList<>();
+            ArrayList<PlantHook> plantHooksToAdd = generatePlantHooksForTasksFromTableHooks(conn, task, scriptTask, hooksToRemove);
+            // if null, mark task for deletion
+            if (plantHooksToAdd == null) {
+                return new TaskAndHooksHolder(task.getTaskId().toString());
+            }
+            // add hooks to task
+            for (PlantHook hookToAdd : plantHooksToAdd) {
+                task.addHook(hookToAdd);
+            }
+            // schedule task
+            performantPlants.getTaskManager().scheduleFrozenTask(task);
+            // return any hooks marked for removal
+            return new TaskAndHooksHolder(hooksToRemove);
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning("SQLException occurred trying to load tasks and hooks; " + e.toString());
+        }
+        return null;
+    }
+
+    ArrayList<PlantHook> generatePlantHooksForTasksFromTableHooks(Connection conn, PlantTask task, ScriptTask scriptTask, ArrayList<HookIdentifier> hooksToRemove) {
+        ArrayList<PlantHook> plantHooks = new ArrayList<>();
+        if (scriptTask.getHooks().isEmpty()) {
+            return plantHooks;
+        }
+        // compile set of hookConfigIds required for task
+        HashSet<String> hookConfigIdsRequired = new HashSet<>();
+        for (ScriptHook scriptHook : scriptTask.getHooks()) {
+            hookConfigIdsRequired.add(scriptHook.getHookConfigId());
+        }
+        // make sql call to get all existing hook data for task
+        String sql = "SELECT hookConfigId, action, json_data FROM hooks"
+                + "    WHERE taskUUID = ?;";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, task.getTaskId().toString());
+            // execute
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String hookConfigId = rs.getString("hookConfigId");
+                // if hookConfigId not required, mark for removal and process next retrieved hook
+                if (!hookConfigIdsRequired.contains(hookConfigId)) {
+                    hooksToRemove.add(new HookIdentifier(task.getTaskId(), hookConfigId));
+                    continue;
+                }
+                // if action not valid, mark for removal and process next retrieved hook
+                HookAction action = HookAction.fromString(rs.getString("action"));
+                if (action == null) {
+                    hooksToRemove.add(new HookIdentifier(task.getTaskId(), hookConfigId));
+                    continue;
+                }
+                ScriptHook scriptHook = scriptTask.getHook(hookConfigId);
+                PlantHook plantHook = null;
+                String jsonString = rs.getString("json_data");
+                // try to load data into plantHook from db data
+                try {
+                    // create PlantHook of appropriate type
+                    if (scriptHook instanceof ScriptHookPlayer) {
+                        if (scriptHook instanceof ScriptHookPlayerAlive) {
+                            plantHook = new PlantHookPlayerAlive(task.getTaskId(), action, hookConfigId, jsonString);
+                        } else if (scriptHook instanceof ScriptHookPlayerDead) {
+                            plantHook = new PlantHookPlayerDead(task.getTaskId(), action, hookConfigId, jsonString);
+                        } else if (scriptHook instanceof ScriptHookPlayerOnline) {
+                            plantHook = new PlantHookPlayerOnline(task.getTaskId(), action, hookConfigId, jsonString);
+                        } else if (scriptHook instanceof ScriptHookPlayerOffline) {
+                            plantHook = new PlantHookPlayerOffline(task.getTaskId(), action, hookConfigId, jsonString);
+                        }
+                    }
+                } catch (PlantHookJsonParseException e) {
+                    // invalid data, so mark hook for removal and process next hook
+                    hooksToRemove.add(new HookIdentifier(task.getTaskId(), hookConfigId));
+                    continue;
+                }
+                // mark hook for removal if hook type not recognized for some reason
+                if (plantHook == null) {
+                    performantPlants.getLogger().severe(String.format("BAD_CODE: generatePlantHooksForTasksFromTableHooks: hook %s is " +
+                            "valid, but ScriptHook instance type has no matching statement; hook will be discarded.", hookConfigId));
+                    hooksToRemove.add(new HookIdentifier(task.getTaskId(), hookConfigId));
+                    continue;
+                }
+                // data load worked, so plantHook was properly loaded
+                plantHooks.add(plantHook);
+                hookConfigIdsRequired.remove(hookConfigId);
+            }
+            // for all remaining hooks, try to generate hooks from existing data in task
+            for (String hookConfigId : hookConfigIdsRequired) {
+                ScriptHook scriptHook = scriptTask.getHook(hookConfigId);
+                PlantHook plantHook = null;
+                // create PlantHook of matching type
+                if (scriptHook instanceof ScriptHookPlayer) {
+                    OfflinePlayer offlinePlayer = null;
+                    ScriptHookPlayer thisScriptHook = (ScriptHookPlayer) scriptHook;
+                    // if hook is meant to use specific player's id, try to get its value
+                    if (thisScriptHook.getPlayerId() != null) {
+                        String playerUUIDString;
+                        // attempt to get value
+                        if (task.getOfflinePlayer() != null) {
+                            playerUUIDString = thisScriptHook.getPlayerIdValue(task.getOfflinePlayer().getPlayer(), task.getPlantBlock());
+                        } else {
+                            playerUUIDString = thisScriptHook.getPlayerIdValue(null, task.getPlantBlock());
+                        }
+                        UUID playerUUID;
+                        // attempt to convert to UUID
+                        try {
+                            playerUUID = UUID.fromString(playerUUIDString);
+                        } catch (IllegalArgumentException e) {
+                            // do not have enough info to create hook; task in invalid
+                            return null;
+                        }
+                        // set offline player
+                        offlinePlayer = performantPlants.getServer().getOfflinePlayer(playerUUID);
+                    }
+                    // if offlinePlayer not generated yet, then use task to do it
+                    if (offlinePlayer == null) {
+                        // if no player included on task, then hook cannot be generated; task is invalid
+                        if (task.getOfflinePlayer() == null) {
+                            return null;
+                        }
+                        // otherwise use task's offline player
+                        offlinePlayer = task.getOfflinePlayer();
+                    }
+                    if (thisScriptHook instanceof ScriptHookPlayerAlive) {
+                        plantHook = new PlantHookPlayerAlive(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, offlinePlayer);
+                    } else if (thisScriptHook instanceof ScriptHookPlayerDead) {
+                        plantHook = new PlantHookPlayerDead(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, offlinePlayer);
+                    } else if (thisScriptHook instanceof ScriptHookPlayerOnline) {
+                        plantHook = new PlantHookPlayerOnline(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, offlinePlayer);
+                    } else if (thisScriptHook instanceof ScriptHookPlayerOffline) {
+                        plantHook = new PlantHookPlayerOffline(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, offlinePlayer);
+                    }
+                } else {
+                    performantPlants.getLogger().severe(String.format("BAD_CODE: generatePlantHooksForTasksFromTableHooks: " +
+                            "manually generating hook %s results in an unrecognized ScriptHook type; hook will not be included.", hookConfigId));
+                    continue;
+                }
+                // add plant hook to list
+                plantHooks.add(plantHook);
+            }
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning("SQLException occurred trying to load PlantHooks for task; " + e.toString());
+        }
+        return plantHooks;
+    }
+
+    ArrayList<HookIdentifier> getHookIdentifiersForTaskFromTableHooks(Connection conn, String taskUUID) {
+        ArrayList<HookIdentifier> hookIdentifiers = new ArrayList<>();
+        String sql = "SELECT taskUUID, hookConfigId" +
+                "    WHERE taskUUID = ?;";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setString(1, taskUUID);
+            // execute
+            ResultSet rs = pstmt.executeQuery();
+            // add all return hook identifiers
+            while (rs.next()) {
+                HookIdentifier hookIdentifier = new HookIdentifier(
+                        rs.getString("taskUUID"),
+                        rs.getString("hookConfigId")
+                );
+                hookIdentifiers.add(hookIdentifier);
+            }
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning("SQLException occurred trying to load hook identifiers; " + e.toString());
+        }
+        return hookIdentifiers;
     }
 
     //end region
