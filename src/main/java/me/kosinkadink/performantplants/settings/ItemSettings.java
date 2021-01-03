@@ -189,7 +189,8 @@ public class ItemSettings {
         // add item flags
 
         if (!itemFlags.isEmpty()) {
-            builder.addItemFlags((ItemFlag[]) itemFlags.toArray());
+            ItemFlag[] itemFlagsArray = new ItemFlag[itemFlags.size()];
+            builder.addItemFlags(itemFlags.toArray(itemFlagsArray));
         }
         // add custom model data
         if (getCustomModelData() != null) {

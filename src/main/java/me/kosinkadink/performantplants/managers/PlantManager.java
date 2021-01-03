@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -15,17 +15,17 @@ import java.util.HashMap;
 
 public class PlantManager {
 
-    private Main main;
+    private PerformantPlants performantPlants;
     private static HashMap<String, PlantChunkStorage> plantChunkStorageMap = new HashMap<>();
 
-    public PlantManager(Main mainClass) {
-        main = mainClass;
+    public PlantManager(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
         createPlantChunkStorageMap();
     }
 
     public void createPlantChunkStorageMap() {
         for (World world : Bukkit.getWorlds()) {
-            PlantChunkStorage plantChunkStorage = new PlantChunkStorage(main, world.getName());
+            PlantChunkStorage plantChunkStorage = new PlantChunkStorage(performantPlants, world.getName());
             addPlantChunkStorage(plantChunkStorage);
         }
     }
@@ -53,7 +53,7 @@ public class PlantManager {
         // get plantChunkStorage
         PlantChunkStorage plantChunkStorage = getPlantChunkStorage(chunkLocation);
         if (plantChunkStorage == null) {
-            plantChunkStorage = new PlantChunkStorage(main, chunkLocation.getWorldName());
+            plantChunkStorage = new PlantChunkStorage(performantPlants, chunkLocation.getWorldName());
             addPlantChunkStorage(plantChunkStorage);
         }
         plantChunkStorage.addPlantBlock(block);
@@ -81,7 +81,7 @@ public class PlantManager {
                 parent.removeChildLocation(block.getLocation());
                 // if parent's stage should be updated, do it
                 if (block.isUpdateStageOnBreak()) {
-                    parent.goToPreviousStageGracefully(main, block.getStageIndex());
+                    parent.goToPreviousStageGracefully(performantPlants, block.getStageIndex());
                 }
             }
         }
@@ -137,7 +137,7 @@ public class PlantManager {
     //region Task Control
 
     public void startGrowthTask(PlantBlock plantBlock) {
-        plantBlock.startTask(main);
+        plantBlock.startTask(performantPlants);
     }
 
     public void startGrowthTask(BlockLocation blockLocation) {
@@ -159,7 +159,7 @@ public class PlantManager {
     }
 
     public void setGrowthTaskStage(PlantBlock plantBlock, int stage) {
-        plantBlock.goToPreviousStageGracefully(main, stage);
+        plantBlock.goToPreviousStageGracefully(performantPlants, stage);
     }
 
     public void setGrowthTaskStage(BlockLocation blockLocation, int stage) {

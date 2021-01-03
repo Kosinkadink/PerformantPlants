@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.statistics.StatisticsAmount;
 import me.kosinkadink.performantplants.statistics.StatisticsTagItem;
 import me.kosinkadink.performantplants.storage.StatisticsAmountStorage;
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class StatisticsManager {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
     private ConcurrentHashMap<UUID, StatisticsAmountStorage> plantItemsSoldStorageMap = new ConcurrentHashMap<>();
     private HashSet<StatisticsAmount> statisticsAmountsToDelete = new HashSet<>();
@@ -22,8 +22,8 @@ public class StatisticsManager {
     private ConcurrentHashMap<String, StatisticsTagStorage> plantTagStorageMap = new ConcurrentHashMap<>();
     private HashSet<StatisticsTagItem> statisticsTagsToDeleteItem = new HashSet<>();
 
-    public StatisticsManager(Main main) {
-        this.main = main;
+    public StatisticsManager(PerformantPlants performantPlants) {
+        this.performantPlants = performantPlants;
     }
 
     // region PlantItemsSold

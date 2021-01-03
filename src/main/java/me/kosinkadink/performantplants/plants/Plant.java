@@ -3,13 +3,14 @@ package me.kosinkadink.performantplants.plants;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,13 +18,14 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
-    private String id;
-    private PlantItem plantItem;
+    private final String id;
+    private final PlantItem plantItem;
     private PlantItem plantSeedItem;
-    private HashMap<String, PlantItem> goods = new HashMap<>();
-    private HashMap<String, GrowthStageBlock> growthStageBlockMap = new HashMap<>();
-    private HashMap<String, ScriptBlock> scriptBlockMap = new HashMap<>();
-    private StageStorage stageStorage = new StageStorage();
+    private final HashMap<String, PlantItem> goods = new HashMap<>();
+    private final HashMap<String, GrowthStageBlock> growthStageBlockMap = new HashMap<>();
+    private final HashMap<String, ScriptBlock> scriptBlockMap = new HashMap<>();
+    private final HashMap<String, ScriptTask> scriptTaskMap = new HashMap<>();
+    private final StageStorage stageStorage = new StageStorage();
     private PlantData plantData;
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
@@ -37,6 +39,8 @@ public class Plant {
         this.id = id;
         this.plantItem = plantItem;
         this.plantItem.setId(this.id);
+        plantData = new PlantData(new JSONObject());
+        plantData.setPlant(this);
     }
 
     public String getId() {
@@ -128,6 +132,19 @@ public class Plant {
         scriptBlockMap.put(blockId, scriptBlock);
     }
 
+    public void removeAllScriptBlocks() {
+        scriptBlockMap.clear();
+    }
+
+    // plant task map
+    public ScriptTask getScriptTask(String taskId) {
+        return scriptTaskMap.get(taskId);
+    }
+
+    public void addScriptTask(String taskId, ScriptTask scriptTask) {
+        scriptTaskMap.put(taskId, scriptTask);
+    }
+
     // requirements
     public boolean hasPlantRequirements() {
         return plantRequirementStorage != null && plantRequirementStorage.isSet();
@@ -191,7 +208,7 @@ public class Plant {
     //endregion
 
     public boolean hasPlantData() {
-        return plantData != null;
+        return plantData != null && !plantData.getData().isEmpty();
     }
 
     public boolean hasSeed() {

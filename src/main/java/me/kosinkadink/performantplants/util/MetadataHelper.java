@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.block.Block;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -11,15 +11,15 @@ import java.util.UUID;
 
 public class MetadataHelper {
 
-    public static void setPlantBlockMetadata(Main main, PlantBlock plantblock) {
+    public static void setPlantBlockMetadata(PerformantPlants performantPlants, PlantBlock plantblock) {
         plantblock.getBlock().setMetadata(
                 "performantplants-plant",
-                new FixedMetadataValue(main, plantblock.getPlantUUID().toString())
+                new FixedMetadataValue(performantPlants, plantblock.getPlantUUID().toString())
         );
     }
 
-    public static void removePlantBlockMetadata(Main main, Block block) {
-        block.removeMetadata("performantplants-plant", main);
+    public static void removePlantBlockMetadata(PerformantPlants performantPlants, Block block) {
+        block.removeMetadata("performantplants-plant", performantPlants);
     }
 
     public static boolean hasPlantBlockMetadata(Block block) {

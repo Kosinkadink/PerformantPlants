@@ -16,7 +16,7 @@ public class PlaceholderHelper {
             }
         }
         // replace plant variables
-        formatted = ScriptHelper.setVariables(plantBlock, formatted);
+        formatted = ScriptHelper.setVariables(plantBlock, player, formatted);
         // replace placeholders
         if (player != null) {
             if (Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {

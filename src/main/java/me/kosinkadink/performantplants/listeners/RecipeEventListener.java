@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.listeners;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
-import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.PlantRecipe;
@@ -22,19 +21,19 @@ import org.bukkit.inventory.*;
 
 public class RecipeEventListener implements Listener {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public RecipeEventListener(Main mainClass) {
-        main = mainClass;
+    public RecipeEventListener(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     @EventHandler
     public void onPrepareItemCraft(PrepareItemCraftEvent event) {
         // check if a vanilla recipe is trying to use a plant item
-        if (!main.getRecipeManager().isRecipe(event.getRecipe())) {
+        if (!performantPlants.getRecipeManager().isRecipe(event.getRecipe())) {
             for (ItemStack ingredient : event.getInventory().getMatrix()) {
                 // if plant item is used, set result to air
-                if (main.getPlantTypeManager().isPlantItemStack(ingredient)) {
+                if (performantPlants.getPlantTypeManager().isPlantItemStack(ingredient)) {
                     event.getInventory().setResult(new ItemStack(Material.AIR));
                     return;
                 }
@@ -45,7 +44,7 @@ public class RecipeEventListener implements Listener {
     @EventHandler
     public void onCraftItem(CraftItemEvent event) {
         if (!event.isCancelled()) {
-            PlantRecipe plantRecipe = main.getRecipeManager().getRecipe(event.getRecipe());
+            PlantRecipe plantRecipe = performantPlants.getRecipeManager().getRecipe(event.getRecipe());
             if (plantRecipe == null) {
                 return;
             }
@@ -88,25 +87,25 @@ public class RecipeEventListener implements Listener {
     @EventHandler
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         // check if a smelting recipe was registered for item stack
-        if (main.getPlantTypeManager().isPlantItemStack(event.getSource())) {
+        if (performantPlants.getPlantTypeManager().isPlantItemStack(event.getSource())) {
             switch (event.getBlock().getType()) {
                 case FURNACE:
-                    if (!main.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
+                    if (!performantPlants.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
                         event.setCancelled(true);
                     }
                     break;
                 case BLAST_FURNACE:
-                    if (!main.getRecipeManager().isInputForBlastingRecipe(event.getSource())) {
+                    if (!performantPlants.getRecipeManager().isInputForBlastingRecipe(event.getSource())) {
                         event.setCancelled(true);
                     }
                     break;
                 case SMOKER:
-                    if (!main.getRecipeManager().isInputForSmokingRecipe(event.getSource())) {
+                    if (!performantPlants.getRecipeManager().isInputForSmokingRecipe(event.getSource())) {
                         event.setCancelled(true);
                     }
                     break;
                 case CAMPFIRE:
-                    if (!main.getRecipeManager().isInputForCampfireRecipe(event.getSource())) {
+                    if (!performantPlants.getRecipeManager().isInputForCampfireRecipe(event.getSource())) {
                         event.setCancelled(true);
                     }
                     break;
@@ -120,7 +119,7 @@ public class RecipeEventListener implements Listener {
     public void onFurnaceBurn(FurnaceBurnEvent event) {
         // check if a plant item is about to be used as fuel
         // cancel if plant
-        if (main.getPlantTypeManager().isPlantItemStack(event.getFuel())) {
+        if (performantPlants.getPlantTypeManager().isPlantItemStack(event.getFuel())) {
             event.setCancelled(true);
             return;
         }
@@ -128,7 +127,7 @@ public class RecipeEventListener implements Listener {
         InventoryHolder inventoryHolder = (InventoryHolder) event.getBlock().getState();
         FurnaceInventory furnaceInventory = (FurnaceInventory) inventoryHolder.getInventory();
         // check if a smelting recipe was registered for item stack
-        if (main.getPlantTypeManager().isPlantItemStack(furnaceInventory.getSmelting()) && !main.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
+        if (performantPlants.getPlantTypeManager().isPlantItemStack(furnaceInventory.getSmelting()) && !performantPlants.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
             event.setCancelled(true);
         }
     }

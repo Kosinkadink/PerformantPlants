@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.builders.PlantItemBuilder;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
@@ -11,12 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantTypeManager {
 
-    private Main main;
+    private PerformantPlants performantPlants;
     private final ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PlantDataStorage> plantDataStorageMap = new ConcurrentHashMap<>();
 
-    public PlantTypeManager(Main mainClass) {
-        main = mainClass;
+    public PlantTypeManager(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
     }
 
     void addPlantDataStorage(PlantDataStorage storage) {
@@ -43,6 +43,22 @@ public class PlantTypeManager {
         PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
         if (plantDataStorage != null) {
             return plantDataStorage.updateVariable(scope, parameter, variableName, value);
+        }
+        return false;
+    }
+
+    public boolean containsScopeParameter(String plantId, String scope, String parameter) {
+        PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
+        if (plantDataStorage != null) {
+            return plantDataStorage.containsScopeParameter(scope, parameter);
+        }
+        return false;
+    }
+
+    public boolean removeScopeParameter(String plantId, String scope, String parameter) {
+        PlantDataStorage plantDataStorage = getPlantDataStorage(plantId);
+        if (plantDataStorage != null) {
+            return plantDataStorage.removeScopeParameter(scope, parameter);
         }
         return false;
     }

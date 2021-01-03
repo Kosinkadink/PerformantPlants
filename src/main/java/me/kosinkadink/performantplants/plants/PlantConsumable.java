@@ -12,9 +12,14 @@ public class PlantConsumable {
     private boolean missingFood = false;
     private boolean normalEat = true;
     private int addDamage = 0;
-    private ArrayList<ItemStack> itemsToGive = new ArrayList<>();
-    private ArrayList<RequiredItem> requiredItems = new ArrayList<>();
-    private PlantEffectStorage effectStorage = new PlantEffectStorage();
+    private final ArrayList<ItemStack> itemsToGive = new ArrayList<>();
+    private final ArrayList<RequiredItem> requiredItems = new ArrayList<>();
+    private final PlantEffectStorage effectStorage = new PlantEffectStorage();
+
+    private ScriptBlock doIf;
+    private ScriptBlock scriptBlock;
+    private ScriptBlock scriptBlockOnDo;
+    private ScriptBlock scriptBlockOnNotDo;
 
     public PlantConsumable() { }
 
@@ -70,4 +75,36 @@ public class PlantConsumable {
         return effectStorage;
     }
 
+    // script blocks
+    public ScriptBlock getDoIf() {
+        return doIf;
+    }
+
+    public void setDoIf(ScriptBlock doIf) {
+        this.doIf = doIf;
+    }
+
+    public ScriptBlock getScriptBlock() {
+        return scriptBlock;
+    }
+
+    public void setScriptBlock(ScriptBlock scriptBlock) {
+        this.scriptBlock = scriptBlock;
+    }
+
+    public ScriptBlock getScriptBlockOnDo() {
+        return scriptBlockOnDo;
+    }
+
+    public void setScriptBlockOnDo(ScriptBlock scriptBlockOnDo) {
+        this.scriptBlockOnDo = scriptBlockOnDo;
+    }
+
+    public ScriptBlock getScriptBlockOnNotDo() {
+        return scriptBlockOnNotDo;
+    }
+
+    public void setScriptBlockOnNotDo(ScriptBlock scriptBlockOnNotDo) {
+        this.scriptBlockOnNotDo = scriptBlockOnNotDo;
+    }
 }

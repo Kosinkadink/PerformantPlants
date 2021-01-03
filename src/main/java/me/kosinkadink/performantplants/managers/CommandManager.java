@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.managers;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.commands.PPCommand;
 import me.kosinkadink.performantplants.executors.PPCommandExecutor;
 
@@ -10,14 +10,14 @@ import java.util.Objects;
 
 public class CommandManager {
 
-    private Main main;
+    private PerformantPlants performantPlants;
     private PPCommandExecutor PPCommandExecutor;
     private List<PPCommand> registeredCommands = new ArrayList<>();
     private String commandRoot = "pp";
 
-    public CommandManager(Main mainClass) {
-        main = mainClass;
-        PPCommandExecutor = new PPCommandExecutor(mainClass);
+    public CommandManager(PerformantPlants performantPlantsClass) {
+        performantPlants = performantPlantsClass;
+        PPCommandExecutor = new PPCommandExecutor(performantPlantsClass);
     }
 
     public List<PPCommand> getRegisteredCommands() {
@@ -25,7 +25,7 @@ public class CommandManager {
     }
 
     public void registerCommand(PPCommand ppCommand) {
-        Objects.requireNonNull(main.getCommand(commandRoot)).setExecutor(PPCommandExecutor);
+        Objects.requireNonNull(performantPlants.getCommand(commandRoot)).setExecutor(PPCommandExecutor);
         registeredCommands.add(ppCommand);
     }
 

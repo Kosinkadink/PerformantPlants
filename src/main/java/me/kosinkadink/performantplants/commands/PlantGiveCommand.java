@@ -1,40 +1,39 @@
 package me.kosinkadink.performantplants.commands;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PlantGiveCommand extends PPCommand {
 
-    private Main main;
+    private PerformantPlants performantPlants;
 
-    public PlantGiveCommand(Main mainClass) {
+    public PlantGiveCommand(PerformantPlants performantPlantsClass) {
         super(new String[] { "give" },
                 "Give plant item to player.",
                 "/pp give <player> <plant-id> <amount>",
                 "performantplants.give",
                 2,
                 3);
-        main = mainClass;
+        performantPlants = performantPlantsClass;
     }
 
     @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         // get player
         String playerName = argList.get(0);
-        Player player = main.getServer().getPlayer(playerName);
+        Player player = performantPlants.getServer().getPlayer(playerName);
         if (player == null) {
             commandSender.sendMessage("Player " + playerName + " not found");
             return;
         }
         String plantId = argList.get(1);
         // get plant item
-        ItemStack requestedItem = main.getPlantTypeManager().getPlantItemStackById(plantId);
+        ItemStack requestedItem = performantPlants.getPlantTypeManager().getPlantItemStackById(plantId);
         // if item not found, inform sender and stop
         if (requestedItem == null) {
             commandSender.sendMessage(String.format("Plant item '%s' not recognized", plantId));

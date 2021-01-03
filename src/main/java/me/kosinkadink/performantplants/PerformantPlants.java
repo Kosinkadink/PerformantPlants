@@ -10,8 +10,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Main extends JavaPlugin {
-    private static Main main;
+public class PerformantPlants extends JavaPlugin {
+    private static PerformantPlants performantPlants;
 
     private Economy economy;
 
@@ -24,10 +24,11 @@ public class Main extends JavaPlugin {
     private StatisticsManager statisticsManager;
     private RecipeManager recipeManager;
     private VanillaDropManager vanillaDropManager;
+    private TaskManager taskManager;
 
     @Override
     public void onEnable() {
-        main = this;
+        performantPlants = this;
         setupEconomy();
         registerManagers();
         registerListeners();
@@ -45,6 +46,7 @@ public class Main extends JavaPlugin {
     public void onDisable() {
         plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
         configManager.getConfigSettings().setDebug(true); // enable debug mode to get extra logging on shutdown
+        taskManager.freezeAllTasks(); // freeze tasks so that they can be properly saved in the db
         databaseManager.cancelTask(); // cancel queued up save task, to prevent possible double-run
         databaseManager.saveDatabases(); // save all plant blocks
     }
@@ -60,8 +62,8 @@ public class Main extends JavaPlugin {
         registerCommands();
     }
 
-    public static Main getInstance() {
-        return main;
+    public static PerformantPlants getInstance() {
+        return performantPlants;
     }
 
     private void setupEconomy() {
@@ -82,6 +84,7 @@ public class Main extends JavaPlugin {
         plantTypeManager = new PlantTypeManager(this);
         recipeManager = new RecipeManager(this);
         vanillaDropManager = new VanillaDropManager(this);
+        taskManager = new TaskManager(this);
         configManager = new ConfigurationManager(this);
         statisticsManager = new StatisticsManager(this);
         databaseManager = new DatabaseManager(this);
@@ -94,6 +97,7 @@ public class Main extends JavaPlugin {
         pluginManager.registerEvents(new PlantBlockEventListener(this), this);
         pluginManager.registerEvents(new RecipeEventListener(this), this);
         pluginManager.registerEvents(new VanillaDropListener(this), this);
+        pluginManager.registerEvents(new HookListener(this), this);
     }
 
     private void registerCommands() {
@@ -163,5 +167,9 @@ public class Main extends JavaPlugin {
 
     public VanillaDropManager getVanillaDropManager() {
         return vanillaDropManager;
+    }
+
+    public TaskManager getTaskManager() {
+        return taskManager;
     }
 }

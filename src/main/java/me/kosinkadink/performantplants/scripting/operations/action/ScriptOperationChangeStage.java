@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.StageStorage;
@@ -8,11 +8,11 @@ import org.bukkit.entity.Player;
 
 public class ScriptOperationChangeStage extends ScriptOperation {
 
-    Main main;
+    PerformantPlants performantPlants;
 
-    public ScriptOperationChangeStage(Main main, ScriptBlock stage, ScriptBlock ifNext) {
+    public ScriptOperationChangeStage(PerformantPlants performantPlants, ScriptBlock stage, ScriptBlock ifNext) {
         super(stage, ifNext);
-        this.main = main;
+        this.performantPlants = performantPlants;
     }
 
     public ScriptBlock getStage() {
@@ -39,15 +39,15 @@ public class ScriptOperationChangeStage extends ScriptOperation {
             StageStorage stageStorage = effectivePlantBlock.getPlant().getStageStorage();
             if (stageStorage.isValidStage(stageName)) {
                 int stageIndex = stageStorage.getGrowthStageIndex(stageName);
-                success = effectivePlantBlock.goToStageForcefully(main, stageIndex);
+                success = effectivePlantBlock.goToStageForcefully(performantPlants, stageIndex);
             } else {
-                main.getLogger().warning(String.format("OperationChangeStage: stage name '%s' not recognized for " +
+                performantPlants.getLogger().warning(String.format("OperationChangeStage: stage name '%s' not recognized for " +
                         "block: %s", stageName, plantBlock.toString()));
             }
         }
         // if goToNext is set to true, then advance to next growth stage as if plant grew
         else if (ifNext) {
-            success = effectivePlantBlock.goToNextStage(main);
+            success = effectivePlantBlock.goToNextStage(performantPlants);
         }
         return new ScriptResult(success);
     }

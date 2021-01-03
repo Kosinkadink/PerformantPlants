@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.blocks;
 
-import me.kosinkadink.performantplants.Main;
+import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Plant;
@@ -153,7 +153,7 @@ public class PlantBlock {
 
     public PlantBlock getEffectivePlantBlock() {
         if (hasParent()) {
-            return Main.getInstance().getPlantManager().getPlantBlock(getParentLocation());
+            return PerformantPlants.getInstance().getPlantManager().getPlantBlock(getParentLocation());
         }
         return this;
     }
@@ -376,7 +376,7 @@ public class PlantBlock {
 
     public PlantData getEffectivePlantData() {
         if (hasParent()) {
-            PlantBlock parent = Main.getInstance().getPlantManager().getPlantBlock(getParentLocation());
+            PlantBlock parent = PerformantPlants.getInstance().getPlantManager().getPlantBlock(getParentLocation());
             if (parent != null) {
                 return parent.getPlantData();
             }
@@ -390,7 +390,7 @@ public class PlantBlock {
 
     //region Task Control
 
-    public void startTask(Main main) {
+    public void startTask(PerformantPlants performantPlants) {
         // if plantBlock doesn't grow or is already growing, then do nothing
         if (!grows || growthTask != null || !plant.hasGrowthStages()) {
             return;
@@ -403,7 +403,7 @@ public class PlantBlock {
         // set new growth start time
         taskStartTime = System.currentTimeMillis();
         // start task for current growth stage
-        growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
+        growthTask = performantPlants.getServer().getScheduler().runTaskLater(performantPlants, () -> performGrowth(performantPlants, true), duration);
     }
 
     public void pauseTask() {
@@ -422,10 +422,10 @@ public class PlantBlock {
         }
     }
 
-    public void goToPreviousStageGracefully(Main main, int growthStageIndex) {
+    public void goToPreviousStageGracefully(PerformantPlants performantPlants, int growthStageIndex) {
         // check if proposed growth stage is valid; if not, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Could not setTaskStage for block " + toString() + "; stage is invalid: "
                     + growthStageIndex);
             return;
         }
@@ -438,7 +438,7 @@ public class PlantBlock {
             return;
         }
         // if trying to go forward a stage,
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Changing stage to " + growthStageIndex + " from " + stageIndex + " for block " + toString());
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Changing stage to " + growthStageIndex + " from " + stageIndex + " for block " + toString());
         // set plantBlock's growth stage, resetting any growth task it currently has
         pauseTask();
         stageIndex = growthStageIndex;
@@ -448,13 +448,13 @@ public class PlantBlock {
         // set execute to false
         grows = true;
         executedStage = false;
-        startTask(main);
+        startTask(performantPlants);
     }
 
-    public boolean goToNextStage(Main main) {
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("goToNextStage fired for block: " + toString());
+    public boolean goToNextStage(PerformantPlants performantPlants) {
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("goToNextStage fired for block: " + toString());
         // perform growth without advancement
-        boolean canGrow = performGrowth(main, false);
+        boolean canGrow = performGrowth(performantPlants, false);
         // if couldn't grow, do nothing
         if (!canGrow) {
             return false;
@@ -462,13 +462,13 @@ public class PlantBlock {
         // otherwise, pause task
         pauseTask();
         // advance to next stage (or finish growing, if applicable)
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("goToNextStage advancing stage for block: " + toString());
-        advanceStage(main, true, true);
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("goToNextStage advancing stage for block: " + toString());
+        advanceStage(performantPlants, true, true);
         return true;
     }
 
-    public boolean goToStageForcefully(Main main, int growthStageIndex) {
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
+    public boolean goToStageForcefully(PerformantPlants performantPlants, int growthStageIndex) {
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info(String.format("goToStageForcefully (stage %d) fired for block: %s",growthStageIndex,toString()));
         // if stage index not valid, do nothing
         if (!plant.isValidStage(growthStageIndex)) {
             return false;
@@ -480,29 +480,29 @@ public class PlantBlock {
         stageIndex = growthStageIndex;
         executedStage = false;
         // perform growth again without advancement to get block to this stage
-        boolean canGrow = performGrowth(main, false);
+        boolean canGrow = performGrowth(performantPlants, false);
         // if can't grow, revert back to previous state and continue previous task
         if (!canGrow) {
             stageIndex = previousStageIndex;
             executedStage = true;
-            startTask(main);
+            startTask(performantPlants);
             return false;
         }
         // otherwise, advance to next stage
         grows = true;
-        if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info(String.format("goToStageForcefully advancing stage (from %d to %d for block: %s)",previousStageIndex, stageIndex, toString()));
-        advanceStage(main, true);
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info(String.format("goToStageForcefully advancing stage (from %d to %d for block: %s)",previousStageIndex, stageIndex, toString()));
+        advanceStage(performantPlants, true);
         return true;
     }
 
-    public boolean performGrowth(Main main, boolean advance) {
+    public boolean performGrowth(PerformantPlants performantPlants, boolean advance) {
         // if plant metadata for block is not set, remove self and stop task
         if (!MetadataHelper.hasPlantBlockMetadata(getBlock())) {
-            main.getPlantManager().removePlantBlock(this);
+            performantPlants.getPlantManager().removePlantBlock(this);
             return false;
         }
         // check if requirements are met for stage growth
-        boolean canGrow = checkAllRequirements(main);
+        boolean canGrow = checkAllRequirements(performantPlants);
         if (isNewlyPlaced && !canGrow) {
             grows = false;
         }
@@ -542,7 +542,7 @@ public class PlantBlock {
                     // add block as child
                     addChildLocation(newPlantBlock.getLocation());
                     // add plant block via plantManager
-                    main.getPlantManager().addPlantBlock(newPlantBlock);
+                    performantPlants.getPlantManager().addPlantBlock(newPlantBlock);
                     // if has childOf set, add to blocksAdded
                     if (growthStageBlock.hasChildOf()) {
                         blocksWithGuardiansAdded.put(growthStageBlock, newPlantBlock);
@@ -558,7 +558,7 @@ public class PlantBlock {
                 // add guardian to plant block
                 newPlantBlock.setGuardianLocation(guardianLocation);
                 // get guardian block
-                PlantBlock guardianBlock = main.getPlantManager().getPlantBlock(guardianLocation);
+                PlantBlock guardianBlock = performantPlants.getPlantManager().getPlantBlock(guardianLocation);
                 // add child to guardian block
                 guardianBlock.addChildLocation(newPlantBlock.getLocation());
             }
@@ -597,12 +597,12 @@ public class PlantBlock {
             }
         }
         if (advance) {
-            advanceStage(main, canGrow);
+            advanceStage(performantPlants, canGrow);
         }
         return canGrow;
     }
 
-    void advanceStage(Main main, boolean canGrow, boolean interacted) {
+    void advanceStage(PerformantPlants performantPlants, boolean canGrow, boolean interacted) {
         // see if current stage is a stopping point
         boolean growthCheckpoint = plant.isGrowthCheckpoint(stageIndex) && !interacted;
         boolean forcedToGrow = !grows && interacted;
@@ -630,11 +630,11 @@ public class PlantBlock {
                 duration = plant.generateGrowthTime(stageIndex);
             }
             // queue up new task
-            growthTask = main.getServer().getScheduler().runTaskLater(main, () -> performGrowth(main, true), duration);
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Growth Task queued up for " + toString()
+            growthTask = performantPlants.getServer().getScheduler().runTaskLater(performantPlants, () -> performGrowth(performantPlants, true), duration);
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Growth Task queued up for " + toString()
                     + " in " + duration + " ticks; at stage " + stageIndex);
         } else {
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("Plant can't grow any further for block type '"
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Plant can't grow any further for block type '"
                     + plant.getId() + "' at stage: " + stageIndex);
             // stop growth if failure to grow caused by checkpoint
             if (growthCheckpoint) {
@@ -643,22 +643,22 @@ public class PlantBlock {
         }
     }
 
-    void advanceStage(Main main, boolean canGrow) {
-        advanceStage(main, canGrow, false);
+    void advanceStage(PerformantPlants performantPlants, boolean canGrow) {
+        advanceStage(performantPlants, canGrow, false);
     }
 
     //endregion
 
     //region Requirements Check
 
-    public boolean checkAllRequirements(Main main) {
+    public boolean checkAllRequirements(PerformantPlants performantPlants) {
         // check that grow block requirements are met
         if (!checkGrowthRequirements()) {
             return false;
         }
         // check that space is available for blocks that are required to be placed
         if (!checkSpaceRequirements()) {
-            if (main.getConfigManager().getConfigSettings().isDebug()) main.getLogger().info("No space to grow for " + toString());
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("No space to grow for " + toString());
             return false;
         }
         return true;
