@@ -7,16 +7,24 @@ import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.storage.PlantDataStorage;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantTypeManager {
 
     private PerformantPlants performantPlants;
+    // list for tab completion efficiency purposes
+    private final ArrayList<String> plantIds = new ArrayList<>();
+
     private final ConcurrentHashMap<String, Plant> plantTypeMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PlantDataStorage> plantDataStorageMap = new ConcurrentHashMap<>();
 
     public PlantTypeManager(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
+    }
+
+    public ArrayList<String> getPlantIds() {
+        return plantIds;
     }
 
     void addPlantDataStorage(PlantDataStorage storage) {
@@ -65,6 +73,7 @@ public class PlantTypeManager {
 
     void addPlantType(Plant plantType) {
         plantTypeMap.put(plantType.getId(), plantType);
+        plantIds.add(plantType.getId());
     }
 
     public Plant getPlantByItemStack(ItemStack itemStack) {
@@ -137,6 +146,5 @@ public class PlantTypeManager {
         }
         return null;
     }
-
 
 }

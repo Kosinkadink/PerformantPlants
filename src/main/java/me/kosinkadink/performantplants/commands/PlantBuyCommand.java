@@ -6,8 +6,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlantBuyCommand extends PPCommand {
 
@@ -21,6 +23,33 @@ public class PlantBuyCommand extends PPCommand {
                 2,
                 3);
         performantPlants = performantPlantsClass;
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        // if on first argument, return default list of players
+        if (args.length == commandNameWords.length+1) {
+            return null;
+        }
+        // if on second argument, return list of plant-ids
+        if (args.length == commandNameWords.length+2) {
+            return getTabCompletionPlantIds(args[commandNameWords.length+1], performantPlants);
+        }
+        // if on third argument, return list of amounts
+        if (args.length == commandNameWords.length+3) {
+            String amountString = args[commandNameWords.length + 2];
+            ItemStack itemStack = performantPlants.getPlantTypeManager().getPlantItemStackById(args[commandNameWords.length + 1]);
+            if (itemStack != null) {
+                // create basic list
+                return new ArrayList<String>() {
+                    {
+                        add("1");
+                        add(Integer.toString(itemStack.getMaxStackSize()));
+                    }
+                }.stream().filter(id -> id.startsWith(amountString)).collect(Collectors.toList());
+            }
+        }
+        return emptyList;
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlantTagAddCommand extends PPCommand {
 
@@ -19,6 +20,22 @@ public class PlantTagAddCommand extends PPCommand {
                 2,
                 2);
         performantPlants = performantPlantsClass;
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        // if on first argument, then return list of plant tags
+        if (args.length == commandNameWords.length+1) {
+            String tagId = args[commandNameWords.length];
+            return performantPlants.getStatisticsManager().getAllPlantTags()
+                    .stream().filter(id -> id.startsWith(tagId)).collect(Collectors.toList());
+        }
+        // if on second argument, then return list of plant-ids (continue to show when comma-separated
+        if (args.length == commandNameWords.length+2) {
+            String fullPlantIdString = args[commandNameWords.length+1];
+            return getTabCompletionListOfPlantIds(fullPlantIdString, performantPlants);
+        }
+        return emptyList;
     }
 
     @Override
@@ -44,7 +61,7 @@ public class PlantTagAddCommand extends PPCommand {
         ArrayList<String> plantIdsAdded = new ArrayList<>();
         ArrayList<String> plantIdsNotAdded = new ArrayList<>();
         for (String plantId : plantIdList) {
-            if (performantPlants.getPlantTypeManager().getPlantById(plantId) != null) {
+            if (performantPlants.getPlantTypeManager().getPlantItemById(plantId) != null) {
                 performantPlants.getStatisticsManager().addPlantId(tagId, plantId);
                 plantIdsAdded.add(plantId);
             } else {

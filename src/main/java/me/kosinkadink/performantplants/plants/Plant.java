@@ -18,6 +18,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
+    // list for tab completion purposes
+    private final ArrayList<String> itemIds = new ArrayList<>();
+
     private final String id;
     private final PlantItem plantItem;
     private PlantItem plantSeedItem;
@@ -41,6 +44,10 @@ public class Plant {
         this.plantItem.setId(this.id);
         plantData = new PlantData(new JSONObject());
         plantData.setPlant(this);
+    }
+
+    public ArrayList<String> getItemIds() {
+        return itemIds;
     }
 
     public String getId() {
@@ -74,6 +81,7 @@ public class Plant {
     public void addGoodItem(String id, PlantItem goodItem) {
         goodItem.setId(this.id + "." + id);
         goods.put(id, goodItem);
+        itemIds.add(goodItem.getId());
     }
 
     public ItemStack getSeedItemStack() {
@@ -86,6 +94,7 @@ public class Plant {
     public void setSeedItem(PlantItem seedItem) {
         plantSeedItem = seedItem;
         plantSeedItem.setId(id + ".seed");
+        itemIds.add(plantSeedItem.getId());
     }
 
     public PlantItem getItemByItemStack(ItemStack itemStack) {

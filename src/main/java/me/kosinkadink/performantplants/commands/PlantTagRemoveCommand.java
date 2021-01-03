@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlantTagRemoveCommand extends PPCommand {
 
@@ -19,6 +20,46 @@ public class PlantTagRemoveCommand extends PPCommand {
                 2,
                 2);
         performantPlants = performantPlantsClass;
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        // if on first argument, then return list of plant tags
+        if (args.length == commandNameWords.length+1) {
+            String tagId = args[commandNameWords.length];
+            return performantPlants.getStatisticsManager().getAllPlantTags()
+                    .stream().filter(id -> id.startsWith(tagId)).collect(Collectors.toList());
+        }
+        // if on second argument, then return list of plant-ids contained in tag
+        // (continue to show when comma-separated
+        if (args.length == commandNameWords.length+2) {
+            String tagId = args[commandNameWords.length];
+            StatisticsTagStorage tagStorage = performantPlants.getStatisticsManager().getPlantTag(tagId);
+            if (tagStorage != null) {
+                String fullPlantIdString = args[commandNameWords.length + 1];
+                // separate by commas
+                String plantId;
+                String existingPlantIds = "";
+                int index = fullPlantIdString.lastIndexOf(",");
+                if (index >= 0) {
+                    if (index < fullPlantIdString.length() - 1) {
+                        plantId = fullPlantIdString.substring(index+1);
+                    } else {
+                        plantId = "";
+                    }
+                    existingPlantIds = fullPlantIdString.substring(0, index + 1);
+                } else {
+                    plantId = fullPlantIdString;
+                }
+                List<String> possibleOptions = tagStorage.getAllPlantIds()
+                        .stream().filter(id -> id.startsWith(plantId)).collect(Collectors.toList());
+                // finalize for lambda function
+                String finalExistingPlantIds = existingPlantIds;
+                possibleOptions.replaceAll(plant -> finalExistingPlantIds + plant);
+                return possibleOptions;
+            }
+        }
+        return emptyList;
     }
 
     @Override

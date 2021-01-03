@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlantStatsResetAllPlayersCommand extends PPCommand {
 
@@ -32,6 +33,15 @@ public class PlantStatsResetAllPlayersCommand extends PPCommand {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        if (args.length == commandNameWords.length+1) {
+            String stat = args[commandNameWords.length];
+            return statMethodMap.keySet().stream().filter(id -> id.startsWith(stat)).collect(Collectors.toList());
+        }
+        return emptyList;
     }
 
     @Override

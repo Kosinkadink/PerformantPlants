@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.commands.PPCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,22 +62,46 @@ public class PPCommandExecutor implements TabExecutor {
         commandSender.sendMessage("Command not recognized by PerformantPlants");
         return true;
     }
+
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-
-        if (args.length == 1) {
-            List<PPCommand> subCommands = performantPlants.getCommandManager().getRegisteredCommands();
-            List<String> possibleSubCommands = new ArrayList<>();
-            for (PPCommand subCommand : subCommands) {
-                subCommand.getCommandNameWords();
-                possibleSubCommands.add(subCommand.getCommandNameWords()[0]);
+    public List<String> onTabComplete(CommandSender commandSender, Command command, String alias, String[] args) {
+        List<PPCommand> subCommands = performantPlants.getCommandManager().getRegisteredCommands();
+        List<String> possibleOptions = new ArrayList<>();
+        // fill up possible options
+        for (PPCommand subCommand : subCommands) {
+            // skip command if sender doesn't have permission to use it
+            if (!commandSender.hasPermission(subCommand.getPermission())) {
+                continue;
             }
-
-            return possibleSubCommands;
-
+            // if command name exceeds or equal to arguments provided, check for options
+            if (subCommand.getCommandNameWords().length >= args.length) {
+                for (int i = 0; i < args.length; i++) {
+                    if (i < args.length-1) {
+                        if (!subCommand.getCommandNameWords()[i].equals(args[i])) {
+                            break;
+                        }
+                    } else {
+                        if (subCommand.getCommandNameWords()[i].startsWith(args[i])) {
+                            possibleOptions.add(subCommand.getCommandNameWords()[i]);
+                        }
+                    }
+                }
+            }
+            // otherwise, check if it is a match
+            else {
+                boolean matches = true;
+                // check if command words match arguments provided
+                for (int i = 0; i < subCommand.getCommandNameWords().length; i++) {
+                    if (!args[i].equalsIgnoreCase(subCommand.getCommandNameWords()[i])) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    return subCommand.getTabCompletionResult(commandSender, args);
+                }
+            }
         }
-
-        return null;
-
+        return possibleOptions;
     }
 }

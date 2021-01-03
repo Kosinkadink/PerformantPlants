@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlantTagUnregisterCommand extends PPCommand {
 
@@ -17,6 +18,16 @@ public class PlantTagUnregisterCommand extends PPCommand {
                 1,
                 1);
         performantPlants = performantPlantsClass;
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        if (args.length == commandNameWords.length+1) {
+            String tagId = args[commandNameWords.length];
+            return performantPlants.getStatisticsManager().getAllPlantTags()
+                    .stream().filter(id -> id.startsWith(tagId)).collect(Collectors.toList());
+        }
+        return emptyList;
     }
 
     @Override

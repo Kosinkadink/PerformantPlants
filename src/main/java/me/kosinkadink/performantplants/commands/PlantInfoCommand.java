@@ -21,6 +21,14 @@ public class PlantInfoCommand extends PPCommand {
     }
 
     @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        if (args.length == commandNameWords.length+1) {
+            return getTabCompletionPlantIds(args[commandNameWords.length], performantPlants, false);
+        }
+        return emptyList;
+    }
+
+    @Override
     public void executeCommand(CommandSender commandSender, List<String> argList) {
         String plantId = argList.get(0);
         // get plant

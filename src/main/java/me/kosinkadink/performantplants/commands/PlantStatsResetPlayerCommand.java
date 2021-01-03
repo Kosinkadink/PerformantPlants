@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class PlantStatsResetPlayerCommand extends PPCommand {
 
@@ -35,6 +36,20 @@ public class PlantStatsResetPlayerCommand extends PPCommand {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
+        // if on first argument, then return list of stats
+        if (args.length == commandNameWords.length+1) {
+            String stat = args[commandNameWords.length];
+            return statMethodMap.keySet().stream().filter(id -> id.startsWith(stat)).collect(Collectors.toList());
+        }
+        // if on second argument, then return default list of players
+        if (args.length == commandNameWords.length+2) {
+            return null;
+        }
+        return emptyList;
     }
 
     @Override
