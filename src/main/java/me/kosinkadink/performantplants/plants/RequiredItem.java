@@ -1,18 +1,23 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class RequiredItem {
 
     private ItemStack itemStack;
-    private boolean takeItem = false;
-    private boolean inHand = false;
-    private int addDamage = 0;
+    private ScriptBlock takeItem = ScriptResult.FALSE;
+    private ScriptBlock inHand = ScriptResult.FALSE;
+    private ScriptBlock addDamage = ScriptResult.ZERO;
 
     public RequiredItem(ItemStack itemStack) {
         this.itemStack = itemStack;
     }
 
+    // item stack
     public ItemStack getItemStack() {
         return itemStack;
     }
@@ -21,27 +26,30 @@ public class RequiredItem {
         this.itemStack = itemStack;
     }
 
-    public boolean isTakeItem() {
-        return takeItem;
+    // take item
+    public boolean isTakeItem(Player player, PlantBlock plantBlock) {
+        return takeItem.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setTakeItem(boolean takeItem) {
+    public void setTakeItem(ScriptBlock takeItem) {
         this.takeItem = takeItem;
     }
 
-    public boolean isInHand() {
-        return inHand;
+    // in hand
+    public boolean isInHand(Player player, PlantBlock plantBlock) {
+        return inHand.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setInHand(boolean inHand) {
+    public void setInHand(ScriptBlock inHand) {
         this.inHand = inHand;
     }
 
-    public int getAddDamage() {
-        return addDamage;
+    // add damage
+    public int getAddDamage(Player player, PlantBlock plantBlock) {
+        return addDamage.loadValue(plantBlock, player).getIntegerValue();
     }
 
-    public void setAddDamage(int addDamage) {
+    public void setAddDamage(ScriptBlock addDamage) {
         this.addDamage = addDamage;
     }
 }

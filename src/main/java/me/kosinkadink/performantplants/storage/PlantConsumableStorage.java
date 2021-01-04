@@ -24,7 +24,7 @@ public class PlantConsumableStorage {
         PlantConsumable matchConsumable = null;
         for (PlantConsumable plantConsumable : consumableList) {
             // if needs messing food and is full, continue searching
-            if (plantConsumable.isMissingFood()) {
+            if (plantConsumable.isMissingFood(player, null)) {
                 if (!PlayerHelper.hasMissingFood(player)) {
                     continue;
                 }
@@ -48,7 +48,7 @@ public class PlantConsumableStorage {
             boolean matches = true;
             for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
                 // if in hand required, check that other hand contains item
-                if (requirement.isInHand()) {
+                if (requirement.isInHand(player, null)) {
                     matches = ItemHelper.checkIfMatches(requirement.getItemStack(), otherStack);
                 } // else check that item exists somewhere in player's inventory
                 else {

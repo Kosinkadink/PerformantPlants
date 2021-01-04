@@ -1,20 +1,33 @@
 package me.kosinkadink.performantplants.plants;
 
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 
 public class PlantConsumable {
 
-    private boolean takeItem = true;
-    private boolean missingFood = false;
-    private boolean normalEat = true;
-    private int addDamage = 0;
+    private ScriptBlock takeItem = ScriptResult.TRUE;
+    private ScriptBlock onlyTakeItemOnDo = ScriptResult.TRUE;
+
+    private ScriptBlock missingFood = ScriptResult.FALSE;
+    private ScriptBlock normalEat = ScriptResult.TRUE;
+
+    private ScriptBlock addDamage = ScriptResult.ZERO;
+    private ScriptBlock onlyAddDamageOnDo = ScriptResult.TRUE;
+
     private final ArrayList<ItemStack> itemsToGive = new ArrayList<>();
+    private ScriptBlock onlyGiveItemsOnDo = ScriptResult.TRUE;
+
     private final ArrayList<RequiredItem> requiredItems = new ArrayList<>();
+    private ScriptBlock onlyTakeRequiredItemsOnDo = ScriptResult.TRUE;
+
     private final PlantEffectStorage effectStorage = new PlantEffectStorage();
+    private ScriptBlock onlyEffectsOnDo = ScriptResult.TRUE;
 
     private ScriptBlock doIf;
     private ScriptBlock scriptBlock;
@@ -23,38 +36,59 @@ public class PlantConsumable {
 
     public PlantConsumable() { }
 
-    public boolean isTakeItem() {
-        return takeItem;
+    // take item
+    public boolean isTakeItem(Player player, PlantBlock plantBlock) {
+        return takeItem.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setTakeItem(boolean takeItem) {
+    public void setTakeItem(ScriptBlock takeItem) {
         this.takeItem = takeItem;
     }
 
-    public boolean isMissingFood() {
-        return missingFood;
+    public boolean isOnlyTakeItemOnDo(Player player, PlantBlock plantBlock) {
+        return onlyTakeItemOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setMissingFood(boolean missingFood) {
+    public void setOnlyTakeItemOnDo(ScriptBlock onlyTakeItemOnDo) {
+        this.onlyTakeItemOnDo = onlyTakeItemOnDo;
+    }
+
+    // missing food
+    public boolean isMissingFood(Player player, PlantBlock plantBlock) {
+        return missingFood.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setMissingFood(ScriptBlock missingFood) {
         this.missingFood = missingFood;
     }
 
-    public boolean isNormalEat() {
-        return normalEat;
+    // normal eat
+    public boolean isNormalEat(Player player, PlantBlock plantBlock) {
+        return normalEat.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setNormalEat(boolean normalEat) {
+    public void setNormalEat(ScriptBlock normalEat) {
         this.normalEat = normalEat;
     }
 
-    public int getAddDamage() {
-        return addDamage;
+    // add damage
+    public int getAddDamage(Player player, PlantBlock plantBlock) {
+        return addDamage.loadValue(plantBlock, player).getIntegerValue();
     }
 
-    public void setAddDamage(int addDamage) {
+    public void setAddDamage(ScriptBlock addDamage) {
         this.addDamage = addDamage;
     }
 
+    public boolean isOnlyAddDamageOnDo(Player player, PlantBlock plantBlock) {
+        return onlyAddDamageOnDo.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setOnlyAddDamageOnDo(ScriptBlock onlyAddDamageOnDo) {
+        this.onlyAddDamageOnDo = onlyAddDamageOnDo;
+    }
+
+    // items to give
     public void addItemToGive(ItemStack itemToAdd) {
         itemsToGive.add(itemToAdd);
     }
@@ -63,6 +97,15 @@ public class PlantConsumable {
         return itemsToGive;
     }
 
+    public boolean isOnlyGiveItemsOnDo(Player player, PlantBlock plantBlock) {
+        return onlyGiveItemsOnDo.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setOnlyGiveItemsOnDo(ScriptBlock onlyGiveItemsOnDo) {
+        this.onlyGiveItemsOnDo = onlyGiveItemsOnDo;
+    }
+
+    // required items
     public void addRequiredItem(RequiredItem requiredItem) {
         requiredItems.add(requiredItem);
     }
@@ -71,19 +114,41 @@ public class PlantConsumable {
         return requiredItems;
     }
 
+    public boolean isOnlyTakeRequiredItemsOnDo(Player player, PlantBlock plantBlock) {
+        return onlyTakeRequiredItemsOnDo.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setOnlyTakeRequiredItemsOnDo(ScriptBlock onlyTakeRequiredItemsOnDo) {
+        this.onlyTakeRequiredItemsOnDo = onlyTakeRequiredItemsOnDo;
+    }
+
+    // effect storage
     public PlantEffectStorage getEffectStorage() {
         return effectStorage;
     }
 
-    // script blocks
-    public ScriptBlock getDoIf() {
-        return doIf;
+    // only effects on do
+    public boolean isOnlyEffectsOnDo(Player player, PlantBlock plantBlock) {
+        return onlyEffectsOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
+    public void setOnlyEffectsOnDo(ScriptBlock onlyEffectsOnDo) {
+        this.onlyEffectsOnDo = onlyEffectsOnDo;
+    }
+
+    // do if
     public void setDoIf(ScriptBlock doIf) {
         this.doIf = doIf;
     }
 
+    public boolean generateDoIf(Player player, PlantBlock plantBlock) {
+        if (doIf != null) {
+            return doIf.loadValue(plantBlock, player).getBooleanValue();
+        }
+        return true;
+    }
+
+    // script blocks
     public ScriptBlock getScriptBlock() {
         return scriptBlock;
     }

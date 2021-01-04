@@ -12,10 +12,10 @@ public class PlantFarmlandTrampleEvent extends Event implements Cancellable {
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
 
-    private Player player;
-    private PlantBlock plantBlock;
-    private Block block;
-    private Block trampledBlock;
+    private final Player player;
+    private final PlantBlock plantBlock;
+    private final Block block;
+    private final Block trampledBlock;
 
     public PlantFarmlandTrampleEvent(Player player, PlantBlock plantBlock, Block block, Block trampledBlock) {
         this.player = player;

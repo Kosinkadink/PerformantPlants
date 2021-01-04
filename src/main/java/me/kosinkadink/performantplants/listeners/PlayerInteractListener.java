@@ -57,7 +57,7 @@ public class PlayerInteractListener implements Listener {
                     hand = EquipmentSlot.HAND;
                 }
                 PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(event.getPlayer(), hand);
-                if (consumable != null && consumable.isNormalEat()) {
+                if (consumable != null && consumable.isNormalEat(event.getPlayer(), null)) {
                     performantPlants.getServer().getPluginManager().callEvent(
                             new PlantConsumeEvent(event.getPlayer(), consumable, hand)
                     );
@@ -192,7 +192,7 @@ public class PlayerInteractListener implements Listener {
                         }
                         if (performConsumeForThisHand) {
                             PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(player, event.getHand());
-                            if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat())) {
+                            if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat(player, null))) {
                                 event.setCancelled(true);
                                 performantPlants.getServer().getPluginManager().callEvent(
                                         new PlantConsumeEvent(player, consumable, event.getHand())

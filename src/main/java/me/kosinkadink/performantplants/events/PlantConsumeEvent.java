@@ -12,9 +12,9 @@ public class PlantConsumeEvent extends Event implements Cancellable {
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
 
-    private Player player;
-    private PlantConsumable consumable;
-    private EquipmentSlot hand;
+    private final Player player;
+    private final PlantConsumable consumable;
+    private final EquipmentSlot hand;
 
     public PlantConsumeEvent(Player player, PlantConsumable consumable, EquipmentSlot hand) {
         this.player = player;

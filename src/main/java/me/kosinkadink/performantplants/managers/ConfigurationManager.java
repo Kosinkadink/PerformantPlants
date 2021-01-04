@@ -229,28 +229,16 @@ public class ConfigurationManager {
                 plant.setPlantData(plantData);
             }
         }
-        // load stored plant script blocks, if present
-        boolean loadedScriptBlocks = loadPlantScriptBlocks(
+        // load plant tasks and stored plant script blocks, if present
+        boolean loadedScriptBlocksAndTasks = loadPlantScriptTasksAndScriptBlocks(
                 plantConfig,
                 "stored-script-blocks",
-                plant.getPlantData()
-        );
-        if (!loadedScriptBlocks) {
-            performantPlants.getLogger().warning("Plant stored-script-blocks could not be registered for plant:" + plantId);
-            return;
-        }
-        // load plant tasks, if present
-        HashMap<String, ScriptTask> scriptTaskHashMap = loadPlantScriptTasks(
-                plantConfig,
                 "tasks",
                 plant.getPlantData()
         );
-        if (scriptTaskHashMap == null) {
-            performantPlants.getLogger().warning("Plant tasks could not be registered for plant:" + plantId);
+        if (!loadedScriptBlocksAndTasks) {
+            performantPlants.getLogger().warning("Plant tasks and stored-script-blocks could not be registered for plant:" + plantId);
             return;
-        }
-        for (Map.Entry<String, ScriptTask> entry : scriptTaskHashMap.entrySet()) {
-            plant.addScriptTask(entry.getKey(), entry.getValue());
         }
         // if growing section is present, get seed item + stages
         if (growingConfig != null) {
@@ -1282,20 +1270,68 @@ public class ConfigurationManager {
         }
         PlantConsumable consumable = new PlantConsumable();
         // set take item, if present
-        if (section.isBoolean("take-item")) {
-            consumable.setTakeItem(section.getBoolean("take-item"));
+        if (section.isSet("take-item")) {
+            ScriptBlock value = createPlantScript(section, "take-item", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen take-item value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isTakeItem(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setTakeItem(value);
+            }
+        }
+        if (section.isSet("only-take-item-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-take-item-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-take-item-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isOnlyTakeItemOnDo(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setOnlyTakeItemOnDo(value);
+            }
         }
         // set missing food, if present
-        if (section.isBoolean("missing-food")) {
-            consumable.setMissingFood(section.getBoolean("missing-food"));
+        if (section.isSet("missing-food")) {
+            ScriptBlock value = createPlantScript(section, "missing-food", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen missing-food value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isMissingFood(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setMissingFood(value);
+            }
         }
         // set normal eat, if present
-        if (section.isBoolean("normal-eat")) {
-            consumable.setNormalEat(section.getBoolean("normal-eat"));
+        if (section.isSet("normal-eat")) {
+            ScriptBlock value = createPlantScript(section, "normal-eat", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen normal-eat value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isNormalEat(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setNormalEat(value);
+            }
         }
         // set damage to add to item, if present
-        if (section.isInt("add-damage")) {
-            consumable.setAddDamage(section.getInt("add-damage"));
+        if (section.isSet("add-damage")) {
+            ScriptBlock value = createPlantScript(section, "add-damage", data);
+            if (value == null || !ScriptHelper.isLong(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen add-damage value and instead will be" +
+                                " %n; must be ScriptType LONG in section: %s",
+                        consumable.getAddDamage(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setAddDamage(value);
+            }
+        }
+        if (section.isSet("only-add-damage-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-add-damage-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-add-damage-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isOnlyAddDamageOnDo(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setOnlyAddDamageOnDo(value);
+            }
         }
         // set give item, if present
         if (section.isConfigurationSection("give-items")) {
@@ -1310,6 +1346,16 @@ public class ConfigurationManager {
                     return null;
                 }
                 consumable.addItemToGive(itemSettings.generateItemStack());
+            }
+        }
+        if (section.isSet("only-give-items-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-give-items-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-give-items-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isOnlyGiveItemsOnDo(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setOnlyGiveItemsOnDo(value);
             }
         }
         // set required items, if present
@@ -1335,22 +1381,92 @@ public class ConfigurationManager {
                 // create required item from item
                 RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
                 // set take item, if set
-                if (requiredItemSection.isBoolean("take-item")) {
-                    requiredItem.setTakeItem(requiredItemSection.getBoolean("take-item"));
+                if (section.isSet("take-item")) {
+                    ScriptBlock value = createPlantScript(section, "take-item", data);
+                    if (value == null || !ScriptHelper.isBoolean(value)) {
+                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen take-item value and instead will be" +
+                                        " %b; must be ScriptType BOOLEAN in section: %s",
+                                requiredItem.isTakeItem(null, null), section.getCurrentPath()));
+                    } else {
+                        requiredItem.setTakeItem(value);
+                    }
                 }
                 // set if required item should be in hand (offhand or main hand), if set
-                if (requiredItemSection.isBoolean("in-hand")) {
-                    requiredItem.setInHand(requiredItemSection.getBoolean("in-hand"));
+                if (section.isSet("in-hand")) {
+                    ScriptBlock value = createPlantScript(section, "in-hand", data);
+                    if (value == null || !ScriptHelper.isBoolean(value)) {
+                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen in-hand value and instead will be" +
+                                        " %b; must be ScriptType BOOLEAN in section: %s",
+                                requiredItem.isInHand(null, null), section.getCurrentPath()));
+                    } else {
+                        requiredItem.setInHand(value);
+                    }
                 }
                 // set damage to add to item, if present
-                if (requiredItemSection.isInt("add-damage")) {
-                    requiredItem.setAddDamage(requiredItemSection.getInt("add-damage"));
+                if (section.isSet("add-damage")) {
+                    ScriptBlock value = createPlantScript(section, "add-damage", data);
+                    if (value == null || !ScriptHelper.isLong(value)) {
+                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
+                                        " %n; must be ScriptType LONG in section: %s",
+                                requiredItem.getAddDamage(null, null), section.getCurrentPath()));
+                    } else {
+                        requiredItem.setAddDamage(value);
+                    }
                 }
                 consumable.addRequiredItem(requiredItem);
             }
         }
+        if (section.isSet("only-take-required-items-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-take-required-items-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-take-required-items-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isOnlyTakeRequiredItemsOnDo(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setOnlyTakeRequiredItemsOnDo(value);
+            }
+        }
+
         // add effects, if present
         addEffectsToEffectStorage(section, consumable.getEffectStorage(), data);
+
+        // set if effects should only happen on successful chance, if present
+        if (section.isSet("only-effects-on-do")) {
+            ScriptBlock value = createPlantScript(section, "only-effects-on-do", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-effects-on-do value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isOnlyEffectsOnDo(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setOnlyEffectsOnDo(value);
+            }
+        }
+
+        // set condition for doing actions, if present
+        if (section.isSet("do-if")) {
+            ScriptBlock value = createPlantScript(section, "do-if", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen do-if value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.generateDoIf(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setDoIf(value);
+            }
+        }
+
+        // add script blocks, if present
+        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        if (scriptBlock != null) {
+            consumable.setScriptBlock(scriptBlock);
+        }
+        scriptBlock = createPlantScript(section, "plant-script-on-do", data);
+        if (scriptBlock != null) {
+            consumable.setScriptBlockOnDo(scriptBlock);
+        }
+        scriptBlock = createPlantScript(section, "plant-script-on-not-do", data);
+        if (scriptBlock != null) {
+            consumable.setScriptBlockOnNotDo(scriptBlock);
+        }
         // return consumable
         return consumable;
     }
@@ -1612,13 +1728,20 @@ public class ConfigurationManager {
     }
 
     void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data) {
+        addEffectsToEffectStorage(section, effectStorage, data, false);
+    }
+
+    void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data, boolean useSectionDirectly) {
         if (section == null || effectStorage == null) {
             return;
         }
-        if (!section.isConfigurationSection("effects")) {
-            return;
+        ConfigurationSection effectsSection = section;
+        if (!useSectionDirectly) {
+            if (!section.isConfigurationSection("effects")) {
+                return;
+            }
+            effectsSection = section.getConfigurationSection("effects");
         }
-        ConfigurationSection effectsSection = section.getConfigurationSection("effects");
         for (String placeholder : effectsSection.getKeys(false)) {
             ConfigurationSection effectSection = effectsSection.getConfigurationSection(placeholder);
             if (effectSection != null) {
@@ -1639,7 +1762,7 @@ public class ConfigurationManager {
             performantPlants.getLogger().warning("Type not set for effect at: " + section.getCurrentPath());
             return false;
         }
-        PlantEffect effect = null;
+        PlantEffect effect;
         switch (type.toLowerCase()) {
             case "feed":
                 effect = createFeedEffect(section, data);
@@ -1681,15 +1804,15 @@ public class ConfigurationManager {
                 effect = createScriptEffect(section, data);
                 break;
             default:
-                break;
+                performantPlants.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
+                        type, section.getCurrentPath()));
+                return false;
         }
         if (effect != null) {
             addDoIfAndDelayToEffect(section, effect, data);
             effectStorage.addEffect(effect);
             return true;
         }
-        performantPlants.getLogger().warning(String.format("Effect %s not recognized; not added to effect storage for section: %s",
-                type, section.getCurrentPath()));
         return false;
     }
 
@@ -2720,40 +2843,79 @@ public class ConfigurationManager {
         return null;
     }
 
-    //region Plant Script Tasks
-    HashMap<String, ScriptTask> loadPlantScriptTasks(ConfigurationSection section, String subsectionName, PlantData data) {
-        if (section == null) {
-            return null;
+    //region Plant Script Tasks and Stored Script Blocks
+    boolean loadPlantScriptTasksAndScriptBlocks(ConfigurationSection section, String scriptSectionName, String taskSectionName, PlantData data) {
+        if (section == null || data == null) {
+            return false;
         }
 
-        HashMap<String, ScriptTask> scriptTaskHashMap = new HashMap<>();
-        if (section.isConfigurationSection(subsectionName)) {
-            ConfigurationSection scriptTasksSection = section.getConfigurationSection(subsectionName);
-            // load all task names
-            currentTaskLoader = new ScriptTaskLoader(performantPlants);
+        HashMap<String, ScriptTask> taskHashMap = new HashMap<>();
+
+        // create currentTaskLoader
+        currentTaskLoader = new ScriptTaskLoader(performantPlants);
+
+        // load all task names
+        if (section.isConfigurationSection(taskSectionName)) {
+            ConfigurationSection scriptTasksSection = section.getConfigurationSection(taskSectionName);
             for (String taskId : scriptTasksSection.getKeys(false)) {
                 currentTaskLoader.addTaskName(taskId);
             }
+        }
+
+        // load all script blocks
+        if (section.isConfigurationSection(scriptSectionName)) {
+            ConfigurationSection scriptBlocksSection = section.getConfigurationSection(scriptSectionName);
+            for (String scriptBlockName : scriptBlocksSection.getKeys(false)) {
+                // set current script name
+                currentTaskLoader.setCurrentScript(scriptBlockName);
+                // try to get script block
+                ScriptBlock scriptBlock = createPlantScript(scriptBlocksSection, scriptBlockName, data);
+                if (scriptBlock == null) {
+                    performantPlants.getLogger().warning(String.format("Could not create stored script block '%s' in section: %s",
+                            scriptBlockName, scriptBlocksSection.getCurrentPath()));
+                    continue;
+                }
+                // put script block in map and add script name
+                currentTaskLoader.addScriptName(scriptBlockName);
+                data.getPlant().addScriptBlock(scriptBlockName, scriptBlock);
+            }
+        }
+        // reset script name
+        currentTaskLoader.resetCurrentScript();
+
+        // load all tasks
+        if (section.isConfigurationSection(taskSectionName)) {
+            ConfigurationSection scriptTasksSection = section.getConfigurationSection(taskSectionName);
             // parse each task section
             for (String taskId : scriptTasksSection.getKeys(false)) {
-                ScriptTask scriptTask = null;
-                if (data != null) {
-                    scriptTask = createPlantScriptTask(scriptTasksSection, taskId, data);
-                }
+                ScriptTask scriptTask = createPlantScriptTask(scriptTasksSection, taskId, data);
                 if (scriptTask == null) {
                     performantPlants.getLogger().warning(String.format("Could not create script task '%s' in section: %s",
                             taskId, scriptTasksSection.getCurrentPath()));
                     currentTaskLoader.addFailedTask(taskId);
                     continue;
                 }
-                currentTaskLoader.addTask(taskId, scriptTask);
+                // put task in map and add task name
+                taskHashMap.put(taskId, scriptTask);
+                currentTaskLoader.addTaskName(taskId);
             }
-            // get final version of map after remove any tasks that could not be read from config
-            scriptTaskHashMap = currentTaskLoader.processTasksAndReturnMap(section);
-            // reset currentTaskLoader to null
-            currentTaskLoader = null;
         }
-        return scriptTaskHashMap;
+        // process tasks and script blocks
+        currentTaskLoader.processTasksAndScripts();
+        // remove failed scripts and failed tasks
+        for (String failedScriptName : currentTaskLoader.getFailedScripts()) {
+            data.getPlant().getScriptBlockMap().remove(failedScriptName);
+        }
+        for (String failedTaskName : currentTaskLoader.getFailedTasks()) {
+            taskHashMap.remove(failedTaskName);
+        }
+        // add tasks
+        for (Map.Entry<String, ScriptTask> entry : taskHashMap.entrySet()) {
+            data.getPlant().addScriptTask(entry.getKey(), entry.getValue());
+        }
+        // reset currentTaskLoader to null
+        currentTaskLoader = null;
+        return true;
     }
 
     ScriptTask createPlantScriptTask(ConfigurationSection section, String subsectionName, PlantData data) {
@@ -3012,29 +3174,6 @@ public class ConfigurationManager {
     }
     //endregion
 
-    boolean loadPlantScriptBlocks(ConfigurationSection section, String subsectionName, PlantData data) {
-        if (section == null) {
-            return false;
-        }
-        if (data == null) {
-            return false;
-        }
-        if (section.isConfigurationSection(subsectionName)) {
-            ConfigurationSection scriptBlocksSection = section.getConfigurationSection(subsectionName);
-            for (String scriptBlockName : scriptBlocksSection.getKeys(false)) {
-                ScriptBlock scriptBlock = createPlantScript(scriptBlocksSection, scriptBlockName, data);
-                if (scriptBlock == null) {
-                    performantPlants.getLogger().warning(String.format("Could not create plant script block '%s' in section: %s",
-                            scriptBlockName, scriptBlocksSection.getCurrentPath()));
-                    data.getPlant().removeAllScriptBlocks();
-                    return false;
-                }
-                data.getPlant().addScriptBlock(scriptBlockName, scriptBlock);
-            }
-        }
-        return true;
-    }
-
     ScriptBlock createPlantScript(ConfigurationSection section, String subsectionName, PlantData data) {
         try {
             if (section == null) {
@@ -3077,7 +3216,7 @@ public class ConfigurationManager {
                 blockSection = section;
                 directValue = true;
             }
-            ScriptBlock returned = null;
+            ScriptBlock returned;
             switch (blockName.toLowerCase()) {
                 // constant/variable
                 case "value":
@@ -3204,6 +3343,8 @@ public class ConfigurationManager {
                     returned = createScriptOperationInteract(blockSection, directValue, data); break;
                 case "consumable":
                     returned = createScriptOperationConsumable(blockSection, directValue, data); break;
+                case "effects":
+                    returned = createScriptOperationEffects(blockSection, directValue, data); break;
                 case "createblocks":
                     returned = createScriptOperationCreatePlantBlocks(blockSection, directValue, data); break;
                 case "scheduletask":
@@ -3361,6 +3502,17 @@ public class ConfigurationManager {
             performantPlants.getLogger().warning(String.format("Stored script block '%s' not found in section: %s",
                     storedBlockName, section.getCurrentPath()));
             return null;
+        }
+
+        if (currentTaskLoader != null) {
+            // set dependency of stored script, if this is being called from inside a stored script definition
+            if (currentTaskLoader.isScriptSet()) {
+                currentTaskLoader.addScriptScriptDependent(storedBlockName, currentTaskLoader.getCurrentScript());
+            }
+            // set dependency of task, if this is being called from inside a task definition
+            else if (currentTaskLoader.isTaskSet()) {
+                currentTaskLoader.addScriptTaskDependent(storedBlockName, currentTaskLoader.getCurrentTask());
+            }
         }
         return storedBlock;
     }
@@ -3864,6 +4016,16 @@ public class ConfigurationManager {
         }
         return new ScriptOperationConsumable(plantConsumableStorage, useMainHand);
     }
+    ScriptOperation createScriptOperationEffects(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationEffects in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        PlantEffectStorage plantEffectStorage = new PlantEffectStorage();
+        addEffectsToEffectStorage(section, plantEffectStorage, data, true);
+        return new ScriptOperationEffects(plantEffectStorage);
+    }
     ScriptOperation createScriptOperationChangeStage(ConfigurationSection section, boolean directValue, PlantData data) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
@@ -3924,12 +4086,16 @@ public class ConfigurationManager {
                         taskConfigId, data.getPlant().getId(), section.getCurrentPath()));
                 return null;
             }
-            // if not a recursive call, add current task as dependent on task being scheduled
-            if (!currentTaskLoader.getCurrentTask().equals(taskConfigId)) {
-                currentTaskLoader.addTaskDependency(taskConfigId, currentTaskLoader.getCurrentTask());
+            // if this is called in a stored script block, add current script as dependent on task being scheduled
+            if (currentTaskLoader.isScriptSet()) {
+                currentTaskLoader.addTaskScriptDependent(taskConfigId, currentTaskLoader.getCurrentScript());
             }
-            scriptTask = new ScriptTask(data.getPlant().getId(), taskConfigId);
+            // if not a recursive call, add current task as dependent on task being scheduled
+            else if (!currentTaskLoader.getCurrentTask().equals(taskConfigId)) {
+                currentTaskLoader.addTaskTaskDependent(taskConfigId, currentTaskLoader.getCurrentTask());
+            }
         }
+        scriptTask = new ScriptTask(data.getPlant().getId(), taskConfigId);
         // get delay, if present
         ScriptBlock delay = scriptTask.getDelay();
         if (section.isSet("delay")) {

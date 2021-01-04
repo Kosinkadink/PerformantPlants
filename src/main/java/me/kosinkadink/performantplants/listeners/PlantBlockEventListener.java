@@ -286,58 +286,93 @@ public class PlantBlockEventListener implements Listener {
             callStack = event.getPlayer().getInventory().getItemInMainHand();
             otherStack = event.getPlayer().getInventory().getItemInOffHand();
         }
+
+        // see if should do
+        boolean shouldDo = plantConsumable.generateDoIf(event.getPlayer(), null);
+        boolean onlyEffectsOnDo = plantConsumable.isOnlyEffectsOnDo(event.getPlayer(), null);
+        boolean onlyTakeItemOnDo = plantConsumable.isOnlyTakeItemOnDo(event.getPlayer(), null);
+        boolean onlyTakeRequiredItemsOnDo = plantConsumable.isOnlyTakeRequiredItemsOnDo(event.getPlayer(), null);
+        boolean onlyGiveItemsOnDo = plantConsumable.isOnlyGiveItemsOnDo(event.getPlayer(), null);
+        boolean onlyAddDamageOnDo = plantConsumable.isOnlyAddDamageOnDo(event.getPlayer(), null);
+
+
         // do actions stored in item's PlantConsumable
-        for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {
-            // check that the items could be added
-            HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(itemToGive);
-            for (ItemStack itemToAdd : remaining.values()) {
-                DropHelper.emulatePlayerDrop(event.getPlayer(), itemToAdd);
+        // give items, if set
+        if (!onlyGiveItemsOnDo || shouldDo) {
+            for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {
+                // check that the items could be added
+                HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(itemToGive);
+                for (ItemStack itemToAdd : remaining.values()) {
+                    DropHelper.emulatePlayerDrop(event.getPlayer(), itemToAdd);
+                }
             }
         }
         // decrement item, if set
-        if (plantConsumable.isTakeItem()) {
-            decrementItemStack(callStack);
+        if (!onlyTakeItemOnDo || shouldDo) {
+            if (plantConsumable.isTakeItem(event.getPlayer(), null)) {
+                decrementItemStack(callStack);
+            }
         }
         // add damage to item, if set
-        if (plantConsumable.getAddDamage() != 0) {
-            ItemHelper.updateDamage(callStack, plantConsumable.getAddDamage());
+        if (!onlyAddDamageOnDo || shouldDo) {
+            int addDamageAmount = plantConsumable.getAddDamage(event.getPlayer(), null);
+            if (addDamageAmount != 0) {
+                ItemHelper.updateDamage(callStack, addDamageAmount);
+            }
         }
         // decrement required items, if set
-        for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
-            if (requirement.isTakeItem()) {
-                // if should be in hand, decrement other hand's stack
-                if (requirement.isInHand()) {
-                    decrementItemStack(otherStack);
-                }
-                // otherwise take required item out of inventory
-                else {
-                    ItemStack removeStack = requirement.getItemStack().clone();
-                    removeStack.setAmount(1);
-                    event.getPlayer().getInventory().removeItem(removeStack);
-                }
-            }
-            if (requirement.getAddDamage() != 0) {
-                if (requirement.isInHand()) {
-                    ItemHelper.updateDamage(otherStack, requirement.getAddDamage());
-                }
-                else {
-                    int slot;
-                    if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
-                        slot = event.getPlayer().getInventory().first(requirement.getItemStack().getType());
-                    } else {
-                        slot = event.getPlayer().getInventory().first(requirement.getItemStack());
+        if (!onlyTakeRequiredItemsOnDo || shouldDo) {
+            for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
+                if (requirement.isTakeItem(event.getPlayer(), null)) {
+                    // if should be in hand, decrement other hand's stack
+                    if (requirement.isInHand(event.getPlayer(), null)) {
+                        decrementItemStack(otherStack);
                     }
-                    if (slot >= 0) {
-                        ItemStack slotStack = event.getPlayer().getInventory().getItem(slot);
-                        if (slotStack != null) {
-                            ItemHelper.updateDamage(slotStack, requirement.getAddDamage());
+                    // otherwise take required item out of inventory
+                    else {
+                        ItemStack removeStack = requirement.getItemStack().clone();
+                        removeStack.setAmount(1);
+                        event.getPlayer().getInventory().removeItem(removeStack);
+                    }
+                }
+                int requirementAddDamageAmount = requirement.getAddDamage(event.getPlayer(), null);
+                if (requirementAddDamageAmount != 0) {
+                    if (requirement.isInHand(event.getPlayer(), null)) {
+                        ItemHelper.updateDamage(otherStack, requirementAddDamageAmount);
+                    } else {
+                        int slot;
+                        if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
+                            slot = event.getPlayer().getInventory().first(requirement.getItemStack().getType());
+                        } else {
+                            slot = event.getPlayer().getInventory().first(requirement.getItemStack());
+                        }
+                        if (slot >= 0) {
+                            ItemStack slotStack = event.getPlayer().getInventory().getItem(slot);
+                            if (slotStack != null) {
+                                ItemHelper.updateDamage(slotStack, requirementAddDamageAmount);
+                            }
                         }
                     }
                 }
             }
         }
-        // perform effects
-        plantConsumable.getEffectStorage().performEffects(event.getPlayer(), null);
+        // perform effects, if applicable
+        if (!onlyEffectsOnDo || shouldDo) {
+            plantConsumable.getEffectStorage().performEffects(event.getPlayer(), null);
+        }
+        // perform all applicable script blocks
+        if (shouldDo) {
+            if (plantConsumable.getScriptBlockOnDo() != null) {
+                plantConsumable.getScriptBlockOnDo().loadValue(null, event.getPlayer());
+            }
+        } else {
+            if (plantConsumable.getScriptBlockOnNotDo() != null) {
+                plantConsumable.getScriptBlockOnNotDo().loadValue(null, event.getPlayer());
+            }
+        }
+        if (plantConsumable.getScriptBlock() != null) {
+            plantConsumable.getScriptBlock().loadValue(null, event.getPlayer());
+        }
     }
 
     // region Block Creation

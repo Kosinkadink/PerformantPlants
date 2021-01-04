@@ -117,8 +117,8 @@ public class PlantInteract {
         return onlyTakeItemOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
-    public void setOnlyTakeItemOnDo(ScriptBlock takeItem) {
-        this.onlyTakeItemOnDo = takeItem;
+    public void setOnlyTakeItemOnDo(ScriptBlock onlyTakeItemOnDo) {
+        this.onlyTakeItemOnDo = onlyTakeItemOnDo;
     }
 
     // break block
