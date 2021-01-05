@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.Plant;
 import org.bukkit.command.CommandSender;
 
+import java.util.Collections;
 import java.util.List;
 
 public class PlantInfoCommand extends PPCommand {
@@ -25,7 +26,7 @@ public class PlantInfoCommand extends PPCommand {
         if (args.length == commandNameWords.length+1) {
             return getTabCompletionPlantIds(args[commandNameWords.length], performantPlants, false);
         }
-        return emptyList;
+        return Collections.emptyList();
     }
 
     @Override

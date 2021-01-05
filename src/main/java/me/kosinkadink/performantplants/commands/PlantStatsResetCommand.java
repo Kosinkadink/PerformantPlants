@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public class PlantStatsResetCommand extends PPCommand {
             String plantId = args[commandNameWords.length+2];
             return getTabCompletionPlantIds(plantId, performantPlants);
         }
-        return emptyList;
+        return Collections.emptyList();
     }
 
     @Override

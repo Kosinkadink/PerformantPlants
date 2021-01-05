@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.storage.StatisticsTagStorage;
 import org.bukkit.command.CommandSender;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class PlantTagInfoCommand extends PPCommand {
             return performantPlants.getStatisticsManager().getAllPlantTags()
                     .stream().filter(id -> id.startsWith(tagId)).collect(Collectors.toList());
         }
-        return emptyList;
+        return Collections.emptyList();
     }
 
     @Override

@@ -5,12 +5,11 @@ import me.kosinkadink.performantplants.plants.Plant;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class PPCommand {
-
-    protected static final ArrayList<String> emptyList = new ArrayList<>();
 
     protected String[] commandNameWords;
     private String description;
@@ -31,7 +30,7 @@ public abstract class PPCommand {
     public abstract void executeCommand(CommandSender commandSender, List<String> argList);
 
     public List<String> getTabCompletionResult(CommandSender commandSender, String[] args) {
-        return emptyList;
+        return Collections.emptyList();
     }
 
     public String[] getCommandNameWords() {
@@ -64,15 +63,21 @@ public abstract class PPCommand {
 
     protected List<String> getTabCompletionPlantIds(String arg, PerformantPlants performantPlants, boolean includeSubItems) {
         // if '.' present, see if valid plant
+        List<String> possibleOptions = new ArrayList<>();
         if (includeSubItems && (arg.contains(".") || performantPlants.getPlantTypeManager().getPlantById(arg) != null)) {
             String[] names = arg.split("\\.");
             Plant plant = performantPlants.getPlantTypeManager().getPlantById(names[0]);
             if (plant != null) {
-                return plant.getItemIds().stream().filter(id -> id.startsWith(arg)).collect(Collectors.toList());
+                possibleOptions.addAll(plant.getItemIds().stream().filter(id -> id.startsWith(arg)).collect(Collectors.toList()));
             }
         }
-        return performantPlants.getPlantTypeManager().getPlantIds()
+        List<String> mainPlantIdList = performantPlants.getPlantTypeManager().getPlantIds()
                 .stream().filter(id -> id.startsWith(arg)).collect(Collectors.toList());
+        if (possibleOptions.isEmpty()) {
+            return mainPlantIdList;
+        }
+        possibleOptions.addAll(mainPlantIdList);
+        return possibleOptions;
     }
 
     protected List<String> getTabCompletionListOfPlantIds(String fullPlantIdString, PerformantPlants performantPlants) {

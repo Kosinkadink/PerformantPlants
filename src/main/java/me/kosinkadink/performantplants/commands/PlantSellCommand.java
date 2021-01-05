@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,7 +64,7 @@ public class PlantSellCommand extends PPCommand {
                 return possibleOptions.stream().filter(id -> id.startsWith(amountString)).collect(Collectors.toList());
             }
         }
-        return emptyList;
+        return Collections.emptyList();
     }
 
     @Override
