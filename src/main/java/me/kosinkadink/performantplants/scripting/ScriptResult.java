@@ -7,6 +7,8 @@ import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.Objects;
+
 public class ScriptResult extends ScriptBlock {
 
     public static final ScriptResult TRUE = new ScriptResult(true);
@@ -33,6 +35,10 @@ public class ScriptResult extends ScriptBlock {
 
     public ScriptResult(String variableName, ScriptType type) {
         this.variableName = variableName;
+        this.type = type;
+    }
+
+    public void setType(ScriptType type) {
         this.type = type;
     }
 
@@ -95,11 +101,11 @@ public class ScriptResult extends ScriptBlock {
             case BOOLEAN:
                 return (Boolean) value ? 1L : 0L;
             case STRING:
-                Long conversion = Long.getLong((String) value);
-                if (conversion == null) {
-                    conversion = 0L;
+                try {
+                    return Long.parseLong((String) value);
+                } catch (NullPointerException | NumberFormatException e) {
+                    return 0L;
                 }
-                return conversion;
             default:
                 return 0L;
         }
@@ -218,6 +224,26 @@ public class ScriptResult extends ScriptBlock {
     @Override
     public boolean shouldOptimize() {
         return true;
+    }
+
+    public boolean equals(Object o) {
+        // true if refers to this object
+        if (this == o) {
+            return true;
+        }
+        // false is object is null or not of same class
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ScriptResult fromO = (ScriptResult)o;
+        // check if equal variableName or value
+        if (variableName != null) {
+            return variableName.equals(fromO.variableName);
+        }
+        return value.equals(fromO.value);
+    }
+
+    public int hashCode() {
+        return Objects.hash(value, variableName);
     }
 
 }

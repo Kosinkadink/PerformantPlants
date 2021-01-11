@@ -27,11 +27,6 @@ public abstract class ScriptOperationCast extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        return getInput().loadValue(plantBlock, player);
-    }
-
-    @Override
     public ScriptCategory getCategory() {
         return ScriptCategory.CAST;
     }

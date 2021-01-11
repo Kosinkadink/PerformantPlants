@@ -16,6 +16,7 @@ import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperation
 import me.kosinkadink.performantplants.scripting.operations.compare.*;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationFunction;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
+import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationSwitch;
 import me.kosinkadink.performantplants.scripting.operations.function.*;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationAnd;
 import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationNot;
@@ -3336,6 +3337,8 @@ public class ConfigurationManager {
                 case "func":
                 case "function":
                     returned = createScriptOperationFunction(blockSection, directValue, data); break;
+                case "switch":
+                    returned = createScriptOperationSwitch(blockSection, directValue, data); break;
                 // action
                 case "changestage":
                     returned = createScriptOperationChangeStage(blockSection, directValue, data); break;
@@ -3975,6 +3978,105 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationFunction(scriptBlocks);
+    }
+    ScriptOperation createScriptOperationSwitch(ConfigurationSection section, boolean directValue, PlantData data) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationSwitch in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        String conditionString = "condition";
+        String casesString = "cases";
+        String defaultString = "default";
+        HashMap<ScriptResult, ScriptBlock> casesMap = new HashMap<>();
+        ScriptBlock defaultCase = null;
+        // get condition script block
+        if (!section.isSet(conditionString)) {
+            performantPlants.getLogger().warning("Condition operand missing in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock condition = createPlantScript(section, conditionString, data);
+        if (condition == null) {
+            return null;
+        }
+        // get cases, if present
+        if (section.isSet(casesString)) {
+            if (!section.isConfigurationSection(casesString)) {
+                performantPlants.getLogger().warning("Cases section missing for ScriptOperationSwitch in section: " +
+                        section.getCurrentPath());
+                return null;
+            }
+            ConfigurationSection casesSection = section.getConfigurationSection(casesString);
+            if (casesSection == null) {
+                performantPlants.getLogger().warning("Cases section could not be parsed for ScriptOperationSwitch in section: " +
+                        section.getCurrentPath());
+                return null;
+            }
+            // iterate through cases
+            for (String caseName : casesSection.getKeys(false)) {
+                if (!casesSection.isSet(caseName)) {
+                    performantPlants.getLogger().warning(String.format("No case subsection found to generate PlantScript for case '%s' in " +
+                            "ScriptOperationSwitch in section: %s", caseName, section));
+                    return null;
+                }
+                ScriptBlock scriptBlock = createPlantScript(casesSection, caseName, data);
+                if (scriptBlock == null) {
+                    return null;
+                }
+                ScriptResult scriptResult = new ScriptResult(caseName);
+                switch(condition.getType()) {
+                    case LONG:
+                        scriptResult = new ScriptResult(scriptResult.getLongValue()); break;
+                    case DOUBLE:
+                        scriptResult = new ScriptResult(scriptResult.getDoubleValue()); break;
+                    case BOOLEAN:
+                        if (caseName.equalsIgnoreCase("true")) {
+                            scriptResult = ScriptResult.TRUE;
+                        } else if (caseName.equalsIgnoreCase("false")) {
+                            scriptResult = ScriptResult.FALSE;
+                        } else {
+                            scriptResult = new ScriptResult(scriptResult.getBooleanValue());
+                        } break;
+                }
+                casesMap.put(scriptResult, scriptBlock);
+            }
+        }
+        // get default case, if set
+        if (section.isSet(defaultString)) {
+            defaultCase = createPlantScript(section, defaultString, data);
+            if (defaultCase == null) {
+                performantPlants.getLogger().warning(String.format("Default case could not be parsed for " +
+                        "ScriptOperationSwitch in section: %s", section));
+                return null;
+            }
+        }
+        // check that any cases (including default) have been defined
+        if (casesMap.size() == 0 && defaultCase == null) {
+            performantPlants.getLogger().warning(String.format("No cases were defined for " +
+                    "ScriptOperationSwitch in section: %s", section));
+            return null;
+        }
+        int blockCount = 1 + casesMap.size();
+        if (defaultCase != null) {
+            blockCount++;
+        }
+        ScriptResult[] cases = new ScriptResult[casesMap.size()];
+        ScriptBlock[] scriptBlocks = new ScriptBlock[blockCount];
+        // set first script block to condition block
+        scriptBlocks[0] = condition;
+        int index = 0;
+        // set cases and scriptBlocks array
+        for (Map.Entry<ScriptResult, ScriptBlock> entry : casesMap.entrySet()) {
+            cases[index] = entry.getKey();
+            scriptBlocks[index+1] = entry.getValue();
+            index++;
+        }
+        // add defaultCase at the end of scriptBlocks if exists
+        if (defaultCase != null) {
+            scriptBlocks[scriptBlocks.length-1] = defaultCase;
+        }
+        // create switch operation
+        return new ScriptOperationSwitch(scriptBlocks, cases);
     }
 
     //action
