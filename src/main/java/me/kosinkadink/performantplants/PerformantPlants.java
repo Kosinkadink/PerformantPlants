@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.expansions.PerformantPlantExpansion;
 import me.kosinkadink.performantplants.listeners.*;
 import me.kosinkadink.performantplants.managers.*;
 import net.milkbowl.vault.economy.Economy;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -30,6 +31,7 @@ public class PerformantPlants extends JavaPlugin {
     public void onEnable() {
         performantPlants = this;
         setupEconomy();
+        setupMetrics();
         registerManagers();
         registerListeners();
         registerCommands();
@@ -75,6 +77,11 @@ public class PerformantPlants extends JavaPlugin {
             return;
         }
         economy = rsp.getProvider();
+    }
+
+    private void setupMetrics() {
+        int bStatsId = 10015;
+        Metrics metrics = new Metrics(this, bStatsId);
     }
 
     private void registerManagers() {
