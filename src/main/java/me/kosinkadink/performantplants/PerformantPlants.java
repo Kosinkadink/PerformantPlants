@@ -98,6 +98,7 @@ public class PerformantPlants extends JavaPlugin {
         pluginManager.registerEvents(new RecipeEventListener(this), this);
         pluginManager.registerEvents(new VanillaDropListener(this), this);
         pluginManager.registerEvents(new HookListener(this), this);
+        pluginManager.registerEvents(new InventoryEventListener(this), this);
     }
 
     private void registerCommands() {
