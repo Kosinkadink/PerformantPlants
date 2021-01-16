@@ -9,6 +9,9 @@ import org.bukkit.inventory.ItemStack;
 public class RequiredItem {
 
     private ItemStack itemStack;
+
+    private ScriptBlock condition = ScriptResult.TRUE;
+
     private ScriptBlock takeItem = ScriptResult.FALSE;
     private ScriptBlock inHand = ScriptResult.FALSE;
     private ScriptBlock addDamage = ScriptResult.ZERO;
@@ -24,6 +27,15 @@ public class RequiredItem {
 
     public void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
+    }
+
+    // condition
+    public boolean isConditionMet(Player player, PlantBlock plantBlock) {
+        return condition.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setCondition(ScriptBlock condition) {
+        this.condition = condition;
     }
 
     // take item

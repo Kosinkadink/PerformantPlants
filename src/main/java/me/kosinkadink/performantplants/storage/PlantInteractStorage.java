@@ -1,9 +1,11 @@
 package me.kosinkadink.performantplants.storage;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -19,11 +21,11 @@ public class PlantInteractStorage {
         return interactList;
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack) {
-        return getPlantInteract(itemStack, null);
+    public PlantInteract getPlantInteract(ItemStack itemStack, Player player, PlantBlock plantBlock) {
+        return getPlantInteract(itemStack, player, plantBlock, null);
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack, BlockFace blockFace) {
+    public PlantInteract getPlantInteract(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
         PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
             // if blockFace provided and plantInteract has a blockFace requirement, check it
@@ -31,6 +33,10 @@ public class PlantInteractStorage {
                 if (!plantInteract.isRequiredBlockFace(blockFace)) {
                     continue;
                 }
+            }
+            // if condition not met, continue searching
+            if (!plantInteract.isConditionMet(player, plantBlock)) {
+                continue;
             }
             // if no match interact and less exclusive properties should be checked, check them
             if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
@@ -49,10 +55,10 @@ public class PlantInteractStorage {
                 // set match interact to this one
                 matchInteract = plantInteract;
                 break;
-            } else {
-                if (itemStack.isSimilar(plantInteract.getItemStack())) {
-                    return plantInteract;
-                }
+            }
+            // check if item is similar
+            if (itemStack.isSimilar(plantInteract.getItemStack())) {
+                return plantInteract;
             }
         }
         // if cached interact not null, use it

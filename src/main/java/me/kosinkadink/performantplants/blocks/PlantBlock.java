@@ -18,6 +18,7 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -310,49 +311,49 @@ public class PlantBlock {
         return false;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack, BlockFace blockFace) {
+    public PlantInteract getOnInteract(ItemStack itemStack, Player player, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract(itemStack, blockFace);
+                return stageBlock.getOnInteract(itemStack, player, this, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract(itemStack, blockFace);
+                return growthStageBlock.getOnInteract(itemStack, player, this, blockFace);
             }
         }
         return null;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack, BlockFace blockFace) {
+    public PlantInteract getOnClick(ItemStack itemStack, Player player, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick(itemStack, blockFace);
+                return stageBlock.getOnClick(itemStack, player, this, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick(itemStack, blockFace);
+                return growthStageBlock.getOnClick(itemStack, player, this, blockFace);
             }
         }
         return null;
     }
 
-    public PlantInteract getOnBreak(ItemStack itemStack) {
+    public PlantInteract getOnBreak(ItemStack itemStack, Player player) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnBreak(itemStack);
+                return stageBlock.getOnBreak(itemStack, player, this);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnBreak(itemStack);
+                return growthStageBlock.getOnBreak(itemStack, player, this);
             }
         }
         return null;

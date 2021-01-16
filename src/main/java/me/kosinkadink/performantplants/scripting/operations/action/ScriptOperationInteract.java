@@ -40,7 +40,7 @@ public class ScriptOperationInteract extends ScriptOperation {
             } else {
                 itemStack = new ItemStack(Material.AIR);
             }
-            PlantInteract interact = storage.getPlantInteract(itemStack);
+            PlantInteract interact = storage.getPlantInteract(itemStack, player, plantBlock);
             if (interact != null) {
                 interact.getEffectStorage().performEffects(plantBlock.getBlock(), plantBlock);
                 if (player != null && interact.getConsumableStorage() != null) {

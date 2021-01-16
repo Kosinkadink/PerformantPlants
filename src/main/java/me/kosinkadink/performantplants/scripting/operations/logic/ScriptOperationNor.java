@@ -5,19 +5,16 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.entity.Player;
 
-public class ScriptOperationAnd extends ScriptOperationBinaryLogic {
+public class ScriptOperationNor extends ScriptOperationOr {
 
-    public ScriptOperationAnd(ScriptBlock left, ScriptBlock right) {
+    public ScriptOperationNor(ScriptBlock left, ScriptBlock right) {
         super(left, right);
     }
 
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        // load values with short circuiting
-        return new ScriptResult(
-                getLeft().loadValue(plantBlock, player).getBooleanValue() &&
-                        getRight().loadValue(plantBlock, player).getBooleanValue()
-        );
+        // opposite of 'or' result
+        return new ScriptResult(!super.perform(plantBlock, player).getBooleanValue());
     }
 
 }

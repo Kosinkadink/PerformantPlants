@@ -98,7 +98,7 @@ public class PlantBlockEventListener implements Listener {
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
-            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack);
+            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack, event.getPlayer());
             if (plantInteract != null) {
                 // see if should do
                 boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
@@ -190,15 +190,15 @@ public class PlantBlockEventListener implements Listener {
             PlantInteract plantInteract;
             if (!event.isUseOnClick()) {
                 // get PlantInteract behavior for main hand, if any
-                plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getPlayer(), event.getBlockFace());
                 // if no plant interact behavior, try again for the offhand
                 if (plantInteract == null) {
                     hand = EquipmentSlot.OFF_HAND;
                     itemStack = event.getPlayer().getInventory().getItemInOffHand();
-                    plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getBlockFace());
+                    plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getPlayer(), event.getBlockFace());
                 }
             } else {
-                plantInteract = event.getPlantBlock().getOnClick(itemStack, event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnClick(itemStack, event.getPlayer(), event.getBlockFace());
             }
             // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {

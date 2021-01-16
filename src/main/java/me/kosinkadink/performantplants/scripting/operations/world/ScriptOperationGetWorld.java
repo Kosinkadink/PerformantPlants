@@ -1,17 +1,31 @@
-package me.kosinkadink.performantplants.scripting.operations.function;
+package me.kosinkadink.performantplants.scripting.operations.world;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptOperation;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-public class ScriptOperationIsPlayerNull extends ScriptOperation {
+public class ScriptOperationGetWorld extends ScriptOperation {
 
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        return new ScriptResult(player == null);
+        World world;
+        if (player != null) {
+            world = player.getLocation().getWorld();
+            if (world != null) {
+                return new ScriptResult(world.getName());
+            }
+        }
+        else if (plantBlock != null) {
+            world = plantBlock.getLocation().getWorld();
+            if (world != null) {
+                return new ScriptResult(world.getName());
+            }
+        }
+        return ScriptResult.EMPTY;
     }
 
     @Override
@@ -31,6 +45,6 @@ public class ScriptOperationIsPlayerNull extends ScriptOperation {
 
     @Override
     public ScriptCategory getCategory() {
-        return ScriptCategory.FUNCTION;
+        return ScriptCategory.WORLD;
     }
 }

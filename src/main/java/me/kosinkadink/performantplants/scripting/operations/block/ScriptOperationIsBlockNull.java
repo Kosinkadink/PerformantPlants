@@ -1,4 +1,4 @@
-package me.kosinkadink.performantplants.scripting.operations.function;
+package me.kosinkadink.performantplants.scripting.operations.block;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptCategory;
@@ -31,6 +31,6 @@ public class ScriptOperationIsBlockNull extends ScriptOperation {
 
     @Override
     public ScriptCategory getCategory() {
-        return ScriptCategory.FUNCTION;
+        return ScriptCategory.BLOCK;
     }
 }

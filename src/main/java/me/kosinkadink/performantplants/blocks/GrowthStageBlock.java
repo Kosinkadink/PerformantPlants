@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -134,9 +135,9 @@ public class GrowthStageBlock {
         return onInteract;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack, BlockFace blockFace) {
+    public PlantInteract getOnInteract(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
         if (onInteract != null) {
-            return onInteract.getPlantInteract(itemStack, blockFace);
+            return onInteract.getPlantInteract(itemStack, player, plantBlock, blockFace);
         }
         return null;
     }
@@ -149,9 +150,9 @@ public class GrowthStageBlock {
         return onClick;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack, BlockFace blockFace) {
+    public PlantInteract getOnClick(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
         if (onClick != null) {
-            return onClick.getPlantInteract(itemStack, blockFace);
+            return onClick.getPlantInteract(itemStack, player, plantBlock, blockFace);
         }
         return null;
     }
@@ -164,9 +165,9 @@ public class GrowthStageBlock {
         return onBreak;
     }
 
-    public PlantInteract getOnBreak(ItemStack itemStack) {
+    public PlantInteract getOnBreak(ItemStack itemStack, Player player, PlantBlock plantBlock) {
         if (onBreak != null) {
-            return onBreak.getPlantInteract(itemStack);
+            return onBreak.getPlantInteract(itemStack, player, plantBlock);
         }
         return null;
     }

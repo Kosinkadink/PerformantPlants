@@ -9,6 +9,8 @@ import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.*;
+import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationIsBlockNull;
+import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationPassOnlyBlock;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
@@ -18,14 +20,16 @@ import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperation
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationSwitch;
 import me.kosinkadink.performantplants.scripting.operations.function.*;
-import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationAnd;
-import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationNot;
-import me.kosinkadink.performantplants.scripting.operations.logic.ScriptOperationOr;
+import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationGetMainHandEnchantmentLevel;
+import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationHasMainHandEnchantment;
+import me.kosinkadink.performantplants.scripting.operations.logic.*;
 import me.kosinkadink.performantplants.scripting.operations.math.*;
+import me.kosinkadink.performantplants.scripting.operations.player.*;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationChance;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationChoice;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomDouble;
 import me.kosinkadink.performantplants.scripting.operations.random.ScriptOperationRandomLong;
+import me.kosinkadink.performantplants.scripting.operations.world.ScriptOperationGetWorld;
 import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.scripting.storage.hooks.*;
@@ -1168,6 +1172,18 @@ public class ConfigurationManager {
             }
         }
 
+        // set condition for match, if present
+        if (section.isSet("condition")) {
+            ScriptBlock value = createPlantScript(section, "condition", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Interact will not have chosen condition value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        plantInteract.isConditionMet(null, null), section.getCurrentPath()));
+            } else {
+                plantInteract.setCondition(value);
+            }
+        }
+
         // set condition for doing actions, if present
         if (section.isSet("do-if")) {
             ScriptBlock value = createPlantScript(section, "do-if", data);
@@ -1359,60 +1375,33 @@ public class ConfigurationManager {
                 consumable.setOnlyGiveItemsOnDo(value);
             }
         }
+        // set condition for match, if present
+        if (section.isSet("condition")) {
+            ScriptBlock value = createPlantScript(section, "condition", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("Consumable will not have chosen condition value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        consumable.isConditionMet(null, null), section.getCurrentPath()));
+            } else {
+                consumable.setCondition(value);
+            }
+        }
         // set required items, if present
         if (section.isConfigurationSection("required-items")) {
             ConfigurationSection requiredItemsSection = section.getConfigurationSection("required-items");
             for (String placeholder : requiredItemsSection.getKeys(false)) {
                 ConfigurationSection requiredItemSection = requiredItemsSection.getConfigurationSection(placeholder);
-                // set item
-                ConfigurationSection itemSection = requiredItemSection.getConfigurationSection("item");
-                if (itemSection == null) {
-                    performantPlants.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
+                // if section can't be found, don't load consumable and return null
+                if (requiredItemSection == null) {
+                    performantPlants.getLogger().warning(String.format("Section not found for required item '%s' in section: %s;" +
                                     "will continue to load, but item won't be consumable (fix config)",
                             placeholder, requiredItemsSection));
                     return null;
                 }
-                ItemSettings itemSettings = loadItemConfig(itemSection, true);
-                if (itemSettings == null) {
-                    performantPlants.getLogger().warning(String.format("Problem getting required item in section %s;" +
-                                    "will continue to load, but this item will not be consumable (fix config)",
-                            itemSection.getCurrentPath()));
+                RequiredItem requiredItem = loadRequiredItem(requiredItemSection, placeholder, data);
+                // if null, don't load consumable and return null
+                if (requiredItem == null) {
                     return null;
-                }
-                // create required item from item
-                RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
-                // set take item, if set
-                if (section.isSet("take-item")) {
-                    ScriptBlock value = createPlantScript(section, "take-item", data);
-                    if (value == null || !ScriptHelper.isBoolean(value)) {
-                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen take-item value and instead will be" +
-                                        " %b; must be ScriptType BOOLEAN in section: %s",
-                                requiredItem.isTakeItem(null, null), section.getCurrentPath()));
-                    } else {
-                        requiredItem.setTakeItem(value);
-                    }
-                }
-                // set if required item should be in hand (offhand or main hand), if set
-                if (section.isSet("in-hand")) {
-                    ScriptBlock value = createPlantScript(section, "in-hand", data);
-                    if (value == null || !ScriptHelper.isBoolean(value)) {
-                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen in-hand value and instead will be" +
-                                        " %b; must be ScriptType BOOLEAN in section: %s",
-                                requiredItem.isInHand(null, null), section.getCurrentPath()));
-                    } else {
-                        requiredItem.setInHand(value);
-                    }
-                }
-                // set damage to add to item, if present
-                if (section.isSet("add-damage")) {
-                    ScriptBlock value = createPlantScript(section, "add-damage", data);
-                    if (value == null || !ScriptHelper.isLong(value)) {
-                        performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
-                                        " %n; must be ScriptType LONG in section: %s",
-                                requiredItem.getAddDamage(null, null), section.getCurrentPath()));
-                    } else {
-                        requiredItem.setAddDamage(value);
-                    }
                 }
                 consumable.addRequiredItem(requiredItem);
             }
@@ -1470,6 +1459,71 @@ public class ConfigurationManager {
         }
         // return consumable
         return consumable;
+    }
+
+    RequiredItem loadRequiredItem(ConfigurationSection section, String sectionName, PlantData data) {
+        // set item
+        ConfigurationSection itemSection = section.getConfigurationSection("item");
+        if (itemSection == null) {
+            performantPlants.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
+                            "will continue to load, but item won't be consumable (fix config)",
+                    sectionName, section));
+            return null;
+        }
+        ItemSettings itemSettings = loadItemConfig(itemSection, true);
+        if (itemSettings == null) {
+            performantPlants.getLogger().warning(String.format("Problem getting required item in section %s;" +
+                            "will continue to load, but this item will not be consumable (fix config)",
+                    itemSection.getCurrentPath()));
+            return null;
+        }
+        // create required item from item
+        RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
+        // set take item, if set
+        if (section.isSet("take-item")) {
+            ScriptBlock value = createPlantScript(section, "take-item", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen take-item value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        requiredItem.isTakeItem(null, null), section.getCurrentPath()));
+            } else {
+                requiredItem.setTakeItem(value);
+            }
+        }
+        // set if required item should be in hand (offhand or main hand), if set
+        if (section.isSet("in-hand")) {
+            ScriptBlock value = createPlantScript(section, "in-hand", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen in-hand value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        requiredItem.isInHand(null, null), section.getCurrentPath()));
+            } else {
+                requiredItem.setInHand(value);
+            }
+        }
+        // set damage to add to item, if present
+        if (section.isSet("add-damage")) {
+            ScriptBlock value = createPlantScript(section, "add-damage", data);
+            if (value == null || !ScriptHelper.isLong(value)) {
+                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
+                                " %n; must be ScriptType LONG in section: %s",
+                        requiredItem.getAddDamage(null, null), section.getCurrentPath()));
+            } else {
+                requiredItem.setAddDamage(value);
+            }
+        }
+        // set condition for match, if present
+        if (section.isSet("condition")) {
+            ScriptBlock value = createPlantScript(section, "condition", data);
+            if (value == null || !ScriptHelper.isBoolean(value)) {
+                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen condition value and instead will be" +
+                                " %b; must be ScriptType BOOLEAN in section: %s",
+                        requiredItem.isConditionMet(null, null), section.getCurrentPath()));
+            } else {
+                requiredItem.setCondition(value);
+            }
+        }
+        return requiredItem;
     }
 
     ScriptColor createColor(ConfigurationSection section, PlantData data) {
@@ -3224,9 +3278,6 @@ public class ConfigurationManager {
                 case "variable":
                 case "result":
                     returned = createPlantScriptResult(blockSection, data); break;
-                // zero argument operations
-                case "call":
-                    returned = createScriptOperationWithNoArguments(blockSection, data); break;
                 // reference to defined stored-script-block in plant
                 case "stored":
                     returned = getStoredScriptBlock(blockSection, directValue, blockName, data); break;
@@ -3271,9 +3322,18 @@ public class ConfigurationManager {
                 case "&&":
                 case "and":
                     returned = createScriptOperationAnd(blockSection, directValue, data); break;
+                case "!&&":
+                case "nand":
+                    returned = createScriptOperationNand(blockSection, directValue, data); break;
                 case "||":
                 case "or":
                     returned = createScriptOperationOr(blockSection, directValue, data); break;
+                case "^":
+                case "xor":
+                    returned = createScriptOperationXor(blockSection, directValue, data); break;
+                case "!||":
+                case "nor":
+                    returned = createScriptOperationNor(blockSection, directValue, data);  break;
                 case "!":
                 case "not":
                     returned = createScriptOperationNot(blockSection, directValue, blockName, data); break;
@@ -3354,6 +3414,30 @@ public class ConfigurationManager {
                     returned = createScriptOperationScheduleTask(blockSection, directValue, data); break;
                 case "canceltask":
                     returned = createScriptOperationCancelTask(blockSection, directValue, data); break;
+                // player
+                case "isplayernull":
+                    returned = new ScriptOperationIsPlayerNull(); break;
+                case "isplayerdead":
+                    returned = new ScriptOperationIsPlayerDead(); break;
+                case "isplayersneaking":
+                    returned = new ScriptOperationIsPlayerSneaking(); break;
+                case "isplayersprinting":
+                    returned = new ScriptOperationIsPlayerSprinting(); break;
+                case "passonlyplayer":
+                    returned = createScriptOperationPassOnlyPlayer(blockSection, directValue, blockName, data); break;
+                // block
+                case "isblocknull":
+                    returned = new ScriptOperationIsBlockNull(); break;
+                case "passonlyblock":
+                    returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, data); break;
+                // world
+                case "getworld":
+                    returned = new ScriptOperationGetWorld(); break;
+                // inventory
+                case "hasmainhandenchantment":
+                    returned =  createScriptOperationHasMainHandEnchantment(blockSection, directValue, blockName, data); break;
+                case "getmainhandenchantmentlevel":
+                    returned =  createScriptOperationGetMainHandEnchantmentLevel(blockSection, directValue, blockName, data); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, directValue, blockName, data); break;
@@ -3377,28 +3461,6 @@ public class ConfigurationManager {
         }
         performantPlants.getLogger().warning(String.format("No PlantScript block defined in section: %s",
                 section.getCurrentPath()));
-        return null;
-    }
-
-    ScriptOperation createScriptOperationWithNoArguments(ConfigurationSection section, PlantData data) {
-        if (section.isString("call")) {
-            String operationName = section.getString("call");
-            if (operationName != null) {
-                switch (operationName.toLowerCase()) {
-                    case "isblocknull":
-                        return new ScriptOperationIsBlockNull();
-                    case "isplayernull":
-                        return new ScriptOperationIsPlayerNull();
-                    default:
-                        performantPlants.getLogger().warning(String.format("Operation '%s' not recognized and could not be called in section: %s",
-                                operationName, section.getCurrentPath()
-                        ));
-                        return null;
-                }
-            }
-            performantPlants.getLogger().warning(String.format("No operation name set in 'call' in section: %s", section.getCurrentPath()));
-            return null;
-        }
         return null;
     }
 
@@ -3614,12 +3676,33 @@ public class ConfigurationManager {
         }
         return new ScriptOperationAnd(operands.get(0), operands.get(1));
     }
+    ScriptOperation createScriptOperationNand(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationNand(operands.get(0), operands.get(1));
+    }
     ScriptOperation createScriptOperationOr(ConfigurationSection section, boolean directValue, PlantData data) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationOr(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationXor(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationXor(operands.get(0), operands.get(1));
+    }
+    ScriptOperation createScriptOperationNor(ConfigurationSection section, boolean directValue, PlantData data) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, data);
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationNor(operands.get(0), operands.get(1));
     }
     ScriptOperation createScriptOperationNot(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
@@ -4247,7 +4330,6 @@ public class ConfigurationManager {
         return new ScriptOperationScheduleTask(data.getPlant().getId(), taskConfigId, delay,
                 currentPlayer, currentBlock, playerId, autostart);
     }
-
     ScriptOperation createScriptOperationCancelTask(ConfigurationSection section, boolean directValue, PlantData data) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
@@ -4312,6 +4394,41 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationRandomLong(operands.get(0), operands.get(1));
+    }
+
+    //player
+    private ScriptBlock createScriptOperationPassOnlyPlayer(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationPassOnlyPlayer(operand);
+    }
+
+    //block
+    private ScriptBlock createScriptOperationPassOnlyBlock(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationPassOnlyBlock(operand);
+    }
+
+    //inventory
+    private ScriptBlock createScriptOperationHasMainHandEnchantment(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationHasMainHandEnchantment(operand);
+    }
+
+    private ScriptBlock createScriptOperationGetMainHandEnchantmentLevel(ConfigurationSection section, boolean directValue, String sectionName, PlantData data) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, data);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationGetMainHandEnchantmentLevel(operand);
     }
 
     //endregion

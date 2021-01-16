@@ -26,6 +26,8 @@ public class PlantConsumable {
     private final ArrayList<RequiredItem> requiredItems = new ArrayList<>();
     private ScriptBlock onlyTakeRequiredItemsOnDo = ScriptResult.TRUE;
 
+    private ScriptBlock condition = ScriptResult.TRUE;
+
     private final PlantEffectStorage effectStorage = new PlantEffectStorage();
     private ScriptBlock onlyEffectsOnDo = ScriptResult.TRUE;
 
@@ -35,6 +37,15 @@ public class PlantConsumable {
     private ScriptBlock scriptBlockOnNotDo;
 
     public PlantConsumable() { }
+
+    // condition
+    public boolean isConditionMet(Player player, PlantBlock plantBlock) {
+        return condition.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setCondition(ScriptBlock condition) {
+        this.condition = condition;
+    }
 
     // take item
     public boolean isTakeItem(Player player, PlantBlock plantBlock) {

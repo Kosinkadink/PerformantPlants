@@ -26,6 +26,8 @@ public class PlantInteract {
     private ScriptBlock onlyConsumableEffectsOnDo = ScriptResult.FALSE;
     private ScriptBlock onlyDropOnDo = ScriptResult.TRUE;
 
+    private ScriptBlock condition = ScriptResult.TRUE;
+
     private boolean matchMaterial = false;
     private boolean matchEnchantments = false;
     private boolean matchEnchantmentLevel = false;
@@ -75,7 +77,7 @@ public class PlantInteract {
 
     // block drops
     public boolean isGiveBlockDrops(Player player, PlantBlock plantBlock) {
-        return isGiveBlockDropsNull() ? false : giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
+        return !isGiveBlockDropsNull() && giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
     }
 
     public void setGiveBlockDrops(ScriptBlock giveBlockDrops) {
@@ -94,7 +96,6 @@ public class PlantInteract {
         this.onlyDropOnDo = onlyDropOnDo;
     }
 
-
     // item stack
     public ItemStack getItemStack() {
         return itemStack;
@@ -102,6 +103,15 @@ public class PlantInteract {
 
     public void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
+    }
+
+    // condition
+    public boolean isConditionMet(Player player, PlantBlock plantBlock) {
+        return condition.loadValue(plantBlock, player).getBooleanValue();
+    }
+
+    public void setCondition(ScriptBlock condition) {
+        this.condition = condition;
     }
 
     // take item
@@ -123,7 +133,7 @@ public class PlantInteract {
 
     // break block
     public boolean isBreakBlock(Player player, PlantBlock plantBlock) {
-        return isBreakBlockNull() ? false : breakBlock.loadValue(plantBlock, player).getBooleanValue();
+        return !isBreakBlockNull() && breakBlock.loadValue(plantBlock, player).getBooleanValue();
     }
 
     public void setBreakBlock(ScriptBlock breakBlock) {
@@ -135,7 +145,7 @@ public class PlantInteract {
     }
 
     public boolean isOnlyBreakBlockOnDo(Player player, PlantBlock plantBlock) {
-        return isOnlyBreakBlockOnDoNull() ? false : onlyBreakBlockOnDo.loadValue(plantBlock, player).getBooleanValue();
+        return !isOnlyBreakBlockOnDoNull() && onlyBreakBlockOnDo.loadValue(plantBlock, player).getBooleanValue();
     }
 
     public void setOnlyBreakBlockOnDo(ScriptBlock breakBlock) {

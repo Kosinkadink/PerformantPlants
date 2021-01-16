@@ -13,10 +13,11 @@ public class ScriptOperationOr extends ScriptOperationBinaryLogic {
 
     @Override
     public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        // if left or right is variable, use proper temp value;
-        ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
-        ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
-        return new ScriptResult(leftInstance.getBooleanValue() || rightInstance.getBooleanValue());
+        // load values with short circuiting
+        return new ScriptResult(
+                getLeft().loadValue(plantBlock, player).getBooleanValue() ||
+                        getRight().loadValue(plantBlock, player).getBooleanValue()
+        );
     }
 
 }

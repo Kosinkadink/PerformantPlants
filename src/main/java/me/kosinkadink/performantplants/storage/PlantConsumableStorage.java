@@ -29,6 +29,10 @@ public class PlantConsumableStorage {
                     continue;
                 }
             }
+            // if condition not met, continue searching
+            if (!plantConsumable.isConditionMet(player, null)) {
+                continue;
+            }
             // if no requirement, set match to this and continue searching
             if (plantConsumable.getRequiredItems().isEmpty()) {
                 matchConsumable = plantConsumable;
@@ -56,6 +60,10 @@ public class PlantConsumableStorage {
                 }
                 // if not a match, stop searching since this isn't it
                 if (!matches) {
+                    break;
+                }
+                // if condition not met, stop searching since this isn't it
+                if (!requirement.isConditionMet(player, null)) {
                     break;
                 }
             }
