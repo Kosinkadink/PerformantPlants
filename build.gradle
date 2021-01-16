@@ -45,6 +45,8 @@ shadowJar {
     archiveClassifier.set('')
 }
 
+tasks.build.dependsOn tasks.shadowJar
+
 compileJava.dependsOn {
     buildSpigot
 }
