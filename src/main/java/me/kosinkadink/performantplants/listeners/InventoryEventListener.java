@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.plants.PlantItem;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,17 +21,57 @@ public class InventoryEventListener implements Listener {
     @EventHandler
     public void onInventoryClickEvent(InventoryClickEvent event) {
         if (!event.isCancelled()) {
-            // if AnvilInventory, check if trying to rename or use plant item
-            if (event.getClickedInventory() instanceof AnvilInventory) {
-                if (event.getSlotType() == InventoryType.SlotType.RESULT) {
-                    // check all item stacks involved to get anvil result
-                    for (ItemStack itemStack : event.getClickedInventory()) {
-                        // if item stack is a plant item, cancel event and stop searching for more
-                        if (performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
-                            event.setResult(Event.Result.DENY);
-                            break;
-                        }
-                    }
+            if (event.getClickedInventory() != null) {
+                // check which inventory type
+                switch (event.getClickedInventory().getType()) {
+                    case GRINDSTONE:
+                        if (event.getSlotType() == InventoryType.SlotType.RESULT) {
+                            // check if trying to use plant item
+                            for (ItemStack itemStack : event.getClickedInventory().getStorageContents()) {
+                                // if plant item, check if allowed to used in this inventory
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+                                if (plantItem != null && !plantItem.isAllowGrindstone()) {
+                                    event.setResult(Event.Result.DENY);
+                                    break;
+                                }
+                            }
+                        } break;
+                    case STONECUTTER:
+                        if (event.getSlotType() == InventoryType.SlotType.RESULT) {
+                            // check if trying to use plant item
+                            for (ItemStack itemStack : event.getClickedInventory().getStorageContents()) {
+                                // if plant item, check if allowed to used in this inventory
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+                                if (plantItem != null && !plantItem.isAllowStonecutter()) {
+                                    event.setResult(Event.Result.DENY);
+                                    break;
+                                }
+                            }
+                        } break;
+                    case LOOM:
+                        if (event.getSlotType() == InventoryType.SlotType.RESULT) {
+                            // check if trying to use plant item
+                            for (ItemStack itemStack : event.getClickedInventory().getStorageContents()) {
+                                // if plant item, check if allowed to used in this inventory
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+                                if (plantItem != null && !plantItem.isAllowLoom()) {
+                                    event.setResult(Event.Result.DENY);
+                                    break;
+                                }
+                            }
+                        } break;
+                    case CARTOGRAPHY:
+                        if (event.getSlotType() == InventoryType.SlotType.RESULT) {
+                            // check if trying to use plant item
+                            for (ItemStack itemStack : event.getClickedInventory().getStorageContents()) {
+                                // if plant item, check if allowed to used in this inventory
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+                                if (plantItem != null && !plantItem.isAllowCartography()) {
+                                    event.setResult(Event.Result.DENY);
+                                    break;
+                                }
+                            }
+                        } break;
                 }
             }
         }

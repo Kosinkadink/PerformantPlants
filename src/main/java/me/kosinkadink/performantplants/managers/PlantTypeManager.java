@@ -77,27 +77,32 @@ public class PlantTypeManager {
     }
 
     public Plant getPlantByItemStack(ItemStack itemStack) {
-        for (Plant plant : plantTypeMap.values()) {
-            if (plant.getItemByItemStack(itemStack) != null) {
-                return plant;
+        // don't bother searching if does not have plant prefix
+        if (PlantItemBuilder.hasPlantPrefix(itemStack)) {
+            for (Plant plant : plantTypeMap.values()) {
+                if (plant.getItemByItemStack(itemStack) != null) {
+                    return plant;
+                }
             }
         }
         return null;
     }
 
     public PlantItem getPlantItemByItemStack(ItemStack itemStack) {
-        for (Plant plant : plantTypeMap.values()) {
-            PlantItem plantItem = plant.getItemByItemStack(itemStack);
-            if (plantItem != null) {
-                return plantItem;
+        // don't bother searching if does not have plant prefix
+        if (PlantItemBuilder.hasPlantPrefix(itemStack)) {
+            for (Plant plant : plantTypeMap.values()) {
+                PlantItem plantItem = plant.getItemByItemStack(itemStack);
+                if (plantItem != null) {
+                    return plantItem;
+                }
             }
         }
         return null;
     }
 
     public boolean isPlantItemStack(ItemStack itemStack) {
-        return PlantItemBuilder.hasPlantPrefix(itemStack)
-                && getPlantByItemStack(itemStack) != null;
+        return getPlantByItemStack(itemStack) != null;
     }
 
     public Plant getPlantById(String id) {

@@ -1,4 +1,4 @@
-package me.kosinkadink.performantplants.plants;
+package me.kosinkadink.performantplants.recipes;
 
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.inventory.Recipe;

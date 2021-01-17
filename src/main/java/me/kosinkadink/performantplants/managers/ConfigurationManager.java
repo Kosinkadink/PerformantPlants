@@ -7,6 +7,11 @@ import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
+import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
+import me.kosinkadink.performantplants.recipes.PlantRecipe;
+import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
+import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.*;
 import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationIsBlockNull;
@@ -221,7 +226,7 @@ public class ConfigurationManager {
         // create plant ItemStack and add it to plant type manager
         PlantItem plantItem = new PlantItem(itemSettings.generatePlantItemStack(plantId));
         // set buy/sell prices
-        addPricesToPlantItem(itemConfig, plantItem);
+        addPropertiesToPlantItem(itemConfig, plantItem);
         // Plant to be saved
         Plant plant = new Plant(plantId, plantItem);
         // get growing section
@@ -259,7 +264,7 @@ public class ConfigurationManager {
                     if (seedItemSettings != null) {
                         // set seed buy/sell price
                         PlantItem seedItem = new PlantItem(seedItemSettings.generatePlantItemStack(plantId, true));
-                        addPricesToPlantItem(seedConfig, seedItem);
+                        addPropertiesToPlantItem(seedConfig, seedItem);
                         plant.setSeedItem(seedItem);
                     } else {
                         performantPlants.getLogger().info("seedItemSettings were null for plant: " + plantId);
@@ -416,7 +421,7 @@ public class ConfigurationManager {
                 ItemSettings goodSettings = loadItemConfig(goodSection, false);
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
-                    addPricesToPlantItem(goodSection, goodItem);
+                    addPropertiesToPlantItem(goodSection, goodItem);
                     if (goodSection.isConfigurationSection("consumable")) {
                         PlantConsumableStorage goodConsumable = loadPlantConsumableStorage(goodSection.getConfigurationSection("consumable"), plant.getPlantData());
                         if (goodConsumable != null) {
@@ -472,6 +477,22 @@ public class ConfigurationManager {
             for (String recipeName : recipesSection.getKeys(false)) {
                 ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
                 addCampfireRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load smithing recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("smithing-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("smithing-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addSmithingRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load anvil recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("anvil-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("anvil-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addAnvilRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
             }
         }
 
@@ -1762,23 +1783,73 @@ public class ConfigurationManager {
         return true;
     }
 
-    void addPricesToPlantItem(ConfigurationSection section, PlantItem plantItem) {
+    void addPropertiesToPlantItem(ConfigurationSection section, PlantItem plantItem) {
         if (section == null) {
             return;
         }
-        // get buy price, if present
+        // set buy price
         if (section.isDouble("buy-price") || section.isInt("buy-price")) {
             double price = section.getDouble("buy-price");
             if (price >= 0.0) {
                 plantItem.setBuyPrice(price);
             }
         }
-        // get sell price, if present
+        // set sell price
         if (section.isDouble("sell-price") || section.isInt("sell-price")) {
             double price = section.getDouble("sell-price");
             if (price >= 0.0) {
                 plantItem.setSellPrice(price);
             }
+        }
+        // set burn time
+        if (section.isInt("burn-time")) {
+            int burnTime = section.getInt("burn-time");
+            plantItem.setBurnTime(burnTime);
+        }
+        // set allow anvil
+        if (section.isBoolean("allow-anvil")) {
+            plantItem.setAllowAnvil(section.getBoolean("allow-anvil"));
+        }
+        // set allow anvil rename
+        if (section.isBoolean("allow-rename")) {
+            plantItem.setAllowAnvilRename(section.getBoolean("allow-rename"));
+        }
+        // set allow smithing
+        if (section.isBoolean("allow-smithing")) {
+            plantItem.setAllowSmithing(section.getBoolean("allow-smithing"));
+        }
+        // set allow grindstone
+        if (section.isBoolean("allow-grindstone")) {
+            plantItem.setAllowGrindstone(section.getBoolean("allow-grindstone"));
+        }
+        // set allow stonecutter
+        if (section.isBoolean("allow-stonecutter")) {
+            plantItem.setAllowStonecutter(section.getBoolean("allow-stonecutter"));
+        }
+
+        // set allow beacon
+        if (section.isBoolean("allow-enchanting")) {
+            plantItem.setAllowEnchanting(section.getBoolean("allow-enchanting"));
+        }
+        // set allow beacon
+        if (section.isBoolean("allow-beacon")) {
+            plantItem.setAllowBeacon(section.getBoolean("allow-beacon"));
+        }
+        // set allow loom
+        if (section.isBoolean("allow-loom")) {
+            plantItem.setAllowLoom(section.getBoolean("allow-loom"));
+        }
+        // set allow cartographer
+        if (section.isBoolean("allow-cartographer")) {
+            plantItem.setAllowCartography(section.getBoolean("allow-cartographer"));
+        }
+        // set allow crafting
+        if (section.isBoolean("allow-crafting")) {
+            plantItem.setAllowCrafting(section.getBoolean("allow-crafting"));
+        }
+        // set allow fuel
+        if (section.isBoolean("allow-fuel")) {
+            plantItem.setAllowFuel(section.getBoolean("allow-fuel"));
         }
     }
 
@@ -2507,23 +2578,28 @@ public class ConfigurationManager {
 
     //region Add Recipes
 
-    void addCraftingRecipe(ConfigurationSection section, String recipeName) {
-        String type = section.getString("type");
-        if (type == null) {
-            performantPlants.getLogger().warning("Type not set for crafting recipe at: " + section.getCurrentPath());
-            return;
-        }
+    void preparePlantRecipe(ConfigurationSection section, PlantRecipe plantRecipe) {
         // load PlantInteractStorage, if present
         PlantInteractStorage storage = null;
         ConfigurationSection storageSection = section.getConfigurationSection("on-craft");
         if (storageSection != null) {
             storage = loadPlantInteractStorage(storageSection);
+            plantRecipe.setStorage(storage);
         }
         boolean ignoreResultPresent = false;
         boolean ignoreResult = false;
         if (section.isBoolean("ignore-result")) {
             ignoreResultPresent = true;
             ignoreResult = section.getBoolean("ignore-result");
+            plantRecipe.setIgnoreResult(ignoreResult);
+        }
+    }
+
+    void addCraftingRecipe(ConfigurationSection section, String recipeName) {
+        String type = section.getString("type");
+        if (type == null) {
+            performantPlants.getLogger().warning("Type not set for crafting recipe at: " + section.getCurrentPath());
+            return;
         }
         // get shaped recipe
         if (type.equalsIgnoreCase("shaped")) {
@@ -2574,10 +2650,8 @@ public class ConfigurationManager {
                 // otherwise add recipe to server
                 performantPlants.getServer().addRecipe(recipe);
                 // add recipe to recipe manager
-                PlantRecipe plantRecipe = new PlantRecipe(recipe, storage);
-                if (ignoreResultPresent) {
-                    plantRecipe.setIgnoreResult(ignoreResult);
-                }
+                PlantRecipe plantRecipe = new PlantRecipe(recipe);
+                preparePlantRecipe(section, plantRecipe);
                 performantPlants.getRecipeManager().addRecipe(plantRecipe);
                 performantPlants.getLogger().info("Registered shaped crafting recipe: " + recipeName);
             } catch (Exception e) {
@@ -2625,10 +2699,8 @@ public class ConfigurationManager {
                 // otherwise add recipe to server
                 performantPlants.getServer().addRecipe(recipe);
                 // add recipe to recipe manager
-                PlantRecipe plantRecipe = new PlantRecipe(recipe, storage);
-                if (ignoreResultPresent) {
-                    plantRecipe.setIgnoreResult(ignoreResult);
-                }
+                PlantRecipe plantRecipe = new PlantRecipe(recipe);
+                preparePlantRecipe(section, plantRecipe);
                 performantPlants.getRecipeManager().addRecipe(plantRecipe);
                 performantPlants.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
             } catch (Exception e) {
@@ -2778,8 +2850,8 @@ public class ConfigurationManager {
             return;
         }
         // get input
-        if (!section.isConfigurationSection("result")) {
-            performantPlants.getLogger().warning("No result section for stonecutting recipe at " + section.getCurrentPath());
+        if (!section.isConfigurationSection("input")) {
+            performantPlants.getLogger().warning("No input section for stonecutting recipe at " + section.getCurrentPath());
             return;
         }
         ItemSettings inputSettings = loadItemConfig(section.getConfigurationSection("input"), true);
@@ -2798,6 +2870,113 @@ public class ConfigurationManager {
         // add recipe to recipe manager
         performantPlants.getRecipeManager().addRecipe(recipe);
         performantPlants.getLogger().info("Registered stonecutting recipe: " + recipeName);
+    }
+
+    void addSmithingRecipe(ConfigurationSection section, String recipeName) {
+        // get result
+        if (!section.isConfigurationSection("result")) {
+            performantPlants.getLogger().warning("No result section for smithing recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (resultSettings == null) {
+            return;
+        }
+        // get base
+        if (!section.isConfigurationSection("base")) {
+            performantPlants.getLogger().warning("No base section for smithing recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings baseSettings = loadItemConfig(section.getConfigurationSection("base"), true);
+        // if no base settings, return (something went wrong or linked item did not exist)
+        if (baseSettings == null) {
+            return;
+        }
+        // get addition
+        if (!section.isConfigurationSection("addition")) {
+            performantPlants.getLogger().warning("No addition section for smithing recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings additionSettings = loadItemConfig(section.getConfigurationSection("addition"), true);
+        // if no base settings, return (something went wrong or linked item did not exist)
+        if (additionSettings == null) {
+            return;
+        }
+        // create item stacks
+        ItemStack resultStack = resultSettings.generateItemStack();
+        ItemStack baseStack = baseSettings.generateItemStack();
+        ItemStack additionStack = additionSettings.generateItemStack();
+        // add recipe to server
+        NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "smithing_" + recipeName);
+        SmithingRecipe smithingRecipe = new SmithingRecipe(namespacedKey,
+                resultStack,
+                new RecipeChoice.ExactChoice(baseStack),
+                new RecipeChoice.ExactChoice(additionStack));
+        performantPlants.getServer().addRecipe(smithingRecipe);
+        // add recipe to recipe manager
+        SmithingRecipeKey recipeKey = new SmithingRecipeKey(baseStack, additionStack);
+        PlantRecipe plantRecipe = new PlantRecipe(new PlantSmithingRecipe(recipeKey, resultStack, namespacedKey));
+        preparePlantRecipe(section, plantRecipe);
+        performantPlants.getRecipeManager().addRecipe(plantRecipe);
+        performantPlants.getLogger().info("Registered smithing recipe: " + recipeName);
+    }
+
+    void addAnvilRecipe(ConfigurationSection section, String recipeName) {
+        // get result
+        if (!section.isConfigurationSection("result")) {
+            performantPlants.getLogger().warning("No result section for anvil recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (resultSettings == null) {
+            return;
+        }
+        // get level cost
+        int levelCost = 1;
+        if (section.isInt("level-cost")) {
+            levelCost = Math.max(1, section.getInt("level-cost"));
+        }
+        // get base
+        if (!section.isConfigurationSection("base")) {
+            performantPlants.getLogger().warning("No base section for anvil recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings baseSettings = loadItemConfig(section.getConfigurationSection("base"), true);
+        // if no base settings, return (something went wrong or linked item did not exist)
+        if (baseSettings == null) {
+            return;
+        }
+        // get addition
+        if (!section.isConfigurationSection("addition")) {
+            performantPlants.getLogger().warning("No addition section for anvil recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings additionSettings = loadItemConfig(section.getConfigurationSection("addition"), true);
+        // if no base settings, return (something went wrong or linked item did not exist)
+        if (additionSettings == null) {
+            return;
+        }
+        // get name, if present
+        String name = "";
+        if (section.isString("name")) {
+            name = section.getString("name");
+            if (name == null) {
+                name = "";
+            }
+        }
+        // create item stacks
+        ItemStack resultStack = resultSettings.generateItemStack();
+        ItemStack baseStack = baseSettings.generateItemStack();
+        ItemStack additionStack = additionSettings.generateItemStack();
+        // add recipe to recipe manager
+        NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "anvil_" + recipeName);
+        AnvilRecipeKey recipeKey = new AnvilRecipeKey(baseStack, additionStack, name);
+        PlantRecipe plantRecipe = new PlantRecipe(new PlantAnvilRecipe(recipeKey, resultStack, levelCost, namespacedKey));
+        preparePlantRecipe(section, plantRecipe);
+        performantPlants.getRecipeManager().addRecipe(plantRecipe);
+        performantPlants.getLogger().info("Registered anvil recipe: " + recipeName);
     }
 
     //endregion
