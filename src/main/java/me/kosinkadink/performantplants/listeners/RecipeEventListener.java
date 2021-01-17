@@ -8,10 +8,11 @@ import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
 import me.kosinkadink.performantplants.recipes.PlantRecipe;
 import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
-import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
-import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
+import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.util.RecipeHelper;
+import me.kosinkadink.performantplants.util.ServerHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
@@ -171,84 +172,50 @@ public class RecipeEventListener implements Listener {
     @EventHandler
     public void onPrepareSmithingEvent(PrepareSmithingEvent event) {
         SmithingInventory inventory = event.getInventory();
-        // get base
-        ItemStack baseItemStack = inventory.getItem(0);
-        if (baseItemStack == null) {
-            return;
-        }
-        PlantItem basePlantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(baseItemStack);
-        // get addition
-        ItemStack addItemStack = inventory.getItem(1);
-        PlantItem addPlantItem = null;
-        if (addItemStack != null) {
-            addPlantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(addItemStack);
-            // check if registered smithing recipe
-            PlantRecipe recipe = performantPlants.getRecipeManager().getSmithingRecipe(new SmithingRecipeKey(baseItemStack, addItemStack));
-            if (recipe != null) {
-                PlantSmithingRecipe smithingRecipe = (PlantSmithingRecipe) recipe.getRecipe();
-                SmithingRecipeKey recipeKey = smithingRecipe.getRecipeKey();
-                if (!recipeKey.getBase().isSimilar(baseItemStack)) {
-                    event.setResult(new ItemStack(Material.AIR));
-                    return;
+        // check recipe result
+        RecipeCheckResult checkResult = RecipeHelper.checkSmithingRecipe(inventory);
+        // if not null, process more (otherwise do vanilla behavior)
+        if (checkResult != null) {
+            // if allow, set result to recipe
+            if (checkResult.isAllow()) {
+                PlantRecipe recipe = checkResult.getRecipe();
+                if (recipe != null) {
+                    PlantSmithingRecipe smithingRecipe = (PlantSmithingRecipe) recipe.getRecipe();
+                    event.setResult(smithingRecipe.getResult());
                 }
-                ItemStack recipeAddition = recipeKey.getAddition();
-                if (recipeAddition != null && !recipeAddition.isSimilar(addItemStack)) {
-                    event.setResult(new ItemStack(Material.AIR));
-                    return;
-                }
-                event.setResult(smithingRecipe.getResult());
-                // TODO: perform actions
-                return;
             }
-        }
-        if (basePlantItem != null && !basePlantItem.isAllowSmithing()) {
-            event.setResult(new ItemStack(Material.AIR));
-            return;
-        }
-        if (addPlantItem != null && !addPlantItem.isAllowSmithing()) {
-            event.setResult(new ItemStack(Material.AIR));
+            // if deny, set result to invalid result
+            else {
+                event.setResult(RecipeHelper.getInvalidResult());
+            }
         }
     }
 
     @EventHandler
     public void onPrepareAnvilEvent(PrepareAnvilEvent event) {
         AnvilInventory inventory = event.getInventory();
-        // get rename
-        String renameText = inventory.getRenameText();
-        // get first item
-        ItemStack firstItemStack = inventory.getStorageContents()[0];
-        // if first item not set, do nothing
-        if (firstItemStack == null) {
-            return;
-        }
-        PlantItem firstPlantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(firstItemStack);
-        if (firstPlantItem != null) {
-            if (!firstPlantItem.isAllowAnvilRename() && renameText != null && !renameText.isEmpty()) {
-                event.setResult(new ItemStack(Material.AIR));
+        // check recipe result
+        RecipeCheckResult checkResult = RecipeHelper.checkAnvilRecipe(inventory);
+        // if not null, process more (otherwise do vanilla behavior)
+        if (checkResult != null) {
+            // if allow, set result to recipe
+            if (checkResult.isAllow()) {
+                PlantRecipe recipe = checkResult.getRecipe();
+                if (recipe != null) {
+                    PlantAnvilRecipe anvilRecipe = (PlantAnvilRecipe) recipe.getRecipe();
+                    event.setResult(anvilRecipe.getResult());
+                    if (ServerHelper.isPaperMC()) {
+                        inventory.setRepairCost(anvilRecipe.getLevelCost());
+                    }
+                    else {
+                        performantPlants.getServer().getScheduler().runTask(performantPlants, () -> inventory.setRepairCost(anvilRecipe.getLevelCost()));
+                    }
+                    // TODO: perform actions
+                }
             }
-        }
-        ItemStack secondItemStack = inventory.getStorageContents()[1];
-        PlantItem secondPlantItem = null;
-        if (secondItemStack != null) {
-            secondPlantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(secondItemStack);
-        }
-        if (secondPlantItem != null) {
-            if (firstPlantItem != null && !firstPlantItem.isAllowAnvil()) {
+            // if deny, set result to Air
+            else {
                 event.setResult(new ItemStack(Material.AIR));
-            }
-            if (!secondPlantItem.isAllowAnvil()) {
-                event.setResult(new ItemStack(Material.AIR));
-            }
-        }
-        if (secondItemStack != null) {
-            // check if anvil recipe is registered
-            AnvilRecipeKey recipeKey = new AnvilRecipeKey(firstItemStack, secondItemStack, renameText);
-            PlantRecipe recipe = performantPlants.getRecipeManager().getAnvilRecipe(recipeKey);
-            if (recipe != null) {
-                PlantAnvilRecipe anvilRecipe = (PlantAnvilRecipe) recipe.getRecipe();
-                event.setResult(anvilRecipe.getResult());
-                inventory.setRepairCost(anvilRecipe.getLevelCost());
-                // TODO: perform actions
             }
         }
     }

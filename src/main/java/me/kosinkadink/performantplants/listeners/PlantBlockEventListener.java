@@ -300,11 +300,7 @@ public class PlantBlockEventListener implements Listener {
         // give items, if set
         if (!onlyGiveItemsOnDo || shouldDo) {
             for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {
-                // check that the items could be added
-                HashMap<Integer, ItemStack> remaining = event.getPlayer().getInventory().addItem(itemToGive);
-                for (ItemStack itemToAdd : remaining.values()) {
-                    DropHelper.emulatePlayerDrop(event.getPlayer(), itemToAdd);
-                }
+                DropHelper.givePlayerItemStack(event.getPlayer(), itemToGive);
             }
         }
         // decrement item, if set

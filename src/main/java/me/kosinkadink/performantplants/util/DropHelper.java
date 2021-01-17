@@ -10,8 +10,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DropHelper {
+
+    public static void givePlayerItemStack(Player player, ItemStack giveStack) {
+        HashMap<Integer,ItemStack> remaining = player.getInventory().addItem(giveStack);
+        // drop any extras in front of player
+        for (ItemStack itemToAdd : remaining.values()) {
+            DropHelper.emulatePlayerDrop(player, itemToAdd);
+        }
+    }
 
     public static void emulatePlayerDrop(Player player, ItemStack itemToDrop) {
         Item droppedItem = player.getWorld().dropItem(player.getEyeLocation().add(0,-0.2,0), itemToDrop);

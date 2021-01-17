@@ -25,8 +25,8 @@ public class PlantItem {
     private boolean allowLoom = false;
     private boolean allowCartography = false;
     private boolean allowCrafting = false;
-    private boolean allowSmelting = false;
     private boolean allowFuel = false;
+    private boolean allowBrewing = false;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -208,6 +208,14 @@ public class PlantItem {
 
     public void setAllowFuel(boolean allowFuel) {
         this.allowFuel = allowFuel;
+    }
+
+    public boolean isAllowBrewing() {
+        return allowBrewing;
+    }
+
+    public void setAllowBrewing(boolean allowBrewing) {
+        this.allowBrewing = allowBrewing;
     }
     //endregion
 

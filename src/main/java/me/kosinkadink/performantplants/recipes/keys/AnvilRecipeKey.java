@@ -14,7 +14,7 @@ public class AnvilRecipeKey extends RecipeKey {
     public AnvilRecipeKey(ItemStack base, ItemStack addition, String name) {
         this.base = base.clone();
         this.addition = addition.clone();
-        this.name = name;
+        this.name = name != null ? name : "";
         this.base.setAmount(1);
         this.addition.setAmount(1);
     }

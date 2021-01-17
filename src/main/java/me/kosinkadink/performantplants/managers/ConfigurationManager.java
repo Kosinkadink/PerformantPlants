@@ -1827,7 +1827,7 @@ public class ConfigurationManager {
             plantItem.setAllowStonecutter(section.getBoolean("allow-stonecutter"));
         }
 
-        // set allow beacon
+        // set allow enchanting
         if (section.isBoolean("allow-enchanting")) {
             plantItem.setAllowEnchanting(section.getBoolean("allow-enchanting"));
         }
@@ -1850,6 +1850,10 @@ public class ConfigurationManager {
         // set allow fuel
         if (section.isBoolean("allow-fuel")) {
             plantItem.setAllowFuel(section.getBoolean("allow-fuel"));
+        }
+        // set allow brewing
+        if (section.isBoolean("allow-brewing")) {
+            plantItem.setAllowBrewing(section.getBoolean("allow-brewing"));
         }
     }
 
