@@ -10,7 +10,6 @@ import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.RecipeHelper;
-import me.kosinkadink.performantplants.util.ServerHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
@@ -293,14 +292,9 @@ public class RecipeEventListener implements Listener {
                 if (recipe != null) {
                     PlantAnvilRecipe anvilRecipe = (PlantAnvilRecipe) recipe.getRecipe();
                     event.setResult(anvilRecipe.getResult());
-                    if (ServerHelper.isPaperMC()) {
-                        inventory.setRepairCost(anvilRecipe.getLevelCost());
-                    }
-                    else {
-                        performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
-                                inventory.setRepairCost(anvilRecipe.getLevelCost())
-                        );
-                    }
+                    performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
+                            inventory.setRepairCost(anvilRecipe.getLevelCost())
+                    );
                     // TODO: perform actions
                 }
             }
