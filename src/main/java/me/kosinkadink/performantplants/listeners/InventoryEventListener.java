@@ -5,15 +5,17 @@ import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.RecipeHelper;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.AnvilInventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.inventory.*;
+
+import java.util.Collection;
 
 public class InventoryEventListener implements Listener {
 
@@ -145,5 +147,102 @@ public class InventoryEventListener implements Listener {
             }
         }
     }
+
+    //region Beacon Inventory Cancelling
+    @EventHandler
+    public void onBeaconInventoryClickEvent(InventoryClickEvent event) {
+        if (!event.isCancelled()) {
+            Inventory clickedInventory = event.getClickedInventory();
+            if (clickedInventory == null) {
+                return;
+            }
+            switch (clickedInventory.getType()) {
+                case BEACON:
+                    // if shift click, do nothing (item being removed from beacon)
+                    if (event.isShiftClick()) {
+                        return;
+                    }
+                    ItemStack content = event.getCurrentItem();
+                    ItemStack cursorItemStack = event.getCursor();
+                    // if nothing on cursor, then nothing would be placed in beacon
+                    if (cursorItemStack == null || cursorItemStack.getType() == Material.AIR) {
+                        return;
+                    }
+                    // if nothing in slot, then see if holding something that could be placed in
+                    if (content == null || content.getType() == Material.AIR) {
+                        // if not allowed, deny
+                        if (isNotAllowedInBeacon(cursorItemStack)) {
+                            event.setResult(Event.Result.DENY);
+                            return;
+                        }
+                    }
+                    else {
+                        // check that a single item on cursor (only replaces content if single)
+                        if (cursorItemStack.getAmount() == 1) {
+                            // if not allowed, deny
+                            if (isNotAllowedInBeacon(cursorItemStack)) {
+                                event.setResult(Event.Result.DENY);
+                                return;
+                            }
+                        }
+                    }
+                    break;
+                case PLAYER:
+                    // if shift click, item could potentially be moved to beacon
+                    if (event.isShiftClick()) {
+                        ItemStack clicked = event.getCurrentItem();
+                        // if no item in clicked slot, then nothing can be moved to beacon anyway
+                        if (clicked == null) {
+                            return;
+                        }
+                        // if air or more than 1 item, then nothing will be moved to beacon
+                        if (clicked.getType() == Material.AIR || clicked.getAmount() > 1) {
+                            return;
+                        }
+                        // make sure top inventory is a beacon inventory
+                        if (event.getWhoClicked().getOpenInventory().getTopInventory().getType() == InventoryType.BEACON) {
+                            // if not allowed, deny
+                            if (isNotAllowedInBeacon(clicked)) {
+                                event.setResult(Event.Result.DENY);
+                                return;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBeaconInventoryDragEvent(InventoryDragEvent event) {
+        if (!event.isCancelled()) {
+            if (event.getInventory().getType() == InventoryType.BEACON) {
+                Collection<ItemStack> values = event.getNewItems().values();
+                for (ItemStack draggedResult : values) {
+                    // if not allowed, deny
+                    if (isNotAllowedInBeacon(draggedResult)) {
+                        event.setResult(Event.Result.DENY);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isNotAllowedInBeacon(ItemStack itemStack) {
+        switch (itemStack.getType()) {
+            case IRON_INGOT:
+            case GOLD_INGOT:
+            case DIAMOND:
+            case EMERALD:
+            case NETHERITE_INGOT:
+                // check if plant item
+                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+                return plantItem != null && !plantItem.isAllowBeacon();
+            default:
+                return false;
+        }
+    }
+    //endregion
 
 }

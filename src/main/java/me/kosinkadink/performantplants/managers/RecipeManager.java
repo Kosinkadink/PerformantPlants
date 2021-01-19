@@ -1,11 +1,9 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
-import me.kosinkadink.performantplants.recipes.PlantPotionRecipe;
-import me.kosinkadink.performantplants.recipes.PlantRecipe;
-import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
+import me.kosinkadink.performantplants.recipes.*;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.ItemStackRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import org.bukkit.inventory.*;
@@ -18,10 +16,10 @@ public class RecipeManager {
 
     private final HashMap<String, PlantRecipe> shapedRecipeMap = new HashMap<>();
     private final HashMap<String, PlantRecipe> shapelessRecipeMap = new HashMap<>();
-    private final HashMap<String, FurnaceRecipe> furnaceRecipeMap = new HashMap<>();
-    private final HashMap<String, BlastingRecipe> blastingRecipeMap = new HashMap<>();
-    private final HashMap<String, SmokingRecipe> smokingRecipeMap = new HashMap<>();
-    private final HashMap<String, CampfireRecipe> campfireRecipeMap = new HashMap<>();
+    private final HashMap<ItemStackRecipeKey, PlantItemStackRecipe> furnaceRecipeMap = new HashMap<>();
+    private final HashMap<ItemStackRecipeKey, PlantItemStackRecipe> blastingRecipeMap = new HashMap<>();
+    private final HashMap<ItemStackRecipeKey, PlantItemStackRecipe> smokingRecipeMap = new HashMap<>();
+    private final HashMap<ItemStackRecipeKey, PlantItemStackRecipe> campfireRecipeMap = new HashMap<>();
     private final HashMap<String, StonecuttingRecipe> stonecuttingRecipeMap = new HashMap<>();
     private final HashMap<SmithingRecipeKey, PlantRecipe> smithingRecipeMap = new HashMap<>();
     private final HashMap<AnvilRecipeKey, PlantRecipe> anvilRecipeMap = new HashMap<>();
@@ -41,39 +39,23 @@ public class RecipeManager {
     }
 
     public boolean isInputForFurnaceRecipe(ItemStack itemStack) {
-        for (FurnaceRecipe recipe : furnaceRecipeMap.values()) {
-            if (recipe.getInput().isSimilar(itemStack)) {
-                return true;
-            }
-        }
-        return false;
+        ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(itemStack);
+        return furnaceRecipeMap.get(recipeKey) != null;
     }
 
     public boolean isInputForBlastingRecipe(ItemStack itemStack) {
-        for (BlastingRecipe recipe : blastingRecipeMap.values()) {
-            if (recipe.getInput().isSimilar(itemStack)) {
-                return true;
-            }
-        }
-        return false;
+        ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(itemStack);
+        return blastingRecipeMap.get(recipeKey) != null;
     }
 
     public boolean isInputForSmokingRecipe(ItemStack itemStack) {
-        for (SmokingRecipe recipe : smokingRecipeMap.values()) {
-            if (recipe.getInput().isSimilar(itemStack)) {
-                return true;
-            }
-        }
-        return false;
+        ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(itemStack);
+        return smokingRecipeMap.get(recipeKey) != null;
     }
 
     public boolean isInputForCampfireRecipe(ItemStack itemStack) {
-        for (CampfireRecipe recipe : campfireRecipeMap.values()) {
-            if (recipe.getInput().isSimilar(itemStack)) {
-                return true;
-            }
-        }
-        return false;
+        ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(itemStack);
+        return campfireRecipeMap.get(recipeKey) != null;
     }
 
     public boolean isInputForStonecuttingRecipe(ItemStack itemStack) {
@@ -115,20 +97,20 @@ public class RecipeManager {
         shapelessRecipeMap.put(((ShapelessRecipe) recipe.getRecipe()).getKey().getKey(), recipe);
     }
 
-    public void addFurnaceRecipe(FurnaceRecipe recipe) {
-        furnaceRecipeMap.put(recipe.getKey().getKey(), recipe);
+    public void addFurnaceRecipe(PlantItemStackRecipe recipe) {
+        furnaceRecipeMap.put(recipe.getRecipeKey(), recipe);
     }
 
-    public void addBlastingRecipe(BlastingRecipe recipe) {
-        blastingRecipeMap.put(recipe.getKey().getKey(), recipe);
+    public void addBlastingRecipe(PlantItemStackRecipe recipe) {
+        blastingRecipeMap.put(recipe.getRecipeKey(), recipe);
     }
 
-    public void addSmokingRecipe(SmokingRecipe recipe) {
-        smokingRecipeMap.put(recipe.getKey().getKey(), recipe);
+    public void addSmokingRecipe(PlantItemStackRecipe recipe) {
+        smokingRecipeMap.put(recipe.getRecipeKey(), recipe);
     }
 
-    public void addCampfireRecipe(CampfireRecipe recipe) {
-        campfireRecipeMap.put(recipe.getKey().getKey(), recipe);
+    public void addCampfireRecipe(PlantItemStackRecipe recipe) {
+        campfireRecipeMap.put(recipe.getRecipeKey(), recipe);
     }
 
     public void addStonecuttingRecipe(StonecuttingRecipe recipe) {
@@ -175,28 +157,28 @@ public class RecipeManager {
     }
 
     private void clearFurnaceRecipes() {
-        for (FurnaceRecipe recipe : furnaceRecipeMap.values()) {
+        for (PlantItemStackRecipe recipe : furnaceRecipeMap.values()) {
             performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         furnaceRecipeMap.clear();
     }
 
     private void clearBlastingRecipes() {
-        for (BlastingRecipe recipe : blastingRecipeMap.values()) {
+        for (PlantItemStackRecipe recipe : blastingRecipeMap.values()) {
             performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         blastingRecipeMap.clear();
     }
 
     private void clearSmokingRecipes() {
-        for (SmokingRecipe recipe : smokingRecipeMap.values()) {
+        for (PlantItemStackRecipe recipe : smokingRecipeMap.values()) {
             performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         smokingRecipeMap.clear();
     }
 
     private void clearCampfireRecipes() {
-        for (CampfireRecipe recipe : campfireRecipeMap.values()) {
+        for (PlantItemStackRecipe recipe : campfireRecipeMap.values()) {
             performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         campfireRecipeMap.clear();

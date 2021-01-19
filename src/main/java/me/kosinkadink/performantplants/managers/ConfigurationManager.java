@@ -7,11 +7,9 @@ import me.kosinkadink.performantplants.effects.*;
 import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
-import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
-import me.kosinkadink.performantplants.recipes.PlantPotionRecipe;
-import me.kosinkadink.performantplants.recipes.PlantRecipe;
-import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
+import me.kosinkadink.performantplants.recipes.*;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.ItemStackRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import me.kosinkadink.performantplants.scripting.*;
@@ -2765,7 +2763,7 @@ public class ConfigurationManager {
         // create item stacks
         ItemStack resultStack = resultSettings.generateItemStack();
         ItemStack inputStack = inputSettings.generateItemStack();
-        return new CookingRecipeSettings(resultStack, new RecipeChoice.ExactChoice(inputStack), experience, cookingTime);
+        return new CookingRecipeSettings(resultStack, inputStack, experience, cookingTime);
     }
 
     void addFurnaceRecipe(ConfigurationSection section, String recipeName) {
@@ -2774,15 +2772,18 @@ public class ConfigurationManager {
             return;
         }
         try {
-            FurnaceRecipe recipe = new FurnaceRecipe(new NamespacedKey(performantPlants, "furnace_" + recipeName),
+            // add recipe to server
+            NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "furnace_" + recipeName);
+            FurnaceRecipe recipe = new FurnaceRecipe(namespacedKey,
                     recipeSettings.getResult(),
                     recipeSettings.getInputChoice(),
                     recipeSettings.getExperience(),
                     recipeSettings.getCookingTime());
-            // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addFurnaceRecipe(recipe);
+            ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(recipeSettings.getInput());
+            PlantItemStackRecipe itemStackRecipe = new PlantItemStackRecipe(recipeKey, recipeSettings.getResult(), namespacedKey);
+            performantPlants.getRecipeManager().addFurnaceRecipe(itemStackRecipe);
             performantPlants.getLogger().info("Registered furnace recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add furnace recipe at %s due to exception: %s",
@@ -2796,15 +2797,18 @@ public class ConfigurationManager {
             return;
         }
         try {
-            BlastingRecipe recipe = new BlastingRecipe(new NamespacedKey(performantPlants, "blasting_" + recipeName),
+            // add recipe to server
+            NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "blasting_" + recipeName);
+            BlastingRecipe recipe = new BlastingRecipe(namespacedKey,
                     recipeSettings.getResult(),
                     recipeSettings.getInputChoice(),
                     recipeSettings.getExperience(),
                     recipeSettings.getCookingTime());
-            // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addBlastingRecipe(recipe);
+            ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(recipeSettings.getInput());
+            PlantItemStackRecipe itemStackRecipe = new PlantItemStackRecipe(recipeKey, recipeSettings.getResult(), namespacedKey);
+            performantPlants.getRecipeManager().addBlastingRecipe(itemStackRecipe);
             performantPlants.getLogger().info("Registered blast furnace recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add blast furnace recipe at %s due to exception: %s",
@@ -2818,15 +2822,18 @@ public class ConfigurationManager {
             return;
         }
         try {
-            SmokingRecipe recipe = new SmokingRecipe(new NamespacedKey(performantPlants, "smoking_" + recipeName),
+            // add recipe to server
+            NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "smoking_" + recipeName);
+            SmokingRecipe recipe = new SmokingRecipe(namespacedKey,
                     recipeSettings.getResult(),
                     recipeSettings.getInputChoice(),
                     recipeSettings.getExperience(),
                     recipeSettings.getCookingTime());
-            // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addSmokingRecipe(recipe);
+            ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(recipeSettings.getInput());
+            PlantItemStackRecipe itemStackRecipe = new PlantItemStackRecipe(recipeKey, recipeSettings.getResult(), namespacedKey);
+            performantPlants.getRecipeManager().addSmokingRecipe(itemStackRecipe);
             performantPlants.getLogger().info("Registered smoker recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add smoker recipe at %s due to exception: %s",
@@ -2840,15 +2847,18 @@ public class ConfigurationManager {
             return;
         }
         try {
-            CampfireRecipe recipe = new CampfireRecipe(new NamespacedKey(performantPlants, "campfire_" + recipeName),
+            // add recipe to server
+            NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "campfire_" + recipeName);
+            CampfireRecipe recipe = new CampfireRecipe(namespacedKey,
                     recipeSettings.getResult(),
                     recipeSettings.getInputChoice(),
                     recipeSettings.getExperience(),
                     recipeSettings.getCookingTime());
-            // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addCampfireRecipe(recipe);
+            ItemStackRecipeKey recipeKey = new ItemStackRecipeKey(recipeSettings.getInput());
+            PlantItemStackRecipe itemStackRecipe = new PlantItemStackRecipe(recipeKey, recipeSettings.getResult(), namespacedKey);
+            performantPlants.getRecipeManager().addCampfireRecipe(itemStackRecipe);
             performantPlants.getLogger().info("Registered campfire recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add campfire recipe at %s due to exception: %s",

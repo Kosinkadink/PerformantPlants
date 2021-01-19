@@ -6,13 +6,13 @@ import org.bukkit.inventory.RecipeChoice;
 public class CookingRecipeSettings {
 
     private ItemStack result;
-    private RecipeChoice inputChoice;
+    private ItemStack input;
     private float experience;
     private int cookingTime;
 
-    public CookingRecipeSettings(ItemStack result, RecipeChoice inputChoice, float experience, int cookingTime) {
+    public CookingRecipeSettings(ItemStack result, ItemStack input, float experience, int cookingTime) {
         this.result = result;
-        this.inputChoice = inputChoice;
+        this.input = input;
         this.experience = experience;
         this.cookingTime = cookingTime;
     }
@@ -25,12 +25,16 @@ public class CookingRecipeSettings {
         this.result = result;
     }
 
-    public RecipeChoice getInputChoice() {
-        return inputChoice;
+    public ItemStack getInput() {
+        return input;
     }
 
-    public void setInputChoice(RecipeChoice inputChoice) {
-        this.inputChoice = inputChoice;
+    public void setInput(ItemStack input) {
+        this.input = input;
+    }
+
+    public RecipeChoice getInputChoice() {
+        return new RecipeChoice.ExactChoice(input);
     }
 
     public float getExperience() {
