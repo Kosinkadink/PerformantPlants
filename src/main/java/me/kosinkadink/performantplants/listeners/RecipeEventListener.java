@@ -5,16 +5,15 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.PlantItem;
-import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
-import me.kosinkadink.performantplants.recipes.PlantRecipe;
-import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
-import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
+import me.kosinkadink.performantplants.recipes.*;
+import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.RecipeHelper;
 import me.kosinkadink.performantplants.util.ServerHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BrewingStand;
 import org.bukkit.block.Furnace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,10 +30,11 @@ public class RecipeEventListener implements Listener {
         performantPlants = performantPlantsClass;
     }
 
+    //region Crafting Table Stuff
     @EventHandler
     public void onPrepareItemCraft(PrepareItemCraftEvent event) {
         // check if a vanilla recipe is trying to use a plant item
-        if (!performantPlants.getRecipeManager().isRecipe(event.getRecipe())) {
+        if (!performantPlants.getRecipeManager().isCraftingRecipe(event.getRecipe())) {
             for (ItemStack ingredient : event.getInventory().getMatrix()) {
                 // if plant item is used and vanilla crafting not allowed, set result to air
                 PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(ingredient);
@@ -86,7 +86,9 @@ public class RecipeEventListener implements Listener {
             }
         }
     }
+    //endregion
 
+    //region Furnace Stuff
     @EventHandler
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         // check if a smelting recipe was registered for item stack
@@ -168,6 +170,93 @@ public class RecipeEventListener implements Listener {
             }
         }
     }
+    //endregion
+
+    //region Brewing Stand Stuff
+    @EventHandler
+    public void onBrewEvent(BrewEvent event) {
+        if (!event.isCancelled()) {
+            BrewerInventory inventory = event.getContents();
+            ItemStack ingredient = inventory.getIngredient();
+            ItemStack[] vanillaCurrent = new ItemStack[3];
+            ItemStack[] plantExpected = new ItemStack[3];
+            if (ingredient != null) {
+                // check if ingredient is a plant item
+                PlantItem plantIngredient = performantPlants.getPlantTypeManager().getPlantItemByItemStack(ingredient);
+                if (plantIngredient != null && !plantIngredient.isAllowIngredient()) {
+                    event.setCancelled(true);
+                    // replenish fuel
+                    BrewingStand brewingStand = inventory.getHolder();
+                    // add used fuel back
+                    if (brewingStand != null) {
+                        int newFuelLevel = brewingStand.getFuelLevel() + 1;
+                        brewingStand.setFuelLevel(newFuelLevel);
+                        brewingStand.update();
+                    }
+                    return;
+                }
+                int totalPlantPotionsBrewed = 0;
+                int totalPotentialInvalidPlantPotionsBrewed = 0;
+                for (int i = 0; i < 3; i++) {
+                    ItemStack potion = inventory.getItem(i);
+                    // if not null, check if recipe exists
+                    if (potion != null) {
+                        PotionRecipeKey recipeKey = new PotionRecipeKey(ingredient, potion);
+                        PlantPotionRecipe potionRecipe = performantPlants.getRecipeManager().getPotionRecipe(recipeKey);
+                        if (potionRecipe != null) {
+                            plantExpected[i] = potionRecipe.getResult();
+                            totalPlantPotionsBrewed++;
+                            continue;
+                        }
+                        // check if potion is a plant item
+                        PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(potion);
+                        // if not allow brewing, make sure item will stay the same
+                        if (plantItem != null && !plantItem.isAllowBrewing()) {
+                            plantExpected[i] = potion;
+                            totalPotentialInvalidPlantPotionsBrewed++;
+                            continue;
+                        }
+                        // add as vanilla item to be potentially evaluated for changes
+                        vanillaCurrent[i] = potion;
+                    }
+                }
+
+                // potentially cleanup or cancel if nothing was supposed to be brewed
+                if (totalPlantPotionsBrewed > 0 || totalPotentialInvalidPlantPotionsBrewed > 0) {
+                    // if no plant potions were brewed, check if vanilla potions were brewed
+                    // if not, do not use ingredient and replenish fuel usage
+                    ItemStack ingredientClone = ingredient.clone();
+                    boolean plantRecipesBrewed = totalPlantPotionsBrewed > 0;
+                    performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
+                            RecipeHelper.cleanupBrewEventIfNoChange(inventory, vanillaCurrent, plantExpected,
+                                    ingredientClone, plantRecipesBrewed)
+                    );
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBrewingStandFuelEvent(BrewingStandFuelEvent event) {
+        if (!event.isCancelled()) {
+            PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getFuel());
+            if (plantItem != null) {
+                // check if plant item has burn time
+                if (plantItem.hasBurnTime()) {
+                    int burnTime = plantItem.getBurnTime();
+                    event.setFuelPower(burnTime);
+                }
+                // if not, don't use it if not allowed to act like fuel
+                else if (!plantItem.isAllowFuel()){
+                    event.setConsuming(false);
+                    event.setFuelPower(0);
+                    return;
+                }
+            }
+            // TODO: check if plant item is trying to be brewed
+        }
+    }
+    //endregion
 
     @EventHandler
     public void onPrepareSmithingEvent(PrepareSmithingEvent event) {
@@ -208,7 +297,9 @@ public class RecipeEventListener implements Listener {
                         inventory.setRepairCost(anvilRecipe.getLevelCost());
                     }
                     else {
-                        performantPlants.getServer().getScheduler().runTask(performantPlants, () -> inventory.setRepairCost(anvilRecipe.getLevelCost()));
+                        performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
+                                inventory.setRepairCost(anvilRecipe.getLevelCost())
+                        );
                     }
                     // TODO: perform actions
                 }

@@ -6,6 +6,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
 
 import java.util.Map;
 
@@ -120,6 +121,14 @@ public class ItemHelper {
             return damageable.getDamage();
         }
         return 0;
+    }
+
+    public static PotionMeta getPotionMeta(ItemStack stack) {
+        ItemMeta itemMeta = stack.getItemMeta();
+        if (itemMeta instanceof PotionMeta) {
+            return (PotionMeta) itemMeta;
+        }
+        return null;
     }
 
 }

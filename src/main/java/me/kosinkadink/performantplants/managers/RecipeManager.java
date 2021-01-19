@@ -2,10 +2,11 @@ package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
+import me.kosinkadink.performantplants.recipes.PlantPotionRecipe;
 import me.kosinkadink.performantplants.recipes.PlantRecipe;
 import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
-import me.kosinkadink.performantplants.recipes.keys.RecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import org.bukkit.inventory.*;
 
@@ -24,12 +25,13 @@ public class RecipeManager {
     private final HashMap<String, StonecuttingRecipe> stonecuttingRecipeMap = new HashMap<>();
     private final HashMap<SmithingRecipeKey, PlantRecipe> smithingRecipeMap = new HashMap<>();
     private final HashMap<AnvilRecipeKey, PlantRecipe> anvilRecipeMap = new HashMap<>();
+    private final HashMap<PotionRecipeKey, PlantPotionRecipe> potionRecipeMap = new HashMap<>();
 
     public RecipeManager(PerformantPlants performantPlants) {
         this.performantPlants = performantPlants;
     }
 
-    public boolean isRecipe(Recipe recipe) {
+    public boolean isCraftingRecipe(Recipe recipe) {
         if (recipe instanceof ShapedRecipe) {
             return shapedRecipeMap.get(((ShapedRecipe) recipe).getKey().getKey()) != null;
         } else if (recipe instanceof ShapelessRecipe) {
@@ -101,49 +103,48 @@ public class RecipeManager {
         return anvilRecipeMap.get(recipeKey);
     }
 
-    public void addRecipe(Recipe recipe) {
-        if (recipe instanceof ShapedRecipe) {
-            ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
-            shapedRecipeMap.put(convertedRecipe.getKey().getKey(), new PlantRecipe(convertedRecipe));
-        } else if (recipe instanceof ShapelessRecipe) {
-            ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
-            shapelessRecipeMap.put(convertedRecipe.getKey().getKey(), new PlantRecipe(convertedRecipe));
-        } else if (recipe instanceof FurnaceRecipe) {
-            FurnaceRecipe convertedRecipe = (FurnaceRecipe) recipe;
-            furnaceRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
-        } else if (recipe instanceof BlastingRecipe) {
-            BlastingRecipe convertedRecipe = (BlastingRecipe) recipe;
-            blastingRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
-        } else if (recipe instanceof SmokingRecipe) {
-            SmokingRecipe convertedRecipe = (SmokingRecipe) recipe;
-            smokingRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
-        } else if (recipe instanceof CampfireRecipe) {
-            CampfireRecipe convertedRecipe = (CampfireRecipe) recipe;
-            campfireRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
-        } else if (recipe instanceof StonecuttingRecipe) {
-            StonecuttingRecipe convertedRecipe = (StonecuttingRecipe) recipe;
-            stonecuttingRecipeMap.put(convertedRecipe.getKey().getKey(), convertedRecipe);
-        }
+    public PlantPotionRecipe getPotionRecipe(PotionRecipeKey recipeKey) {
+        return potionRecipeMap.get(recipeKey);
     }
 
-    public void addRecipe(PlantRecipe plantRecipe) {
-        if (plantRecipe.getRecipe() == null) {
-            return;
-        }
-        Recipe recipe = plantRecipe.getRecipe();
-        if (recipe instanceof ShapedRecipe) {
-            ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
-            shapedRecipeMap.put(convertedRecipe.getKey().getKey(), plantRecipe);
-        } else if (recipe instanceof ShapelessRecipe) {
-            ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
-            shapelessRecipeMap.put(convertedRecipe.getKey().getKey(), plantRecipe);
-        } else if (recipe instanceof PlantSmithingRecipe) {
-            PlantSmithingRecipe convertedRecipe = (PlantSmithingRecipe) recipe;
-            smithingRecipeMap.put(convertedRecipe.getRecipeKey(), plantRecipe);
-        } else if (recipe instanceof PlantAnvilRecipe) {
-            PlantAnvilRecipe convertedRecipe = (PlantAnvilRecipe) recipe;
-            anvilRecipeMap.put(convertedRecipe.getRecipeKey(), plantRecipe);
-        }
+    public void addShapedRecipe(PlantRecipe recipe) {
+        shapedRecipeMap.put(((ShapedRecipe) recipe.getRecipe()).getKey().getKey(), recipe);
+    }
+
+    public void addShapelessRecipe(PlantRecipe recipe) {
+        shapelessRecipeMap.put(((ShapelessRecipe) recipe.getRecipe()).getKey().getKey(), recipe);
+    }
+
+    public void addFurnaceRecipe(FurnaceRecipe recipe) {
+        furnaceRecipeMap.put(recipe.getKey().getKey(), recipe);
+    }
+
+    public void addBlastingRecipe(BlastingRecipe recipe) {
+        blastingRecipeMap.put(recipe.getKey().getKey(), recipe);
+    }
+
+    public void addSmokingRecipe(SmokingRecipe recipe) {
+        smokingRecipeMap.put(recipe.getKey().getKey(), recipe);
+    }
+
+    public void addCampfireRecipe(CampfireRecipe recipe) {
+        campfireRecipeMap.put(recipe.getKey().getKey(), recipe);
+    }
+
+    public void addStonecuttingRecipe(StonecuttingRecipe recipe) {
+        stonecuttingRecipeMap.put(recipe.getKey().getKey(), recipe);
+    }
+
+    public void addSmithingRecipe(PlantRecipe recipe) {
+        smithingRecipeMap.put(((PlantSmithingRecipe)recipe.getRecipe()).getRecipeKey(), recipe);
+    }
+
+    public void addAnvilRecipe(PlantRecipe recipe) {
+        anvilRecipeMap.put(((PlantAnvilRecipe)recipe.getRecipe()).getRecipeKey(), recipe);
+    }
+
+    public void addPotionRecipe(PlantPotionRecipe recipe) {
+        potionRecipeMap.put(recipe.getRecipeKey(), recipe);
     }
 
     public void clearRecipes() {
@@ -156,82 +157,54 @@ public class RecipeManager {
         clearStonecuttingRecipes();
         clearSmithingRecipes();
         clearAnvilRecipes();
-    }
-
-    private void clearRecipe(Recipe recipe) {
-        if (recipe instanceof ShapedRecipe) {
-            ShapedRecipe convertedRecipe = (ShapedRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof ShapelessRecipe) {
-            ShapelessRecipe convertedRecipe = (ShapelessRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof FurnaceRecipe) {
-            FurnaceRecipe convertedRecipe = (FurnaceRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof BlastingRecipe) {
-            BlastingRecipe convertedRecipe = (BlastingRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof SmokingRecipe) {
-            SmokingRecipe convertedRecipe = (SmokingRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof CampfireRecipe) {
-            CampfireRecipe convertedRecipe = (CampfireRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof StonecuttingRecipe) {
-            StonecuttingRecipe convertedRecipe = (StonecuttingRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        } else if (recipe instanceof SmithingRecipe) {
-            SmithingRecipe convertedRecipe = (SmithingRecipe) recipe;
-            performantPlants.getServer().removeRecipe(convertedRecipe.getKey());
-        }
-    }
-
-    private void clearPlantRecipes(HashMap<String, PlantRecipe> recipeMap) {
-        for (PlantRecipe recipe : recipeMap.values()) {
-            clearRecipe(recipe.getRecipe());
-        }
-        recipeMap.clear();
+        clearPotionRecipes();
     }
 
     private void clearShapedRecipes() {
-        clearPlantRecipes(shapedRecipeMap);
+        for (PlantRecipe plantRecipe : shapedRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(((ShapedRecipe) plantRecipe.getRecipe()).getKey());
+        }
+        shapedRecipeMap.clear();
     }
 
     private void clearShapelessRecipes() {
-        clearPlantRecipes(shapelessRecipeMap);
+        for (PlantRecipe plantRecipe : shapelessRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(((ShapelessRecipe) plantRecipe.getRecipe()).getKey());
+        }
+        shapelessRecipeMap.clear();
     }
 
     private void clearFurnaceRecipes() {
-        for (Recipe recipe : furnaceRecipeMap.values()) {
-            clearRecipe(recipe);
+        for (FurnaceRecipe recipe : furnaceRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         furnaceRecipeMap.clear();
     }
 
     private void clearBlastingRecipes() {
-        for (Recipe recipe : blastingRecipeMap.values()) {
-            clearRecipe(recipe);
+        for (BlastingRecipe recipe : blastingRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         blastingRecipeMap.clear();
     }
 
     private void clearSmokingRecipes() {
-        for (Recipe recipe : smokingRecipeMap.values()) {
-            clearRecipe(recipe);
+        for (SmokingRecipe recipe : smokingRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(recipe.getKey());
         }
-        blastingRecipeMap.clear();
+        smokingRecipeMap.clear();
     }
 
     private void clearCampfireRecipes() {
-        for (Recipe recipe : campfireRecipeMap.values()) {
-            clearRecipe(recipe);
+        for (CampfireRecipe recipe : campfireRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         campfireRecipeMap.clear();
     }
 
     private void clearStonecuttingRecipes() {
-        for (Recipe recipe : stonecuttingRecipeMap.values()) {
-            clearRecipe(recipe);
+        for (StonecuttingRecipe recipe : stonecuttingRecipeMap.values()) {
+            performantPlants.getServer().removeRecipe(recipe.getKey());
         }
         stonecuttingRecipeMap.clear();
     }
@@ -245,6 +218,10 @@ public class RecipeManager {
 
     private void clearAnvilRecipes() {
         smithingRecipeMap.clear();
+    }
+
+    private void clearPotionRecipes() {
+        potionRecipeMap.clear();
     }
 
 }

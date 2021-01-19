@@ -7,12 +7,20 @@ import me.kosinkadink.performantplants.recipes.PlantRecipe;
 import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
 import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.BrewingStand;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionType;
+
+import java.util.List;
 
 public class RecipeHelper {
 
@@ -115,6 +123,42 @@ public class RecipeHelper {
             }
         }
         return recipeCheckResult;
+    }
+
+    public static void cleanupBrewEventIfNoChange(BrewerInventory inventory, ItemStack[] vanillaCurrent,
+                                                  ItemStack[] plantExpected, ItemStack ingredientCurrent,
+                                                  boolean plantRecipesBrewed) {
+        boolean change = plantRecipesBrewed;
+        for (int i = 0; i < 3; i++) {
+            if (plantExpected[i] != null) {
+                ItemStack inventoryItem = inventory.getContents()[i];
+                // set inventory item to expected result
+                if (inventoryItem != null) {
+                    if (!plantExpected[i].isSimilar(inventoryItem)) {
+                        inventory.setItem(i, plantExpected[i]);
+                    }
+                }
+            }
+            else if (!change && vanillaCurrent[i] != null) {
+                ItemStack inventoryItem = inventory.getContents()[i];
+                if (inventoryItem != null) {
+                    if (!vanillaCurrent[i].isSimilar(inventoryItem)) {
+                        change = true;
+                    }
+                }
+            }
+        }
+        // if no change, replenish fuel and ingredient stack
+        if (!change) {
+            // add used fuel back
+            BrewingStand brewingStand = inventory.getHolder();
+            if (brewingStand != null) {
+                int newFuelLevel = brewingStand.getFuelLevel() + 1;
+                brewingStand.setFuelLevel(newFuelLevel);
+                brewingStand.update();
+                inventory.setIngredient(ingredientCurrent);
+            }
+        }
     }
 
 }

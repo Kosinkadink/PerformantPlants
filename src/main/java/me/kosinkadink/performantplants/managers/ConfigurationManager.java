@@ -8,9 +8,11 @@ import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.*;
 import me.kosinkadink.performantplants.recipes.PlantAnvilRecipe;
+import me.kosinkadink.performantplants.recipes.PlantPotionRecipe;
 import me.kosinkadink.performantplants.recipes.PlantRecipe;
 import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
+import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.*;
@@ -493,6 +495,14 @@ public class ConfigurationManager {
             for (String recipeName : recipesSection.getKeys(false)) {
                 ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
                 addAnvilRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
+            }
+        }
+        // load potion recipes; failure here shouldn't abort plant loading
+        if (plantConfig.isConfigurationSection("potion-recipes")) {
+            ConfigurationSection recipesSection = plantConfig.getConfigurationSection("potion-recipes");
+            for (String recipeName : recipesSection.getKeys(false)) {
+                ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeName);
+                addPotionRecipe(recipeSection, String.format("%s_%s",plantId,recipeName));
             }
         }
 
@@ -1855,6 +1865,10 @@ public class ConfigurationManager {
         if (section.isBoolean("allow-brewing")) {
             plantItem.setAllowBrewing(section.getBoolean("allow-brewing"));
         }
+        // set allow ingredient
+        if (section.isBoolean("allow-ingredient")) {
+            plantItem.setAllowIngredient(section.getBoolean("allow-ingredient"));
+        }
     }
 
     void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data) {
@@ -2656,7 +2670,7 @@ public class ConfigurationManager {
                 // add recipe to recipe manager
                 PlantRecipe plantRecipe = new PlantRecipe(recipe);
                 preparePlantRecipe(section, plantRecipe);
-                performantPlants.getRecipeManager().addRecipe(plantRecipe);
+                performantPlants.getRecipeManager().addShapedRecipe(plantRecipe);
                 performantPlants.getLogger().info("Registered shaped crafting recipe: " + recipeName);
             } catch (Exception e) {
                 performantPlants.getLogger().warning(String.format("Failed to add shaped crafting recipe at %s due to exception: %s",
@@ -2705,7 +2719,7 @@ public class ConfigurationManager {
                 // add recipe to recipe manager
                 PlantRecipe plantRecipe = new PlantRecipe(recipe);
                 preparePlantRecipe(section, plantRecipe);
-                performantPlants.getRecipeManager().addRecipe(plantRecipe);
+                performantPlants.getRecipeManager().addShapelessRecipe(plantRecipe);
                 performantPlants.getLogger().info("Registered shapeless crafting recipe: " + recipeName);
             } catch (Exception e) {
                 performantPlants.getLogger().warning(String.format("Failed to add shapeless crafting recipe at %s due to exception: %s",
@@ -2768,7 +2782,7 @@ public class ConfigurationManager {
             // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addRecipe(recipe);
+            performantPlants.getRecipeManager().addFurnaceRecipe(recipe);
             performantPlants.getLogger().info("Registered furnace recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add furnace recipe at %s due to exception: %s",
@@ -2790,7 +2804,7 @@ public class ConfigurationManager {
             // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addRecipe(recipe);
+            performantPlants.getRecipeManager().addBlastingRecipe(recipe);
             performantPlants.getLogger().info("Registered blast furnace recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add blast furnace recipe at %s due to exception: %s",
@@ -2812,7 +2826,7 @@ public class ConfigurationManager {
             // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addRecipe(recipe);
+            performantPlants.getRecipeManager().addSmokingRecipe(recipe);
             performantPlants.getLogger().info("Registered smoker recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add smoker recipe at %s due to exception: %s",
@@ -2834,7 +2848,7 @@ public class ConfigurationManager {
             // add recipe to server
             performantPlants.getServer().addRecipe(recipe);
             // add recipe to recipe manager
-            performantPlants.getRecipeManager().addRecipe(recipe);
+            performantPlants.getRecipeManager().addCampfireRecipe(recipe);
             performantPlants.getLogger().info("Registered campfire recipe: " + recipeName);
         } catch (Exception e) {
             performantPlants.getLogger().warning(String.format("Failed to add campfire recipe at %s due to exception: %s",
@@ -2872,7 +2886,7 @@ public class ConfigurationManager {
         // add recipe to server
         performantPlants.getServer().addRecipe(recipe);
         // add recipe to recipe manager
-        performantPlants.getRecipeManager().addRecipe(recipe);
+        performantPlants.getRecipeManager().addStonecuttingRecipe(recipe);
         performantPlants.getLogger().info("Registered stonecutting recipe: " + recipeName);
     }
 
@@ -2922,7 +2936,7 @@ public class ConfigurationManager {
         SmithingRecipeKey recipeKey = new SmithingRecipeKey(baseStack, additionStack);
         PlantRecipe plantRecipe = new PlantRecipe(new PlantSmithingRecipe(recipeKey, resultStack, namespacedKey));
         preparePlantRecipe(section, plantRecipe);
-        performantPlants.getRecipeManager().addRecipe(plantRecipe);
+        performantPlants.getRecipeManager().addSmithingRecipe(plantRecipe);
         performantPlants.getLogger().info("Registered smithing recipe: " + recipeName);
     }
 
@@ -2979,8 +2993,51 @@ public class ConfigurationManager {
         AnvilRecipeKey recipeKey = new AnvilRecipeKey(baseStack, additionStack, name);
         PlantRecipe plantRecipe = new PlantRecipe(new PlantAnvilRecipe(recipeKey, resultStack, levelCost, namespacedKey));
         preparePlantRecipe(section, plantRecipe);
-        performantPlants.getRecipeManager().addRecipe(plantRecipe);
+        performantPlants.getRecipeManager().addAnvilRecipe(plantRecipe);
         performantPlants.getLogger().info("Registered anvil recipe: " + recipeName);
+    }
+
+    void addPotionRecipe(ConfigurationSection section, String recipeName) {
+        // get result
+        if (!section.isConfigurationSection("result")) {
+            performantPlants.getLogger().warning("No result section for potion recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings resultSettings = loadItemConfig(section.getConfigurationSection("result"), true);
+        // if no item settings, return (something went wrong or linked item did not exist)
+        if (resultSettings == null) {
+            return;
+        }
+        // get ingredient
+        if (!section.isConfigurationSection("ingredient")) {
+            performantPlants.getLogger().warning("No ingredient section for potion recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings ingredientSettings = loadItemConfig(section.getConfigurationSection("ingredient"), true);
+        // if no ingredient settings, return (something went wrong or linked item did not exist)
+        if (ingredientSettings == null) {
+            return;
+        }
+        // get potion
+        if (!section.isConfigurationSection("potion")) {
+            performantPlants.getLogger().warning("No potion section for potion recipe at " + section.getCurrentPath());
+            return;
+        }
+        ItemSettings potionSettings = loadItemConfig(section.getConfigurationSection("potion"), true);
+        // if no base settings, return (something went wrong or linked item did not exist)
+        if (potionSettings == null) {
+            return;
+        }
+        // create item stacks
+        ItemStack resultStack = resultSettings.generateItemStack();
+        ItemStack ingredientStack = ingredientSettings.generateItemStack();
+        ItemStack potionStack = potionSettings.generateItemStack();
+        // add recipe to recipe manager
+        NamespacedKey namespacedKey = new NamespacedKey(performantPlants, "potion_" + recipeName);
+        PotionRecipeKey recipeKey = new PotionRecipeKey(ingredientStack, potionStack);
+        PlantPotionRecipe potionRecipe = new PlantPotionRecipe(recipeKey, resultStack, namespacedKey);
+        performantPlants.getRecipeManager().addPotionRecipe(potionRecipe);
+        performantPlants.getLogger().info("Registered potion recipe: " + recipeName);
     }
 
     //endregion
