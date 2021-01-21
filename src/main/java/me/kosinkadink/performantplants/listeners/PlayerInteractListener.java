@@ -46,7 +46,8 @@ public class PlayerInteractListener implements Listener {
     @EventHandler
     public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
         PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getItem());
-        if (plantItem != null) {
+        // if plant item, cancel consume unless allowed
+        if (plantItem != null && !plantItem.isAllowConsume()) {
             event.setCancelled(true);
             // create PlantConsumeEvent if is consumable by default consume
             if (plantItem.getConsumableStorage() != null) {
@@ -75,8 +76,8 @@ public class PlayerInteractListener implements Listener {
             itemStack = event.getPlayer().getInventory().getItemInMainHand();
         }
         PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
-        // don't let plant items be used to feed animals/be interacted with entities
-        if (plantItem != null) {
+        // don't let plant items be used to feed animals/be interacted with entities, unless allowed
+        if (plantItem != null && !plantItem.isAllowEntityInteract()) {
             event.setCancelled(true);
         }
     }
@@ -139,19 +140,24 @@ public class PlayerInteractListener implements Listener {
                 // get plant block interacted with
                 PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(block);
                 if (plantBlock != null && !player.isSneaking()) {
-                    // cancel event and send out PlantInteractEvent ONLY IF main hand to avoid double interaction
-                    event.setCancelled(true);
-                    performantPlants.getServer().getPluginManager().callEvent(
-                            new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand())
-                    );
-                    return;
+                    // only process main hand to avoid double interaction
+                    if (event.getHand() == EquipmentSlot.HAND) {
+                        // send out PlantInteractEvent
+                        PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand());
+                        performantPlants.getServer().getPluginManager().callEvent(plantInteractEvent);
+                        // cancel this event if plantInteractEvent was not cancelled
+                        if (!plantInteractEvent.isCancelled()) {
+                            event.setCancelled(true);
+                        }
+                        // keep processing
+                    }
                 }
             }
             // check if trying to place down plant or consume plant item
             if (itemStack.getType() != Material.AIR) {
                 Plant plant = performantPlants.getPlantTypeManager().getPlantByItemStack(itemStack);
                 if (plant != null) {
-                    PlantItem plantItem;
+                    PlantItem plantItem = null;
                     if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                             block != null) {
                         // if block is inventory holder and player is sneaking, open block's inventory
@@ -178,9 +184,14 @@ public class PlayerInteractListener implements Listener {
                                 return;
                             }
                         }
+                    } else {
+                        if (performantPlants.getConfigManager().getConfigSettings().isDebug())
+                            performantPlants.getLogger().info("Block was NULL");
                     }
                     // check if plant item can be consumed
-                    plantItem = plant.getItemByItemStack(itemStack);
+                    if (plantItem == null) {
+                        plantItem = plant.getItemByItemStack(itemStack);
+                    }
                     if (plantItem.isConsumable()) {
                         // if in offhand and main hand is consumable, don't do anything
                         boolean performConsumeForThisHand = true;
@@ -197,11 +208,10 @@ public class PlayerInteractListener implements Listener {
                                 performantPlants.getServer().getPluginManager().callEvent(
                                         new PlantConsumeEvent(player, consumable, event.getHand())
                                 );
+                                return;
                             }
                         }
                     }
-                    if (performantPlants.getConfigManager().getConfigSettings().isDebug())
-                        performantPlants.getLogger().info("Block was NULL");
                 } else {
                     // check if item in other hand is consumable
                     if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
@@ -225,6 +235,7 @@ public class PlayerInteractListener implements Listener {
                     if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                         performantPlants.getLogger().info("Plant was NULL, doing nothing");
                 }
+            return;
             }
         }
         // endregion

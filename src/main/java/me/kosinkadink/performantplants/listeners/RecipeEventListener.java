@@ -92,7 +92,7 @@ public class RecipeEventListener implements Listener {
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         // check if a smelting recipe was registered for item stack
         PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getSource());
-        if (plantItem != null) {
+        if (plantItem != null && !plantItem.isAllowSmelting()) {
             switch (event.getBlock().getType()) {
                 case FURNACE:
                     if (!performantPlants.getRecipeManager().isInputForFurnaceRecipe(event.getSource())) {
@@ -131,15 +131,10 @@ public class RecipeEventListener implements Listener {
                     event.setBurnTime(burnTime);
                 }
             }
-            // if not, set burn time to zero
+            // if not, simulate no burn for furnace
             else if (!plantItem.isAllowFuel()){
                 Furnace furnace = (Furnace)event.getBlock().getState();
-                short time = furnace.getCookTime();
-                if (time > 0) {
-                    furnace.setCookTime((short) Math.max(0, time - 2));
-                    furnace.setBurnTime((short) 0);
-                    furnace.update();
-                }
+                simulateNoBurnForFurnace(furnace);
                 event.setCancelled(true);
                 return;
             }
@@ -149,24 +144,40 @@ public class RecipeEventListener implements Listener {
         FurnaceInventory furnaceInventory = (FurnaceInventory) inventoryHolder.getInventory();
         // check if a corresponding smelting recipe was registered for item stack
         plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(furnaceInventory.getSmelting());
-        if (plantItem != null) {
+        if (plantItem != null && !plantItem.isAllowSmelting()) {
             switch (event.getBlock().getType()) {
                 case FURNACE:
                     if (!performantPlants.getRecipeManager().isInputForFurnaceRecipe(furnaceInventory.getSmelting())) {
                         event.setCancelled(true);
+                        Furnace furnace = (Furnace)event.getBlock().getState();
+                        simulateNoBurnForFurnace(furnace);
                     }
                     break;
                 case SMOKER:
                     if (!performantPlants.getRecipeManager().isInputForSmokingRecipe(furnaceInventory.getSmelting())) {
                         event.setCancelled(true);
+                        Furnace furnace = (Furnace)event.getBlock().getState();
+                        simulateNoBurnForFurnace(furnace);
                     }
                     break;
                 case BLAST_FURNACE:
                     if (!performantPlants.getRecipeManager().isInputForBlastingRecipe(furnaceInventory.getSmelting())) {
                         event.setCancelled(true);
+                        Furnace furnace = (Furnace)event.getBlock().getState();
+                        simulateNoBurnForFurnace(furnace);
                     }
                     break;
             }
+        }
+    }
+
+    private void simulateNoBurnForFurnace(Furnace furnace) {
+        short time = furnace.getCookTime();
+        if (time > 0) {
+            // decrement cook time and set burn time to zero
+            furnace.setCookTime((short) Math.max(0, time - 2));
+            furnace.setBurnTime((short) 0);
+            furnace.update();
         }
     }
     //endregion

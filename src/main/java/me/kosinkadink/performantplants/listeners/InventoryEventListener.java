@@ -135,9 +135,8 @@ public class InventoryEventListener implements Listener {
                             if (checkResult != null) {
                                 // if not allowed, intervene
                                 if (!checkResult.isAllow()) {
-                                    // deny and set result to air
+                                    // deny
                                     event.setResult(Event.Result.DENY);
-                                    event.setCancelled(true);
                                 }
                                 // TODO: perform actions on allow
                             }

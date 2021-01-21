@@ -1834,7 +1834,6 @@ public class ConfigurationManager {
         if (section.isBoolean("allow-stonecutter")) {
             plantItem.setAllowStonecutter(section.getBoolean("allow-stonecutter"));
         }
-
         // set allow enchanting
         if (section.isBoolean("allow-enchanting")) {
             plantItem.setAllowEnchanting(section.getBoolean("allow-enchanting"));
@@ -1859,6 +1858,10 @@ public class ConfigurationManager {
         if (section.isBoolean("allow-fuel")) {
             plantItem.setAllowFuel(section.getBoolean("allow-fuel"));
         }
+        // set allow smelting
+        if (section.isBoolean("allow-smelting")) {
+            plantItem.setAllowSmelting(section.getBoolean("allow-smelting"));
+        }
         // set allow brewing
         if (section.isBoolean("allow-brewing")) {
             plantItem.setAllowBrewing(section.getBoolean("allow-brewing"));
@@ -1866,6 +1869,14 @@ public class ConfigurationManager {
         // set allow ingredient
         if (section.isBoolean("allow-ingredient")) {
             plantItem.setAllowIngredient(section.getBoolean("allow-ingredient"));
+        }
+        // set allow consume
+        if (section.isBoolean("allow-consume")) {
+            plantItem.setAllowConsume(section.getBoolean("allow-consume"));
+        }
+        // set allow consume
+        if (section.isBoolean("allow-entity-interact")) {
+            plantItem.setAllowEntityInteract(section.getBoolean("allow-entity-interact"));
         }
     }
 

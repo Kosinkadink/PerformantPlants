@@ -15,6 +15,7 @@ public class PlantItem {
 
     private boolean vanillaItem = false;
 
+    // inventory interactions
     private boolean allowAnvil = false;
     private boolean allowAnvilRename = false;
     private boolean allowSmithing = false;
@@ -26,8 +27,12 @@ public class PlantItem {
     private boolean allowCartography = false;
     private boolean allowCrafting = false;
     private boolean allowFuel = false;
+    private boolean allowSmelting = false;
     private boolean allowBrewing = false;
     private boolean allowIngredient = false;
+    // item/entity interactions
+    private boolean allowConsume = false;
+    private boolean allowEntityInteract = false;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -211,6 +216,14 @@ public class PlantItem {
         this.allowFuel = allowFuel;
     }
 
+    public boolean isAllowSmelting() {
+        return allowSmelting;
+    }
+
+    public void setAllowSmelting(boolean allowSmelting) {
+        this.allowSmelting = allowSmelting;
+    }
+
     public boolean isAllowBrewing() {
         return allowBrewing;
     }
@@ -225,6 +238,22 @@ public class PlantItem {
 
     public void setAllowIngredient(boolean allowIngredient) {
         this.allowIngredient = allowIngredient;
+    }
+
+    public boolean isAllowConsume() {
+        return allowConsume;
+    }
+
+    public void setAllowConsume(boolean allowConsume) {
+        this.allowConsume = allowConsume;
+    }
+
+    public boolean isAllowEntityInteract() {
+        return allowEntityInteract;
+    }
+
+    public void setAllowEntityInteract(boolean allowEntityInteract) {
+        this.allowEntityInteract = allowEntityInteract;
     }
     //endregion
 
