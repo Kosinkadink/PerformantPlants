@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlantTypeManager {
 
-    private PerformantPlants performantPlants;
+    private final PerformantPlants performantPlants;
     // list for tab completion efficiency purposes
     private final ArrayList<String> plantIds = new ArrayList<>();
 

@@ -5,6 +5,8 @@ import org.bukkit.inventory.ItemStack;
 
 public class PlantItem {
 
+    private Plant plant;
+
     private String id = "";
     private ItemStack itemStack;
     private double buyPrice;
@@ -44,6 +46,7 @@ public class PlantItem {
         this(itemStack, -1, -1);
     }
 
+    // id
     public String getId() {
         return id;
     }
@@ -52,12 +55,22 @@ public class PlantItem {
         this.id = id;
     }
 
+    // item stack
     public ItemStack getItemStack() {
         return itemStack;
     }
 
     public void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
+    }
+
+    // plant
+    public Plant getPlant() {
+        return plant;
+    }
+
+    public void setPlant(Plant plant) {
+        this.plant = plant;
     }
 
     // vanilla item

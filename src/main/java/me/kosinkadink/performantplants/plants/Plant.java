@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -42,6 +43,7 @@ public class Plant {
         this.id = id;
         this.plantItem = plantItem;
         this.plantItem.setId(this.id);
+        this.plantItem.setPlant(this);
         plantData = new PlantData(new JSONObject());
         plantData.setPlant(this);
     }
@@ -80,8 +82,13 @@ public class Plant {
 
     public void addGoodItem(String id, PlantItem goodItem) {
         goodItem.setId(this.id + "." + id);
+        goodItem.setPlant(this);
         goods.put(id, goodItem);
         itemIds.add(goodItem.getId());
+    }
+
+    public Collection<PlantItem> getGoods() {
+        return goods.values();
     }
 
     public ItemStack getSeedItemStack() {
@@ -94,6 +101,7 @@ public class Plant {
     public void setSeedItem(PlantItem seedItem) {
         plantSeedItem = seedItem;
         plantSeedItem.setId(id + ".seed");
+        plantSeedItem.setPlant(this);
         itemIds.add(plantSeedItem.getId());
     }
 
