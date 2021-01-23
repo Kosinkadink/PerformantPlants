@@ -1,11 +1,2 @@
 debug: False
 save-delay-minutes: 10
-#vanilla-drops:
-#  0:
-#    type: entity
-#    entity: ZOMBIE
-#    drops:
-#      0:
-#        item:
-#          material: STONE
-#        chance: 10.0

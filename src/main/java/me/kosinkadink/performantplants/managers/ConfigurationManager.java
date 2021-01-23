@@ -65,16 +65,17 @@ import java.util.*;
 public class ConfigurationManager {
 
     private final PerformantPlants performantPlants;
-    private final File configFile;
+
     private final YamlConfiguration config = new YamlConfiguration();
+    private final YamlConfiguration vanillaDropsConfig = new YamlConfiguration();
     private final HashMap<String, YamlConfiguration> plantConfigMap = new HashMap<>();
+
     private final ConfigSettings configSettings = new ConfigSettings();
 
     private ScriptTaskLoader currentTaskLoader = null;
 
     public ConfigurationManager(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
-        configFile = new File(performantPlants.getDataFolder(), "config.yml");
         loadMainConfig();
         loadPlantConfigs();
         loadVanillaDropConfig();
@@ -85,14 +86,17 @@ public class ConfigurationManager {
     }
 
     void loadMainConfig() {
+        String fileName = "config.yml";
+        // main config
+        File configFile = new File(performantPlants.getDataFolder(), fileName);
         // create file if doesn't exist
         if (!configFile.exists()) {
-            performantPlants.saveResource("config.yml", false);
+            performantPlants.saveResource(fileName, false);
         }
         try {
             config.load(configFile);
         } catch (Exception e) {
-            performantPlants.getLogger().severe("Error occurred trying to load configFile");
+            performantPlants.getLogger().severe("Error occurred trying to load " + fileName);
             e.printStackTrace();
         }
         // get parameters from config.yml
@@ -510,10 +514,23 @@ public class ConfigurationManager {
     }
 
     void loadVanillaDropConfig() {
-        if (config == null || !config.isConfigurationSection("vanilla-drops")) {
+        String fileName = "vanilla_drops.yml";
+        // vanilla drops config
+        File vanillaDropsFile = new File(performantPlants.getDataFolder(), fileName);
+        // create file if doesn't exist
+        if (!vanillaDropsFile.exists()) {
+            performantPlants.saveResource(fileName, false);
+        }
+        try {
+            vanillaDropsConfig.load(vanillaDropsFile);
+        } catch (Exception e) {
+            performantPlants.getLogger().severe("Error occurred trying to load " + fileName);
+            e.printStackTrace();
+        }
+        if (!vanillaDropsConfig.isConfigurationSection("vanilla-drops")) {
             return;
         }
-        ConfigurationSection vanillaDropsSection = config.getConfigurationSection("vanilla-drops");
+        ConfigurationSection vanillaDropsSection = vanillaDropsConfig.getConfigurationSection("vanilla-drops");
         for (String placeholder : vanillaDropsSection.getKeys(false)) {
             ConfigurationSection dropSection = vanillaDropsSection.getConfigurationSection(placeholder);
             if (dropSection == null) {
@@ -525,10 +542,12 @@ public class ConfigurationManager {
                 return;
             }
             String type = dropSection.getString("type");
-            if (type.equalsIgnoreCase("block")) {
-                addVanillaBlockDrop(dropSection);
-            } else if (type.equalsIgnoreCase("entity")) {
-                addVanillaEntityDrop(dropSection);
+            if (type != null) {
+                if (type.equalsIgnoreCase("block")) {
+                    addVanillaBlockDrop(dropSection);
+                } else if (type.equalsIgnoreCase("entity")) {
+                    addVanillaEntityDrop(dropSection);
+                }
             }
         }
     }
