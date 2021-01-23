@@ -4,18 +4,21 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
 import me.kosinkadink.performantplants.util.DropHelper;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.RecipeHelper;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockDispenseArmorEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class InventoryEventListener implements Listener {
 
@@ -242,6 +245,85 @@ public class InventoryEventListener implements Listener {
                 return false;
         }
     }
+    //endregion
+
+    //region Wearable Item Cancelling
+    @EventHandler
+    public void onBlockDispenseArmorEvent(BlockDispenseArmorEvent event) {
+        if (!event.isCancelled()) {
+            // check if material is wearable
+            if (ItemHelper.isMaterialWearable(event.getItem())) {
+                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getItem());
+                if (plantItem != null && !plantItem.isAllowWear()) {
+                    event.setCancelled(true);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onWearableInventoryDragEvent(InventoryDragEvent event) {
+        if (!event.isCancelled()) {
+            if (event.getInventory().getType() == InventoryType.CRAFTING) {
+                for (Map.Entry<Integer, ItemStack> entry : event.getNewItems().entrySet()) {
+                    switch(entry.getKey()) {
+                        case 5:
+                        case 6:
+                        case 7:
+                        case 8:
+                            PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(entry.getValue());
+                            if (plantItem != null && !plantItem.isAllowWear()) {
+                                event.setCancelled(true);
+                            }
+                            return;
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onWearableInventoryClickEvent(InventoryClickEvent event) {
+        // completely block interaction with result
+        if (!event.isCancelled()) {
+            if (event.getClickedInventory() != null) {
+                if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
+                    // check if shift click
+                    if (event.getClick().isShiftClick()) {
+                        // if shift clicked armor slot, then do nothing (is taking off armor)
+                        if (event.getSlotType() == InventoryType.SlotType.ARMOR) {
+                            return;
+                        }
+                        Inventory inventory = event.getWhoClicked().getOpenInventory().getTopInventory();
+                        // if top inventory is CRAFTING, then armor slots are available
+                        if (inventory.getType() == InventoryType.CRAFTING) {
+                            // if clicked item is not wearable, cancel click
+                            if (ItemHelper.isMaterialWearable(event.getCurrentItem())) {
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getCurrentItem());
+                                if (plantItem != null && !plantItem.isAllowWear()) {
+                                    event.setCancelled(true);
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if (event.getSlotType() == InventoryType.SlotType.ARMOR) {
+                            if (event.getCursor() == null || event.getCursor().getType() == Material.AIR) {
+                                return;
+                            }
+                            if (ItemHelper.isMaterialWearable(event.getCursor())) {
+                                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getCursor());
+                                if (plantItem != null && !plantItem.isAllowWear()) {
+                                    event.setCancelled(true);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //endregion
 
 }

@@ -10,6 +10,7 @@ import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.util.BlockHelper;
+import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.PlayerHelper;
 import org.bukkit.Material;
@@ -19,7 +20,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -79,6 +80,18 @@ public class PlayerInteractListener implements Listener {
         // don't let plant items be used to feed animals/be interacted with entities, unless allowed
         if (plantItem != null && !plantItem.isAllowEntityInteract()) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerArmorStandManipulateEvent(PlayerArmorStandManipulateEvent event) {
+        if (!event.isCancelled()) {
+            if (ItemHelper.isMaterialWearable(event.getPlayerItem())) {
+                PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(event.getPlayerItem());
+                if (plantItem != null && !plantItem.isAllowWear()) {
+                    event.setCancelled(true);
+                }
+            }
         }
     }
 
@@ -174,14 +187,18 @@ public class PlayerInteractListener implements Listener {
                         // check if item is consumable or player is sneaking
                         plantItem = plant.getItemByItemStack(itemStack);
                         if (!plantItem.isConsumable() || player.isSneaking()) {
-                            // check if item is a seed (cancel event regardless)
-                            event.setCancelled(true);
+                            // check if item is a seed
                             if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
                                 // cancel event and send out PlantBlockEvent
+                                event.setCancelled(true);
                                 performantPlants.getServer().getPluginManager().callEvent(
                                         new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
                                 );
                                 return;
+                            }
+                            // cancel event unless plant item can and is allowed to be worn
+                            if (!(ItemHelper.isMaterialWearableWithRightClick(plantItem.getItemStack()) && plantItem.isAllowWear())) {
+                                event.setCancelled(true);
                             }
                         }
                     } else {
@@ -212,6 +229,10 @@ public class PlayerInteractListener implements Listener {
                             }
                         }
                     }
+                    // cancel armor equip if material can be worn but not allowed to
+                    if (ItemHelper.isMaterialWearableWithRightClick(plantItem.getItemStack()) && !plantItem.isAllowWear()) {
+                        event.setCancelled(true);
+                    }
                 } else {
                     // check if item in other hand is consumable
                     if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
@@ -239,6 +260,7 @@ public class PlayerInteractListener implements Listener {
             }
         }
         // endregion
+
         // region LEFT CLICK BEHAVIOR
         if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) {
             // check if clicking on a plant block

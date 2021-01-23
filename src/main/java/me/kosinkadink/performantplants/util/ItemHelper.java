@@ -131,4 +131,93 @@ public class ItemHelper {
         return null;
     }
 
+    public static boolean isMaterialWearableWithRightClick(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            // wearable on head
+            case CHAINMAIL_HELMET:
+            case DIAMOND_HELMET:
+            case GOLDEN_HELMET:
+            case IRON_HELMET:
+            case LEATHER_HELMET:
+            case NETHERITE_HELMET:
+            case TURTLE_HELMET:
+            // wearable on chest
+            case CHAINMAIL_CHESTPLATE:
+            case DIAMOND_CHESTPLATE:
+            case GOLDEN_CHESTPLATE:
+            case IRON_CHESTPLATE:
+            case LEATHER_CHESTPLATE:
+            case NETHERITE_CHESTPLATE:
+            case ELYTRA:
+            // wearable on legs
+            case CHAINMAIL_LEGGINGS:
+            case DIAMOND_LEGGINGS:
+            case GOLDEN_LEGGINGS:
+            case IRON_LEGGINGS:
+            case LEATHER_LEGGINGS:
+            case NETHERITE_LEGGINGS:
+            // wearable on feet
+            case CHAINMAIL_BOOTS:
+            case DIAMOND_BOOTS:
+            case GOLDEN_BOOTS:
+            case IRON_BOOTS:
+            case LEATHER_BOOTS:
+            case NETHERITE_BOOTS:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isMaterialWearable(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            // wearable on head
+            case CHAINMAIL_HELMET:
+            case DIAMOND_HELMET:
+            case GOLDEN_HELMET:
+            case IRON_HELMET:
+            case LEATHER_HELMET:
+            case NETHERITE_HELMET:
+            case TURTLE_HELMET:
+            // heads/skulls
+            case PLAYER_HEAD:
+            case CREEPER_HEAD:
+            case DRAGON_HEAD:
+            case ZOMBIE_HEAD:
+            case SKELETON_SKULL:
+            case WITHER_SKELETON_SKULL:
+            // wearable on chest
+            case CHAINMAIL_CHESTPLATE:
+            case DIAMOND_CHESTPLATE:
+            case GOLDEN_CHESTPLATE:
+            case IRON_CHESTPLATE:
+            case LEATHER_CHESTPLATE:
+            case NETHERITE_CHESTPLATE:
+            case ELYTRA:
+            // wearable on legs
+            case CHAINMAIL_LEGGINGS:
+            case DIAMOND_LEGGINGS:
+            case GOLDEN_LEGGINGS:
+            case IRON_LEGGINGS:
+            case LEATHER_LEGGINGS:
+            case NETHERITE_LEGGINGS:
+            // wearable on feet
+            case CHAINMAIL_BOOTS:
+            case DIAMOND_BOOTS:
+            case GOLDEN_BOOTS:
+            case IRON_BOOTS:
+            case LEATHER_BOOTS:
+            case NETHERITE_BOOTS:
+                return true;
+            default:
+                return false;
+        }
+    }
+
 }

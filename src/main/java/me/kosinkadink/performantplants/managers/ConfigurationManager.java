@@ -1897,6 +1897,11 @@ public class ConfigurationManager {
         if (section.isBoolean("allow-entity-interact")) {
             plantItem.setAllowEntityInteract(section.getBoolean("allow-entity-interact"));
         }
+        // set allow wear
+        if (section.isBoolean("allow-wear")) {
+            plantItem.setAllowWear(section.getBoolean("allow-wear"));
+        }
+
     }
 
     void addEffectsToEffectStorage(ConfigurationSection section, PlantEffectStorage effectStorage, PlantData data) {

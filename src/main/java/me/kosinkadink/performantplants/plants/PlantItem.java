@@ -35,6 +35,7 @@ public class PlantItem {
     // item/entity interactions
     private boolean allowConsume = false;
     private boolean allowEntityInteract = false;
+    private boolean allowWear = false;
 
     public PlantItem(ItemStack itemStack, double buyPrice, double sellPrice) {
         this.itemStack = itemStack;
@@ -267,6 +268,14 @@ public class PlantItem {
 
     public void setAllowEntityInteract(boolean allowEntityInteract) {
         this.allowEntityInteract = allowEntityInteract;
+    }
+
+    public boolean isAllowWear() {
+        return allowWear;
+    }
+
+    public void setAllowWear(boolean allowWear) {
+        this.allowWear = allowWear;
     }
     //endregion
 
