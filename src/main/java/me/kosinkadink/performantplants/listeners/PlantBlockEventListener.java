@@ -22,13 +22,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 public class PlantBlockEventListener implements Listener {
 
-    private PerformantPlants performantPlants;
+    private final PerformantPlants performantPlants;
 
     public PlantBlockEventListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
@@ -490,8 +489,8 @@ public class PlantBlockEventListener implements Listener {
         Block block = event.getBlock();
         if (MetadataHelper.hasPlantBlockMetadata(block)) {
             Block source = event.getSourceBlock();
-            // only destroy block if source is now air, block is not solid, and source is below block
-            if (source.getType().isAir() &&
+            // only destroy block if source is now air/moving piston, block is not solid, and source is below block
+            if ((source.getType().isAir() || source.getType() == Material.MOVING_PISTON) &&
                     !block.getType().isSolid() &&
                     block.getLocation().getBlockY()-source.getLocation().getBlockY() > 0) {
                 BlockHelper.destroyPlantBlock(performantPlants, block, true);
