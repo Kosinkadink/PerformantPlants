@@ -1294,15 +1294,15 @@ public class ConfigurationManager {
             }
         }
         // add script blocks, if present
-        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        ScriptBlock scriptBlock = createPlantScript(section, "script", data);
         if (scriptBlock != null) {
             plantInteract.setScriptBlock(scriptBlock);
         }
-        scriptBlock = createPlantScript(section, "plant-script-on-do", data);
+        scriptBlock = createPlantScript(section, "script-on-do", data);
         if (scriptBlock != null) {
             plantInteract.setScriptBlockOnDo(scriptBlock);
         }
-        scriptBlock = createPlantScript(section, "plant-script-on-not-do", data);
+        scriptBlock = createPlantScript(section, "script-on-not-do", data);
         if (scriptBlock != null) {
             plantInteract.setScriptBlockOnNotDo(scriptBlock);
         }
@@ -1382,7 +1382,7 @@ public class ConfigurationManager {
             ScriptBlock value = createPlantScript(section, "add-damage", data);
             if (value == null || !ScriptHelper.isLong(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen add-damage value and instead will be" +
-                                " %n; must be ScriptType LONG in section: %s",
+                                " %d; must be ScriptType LONG in section: %s",
                         consumable.getAddDamage(null, null), section.getCurrentPath()));
             } else {
                 consumable.setAddDamage(value);
@@ -1493,15 +1493,15 @@ public class ConfigurationManager {
         }
 
         // add script blocks, if present
-        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        ScriptBlock scriptBlock = createPlantScript(section, "script", data);
         if (scriptBlock != null) {
             consumable.setScriptBlock(scriptBlock);
         }
-        scriptBlock = createPlantScript(section, "plant-script-on-do", data);
+        scriptBlock = createPlantScript(section, "script-on-do", data);
         if (scriptBlock != null) {
             consumable.setScriptBlockOnDo(scriptBlock);
         }
-        scriptBlock = createPlantScript(section, "plant-script-on-not-do", data);
+        scriptBlock = createPlantScript(section, "script-on-not-do", data);
         if (scriptBlock != null) {
             consumable.setScriptBlockOnNotDo(scriptBlock);
         }
@@ -1554,7 +1554,7 @@ public class ConfigurationManager {
             ScriptBlock value = createPlantScript(section, "add-damage", data);
             if (value == null || !ScriptHelper.isLong(value)) {
                 performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
-                                " %n; must be ScriptType LONG in section: %s",
+                                " %d; must be ScriptType LONG in section: %s",
                         requiredItem.getAddDamage(null, null), section.getCurrentPath()));
             } else {
                 requiredItem.setAddDamage(value);
@@ -1751,7 +1751,7 @@ public class ConfigurationManager {
                             blockSettings.getMaterial(),
                             blockSettings.getBlockDataStrings());
                 } catch (IllegalArgumentException e) {
-                    performantPlants.getLogger().warning(String.format("Could not create required block in section due to: %s",
+                    performantPlants.getLogger().warning(String.format("Could not create required block in section %s due to: %s",
                             requiredBlockSection.getCurrentPath(), e.getMessage()));
                     return false;
                 }
@@ -2599,13 +2599,13 @@ public class ConfigurationManager {
 
     PlantScriptEffect createScriptEffect(ConfigurationSection section, PlantData data) {
         PlantScriptEffect effect = new PlantScriptEffect();
-        if (!section.isSet("plant-script")) {
-            performantPlants.getLogger().warning("Script effect not added; plant-script section not present in section: " + section.getCurrentPath());
+        if (!section.isSet("script")) {
+            performantPlants.getLogger().warning("Script effect not added; script section not present in section: " + section.getCurrentPath());
             return null;
         }
-        ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        ScriptBlock scriptBlock = createPlantScript(section, "script", data);
         if (scriptBlock == null) {
-            performantPlants.getLogger().warning("Script effect not added; plant-script must be a script block in section: " + section.getCurrentPath());
+            performantPlants.getLogger().warning("Script effect not added; script must be a script block in section: " + section.getCurrentPath());
             return null;
         }
         effect.setScriptBlock(scriptBlock);
@@ -3267,7 +3267,7 @@ public class ConfigurationManager {
         }
         // set script block
         currentTaskLoader.setCurrentTask(subsectionName);
-        ScriptBlock scriptBlock = createPlantScript(taskSection, "plant-script", data);
+        ScriptBlock scriptBlock = createPlantScript(taskSection, "script", data);
         if (scriptBlock == null) {
             return null;
         }
@@ -3493,8 +3493,8 @@ public class ConfigurationManager {
         if (hook == null) {
             return null;
         }
-        if (section.isSet("plant-script")) {
-            ScriptBlock scriptBlock = createPlantScript(section, "plant-script", data);
+        if (section.isSet("script")) {
+            ScriptBlock scriptBlock = createPlantScript(section, "script", data);
             if (scriptBlock == null) {
                 performantPlants.getLogger().warning("Plant-script section is not valid plant script block in section: " + section.getCurrentPath());
                 return null;
