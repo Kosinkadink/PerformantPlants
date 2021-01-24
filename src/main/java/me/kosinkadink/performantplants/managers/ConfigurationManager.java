@@ -3400,6 +3400,7 @@ public class ConfigurationManager {
         // create hook from matching type
         ScriptHook scriptHook = null;
         switch (type) {
+            // player
             case "player_alive":
                 scriptHook = createPlantScriptHookPlayerAlive(action, task, hookSection, data); break;
             case "player_dead":
@@ -3408,6 +3409,14 @@ public class ConfigurationManager {
                 scriptHook = createPlantScriptHookPlayerOnline(action, task, hookSection, data); break;
             case "player_offline":
                 scriptHook = createPlantScriptHookPlayerOffline(action, task, hookSection, data); break;
+            // plant block
+            case "plantblock_broken":
+                scriptHook = createPlantScriptHookPlantBlockBroken(action, task, hookSection, data); break;
+            // plant chunk
+            case "plantchunk_loaded":
+                scriptHook = createPlantScriptHookPlantChunkLoaded(action, task, hookSection, data); break;
+            case "plantchunk_unloaded":
+                scriptHook = createPlantScriptHookPlantChunkUnloaded(action, task, hookSection, data); break;
             default:
                 performantPlants.getLogger().warning(String.format("Type '%s' not recognized as a hook in section: %s",
                         type, hookSection.getCurrentPath()));
@@ -3453,6 +3462,33 @@ public class ConfigurationManager {
         return playerHookInputs;
     }
 
+    ArrayList<ScriptBlock> createPlantScriptHookPlantBlockInputs(ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> playerHookInputs = new ArrayList<>();
+        // get current-block block, if set
+        if (section.isSet("current-block")) {
+            ScriptBlock currentBlock = createPlantScript(section, "current-block", data);
+            if (currentBlock == null || !ScriptHelper.isBoolean(currentBlock)) {
+                performantPlants.getLogger().warning(String.format("Hook's current-block must be ScriptType BOOLEAN in section: %s",
+                        section.getCurrentPath()));
+                return null;
+            }
+            playerHookInputs.add(currentBlock);
+        } else {
+            // otherwise set to scriptTask's default value
+            playerHookInputs.add(task.getCurrentBlock());
+        }
+        // verify list of length 1 as expected
+        if (playerHookInputs.size() != 1) {
+            return null;
+        }
+        return playerHookInputs;
+    }
+
+    ArrayList<ScriptBlock> createPlantScriptHookPlantChunkInputs(ScriptTask task, ConfigurationSection section, PlantData data) {
+        // same inputs as plant block hooks
+        return createPlantScriptHookPlantBlockInputs(task, section, data);
+    }
+
     ScriptHook createPlantScriptHookScriptBlockAndConfigId(ScriptHook hook, HookAction action, ConfigurationSection section, PlantData data) {
         if (hook == null) {
             return null;
@@ -3468,7 +3504,7 @@ public class ConfigurationManager {
         hook.setHookConfigId(action.toString() + "." + section.getName());
         return hook;
     }
-
+    // player hooks
     ScriptHookPlayerAlive createPlantScriptHookPlayerAlive(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
         ArrayList<ScriptBlock> playerHookInputs = createPlantScriptHookPlayerInputs(task, section, data);
         if (playerHookInputs == null) {
@@ -3510,6 +3546,36 @@ public class ConfigurationManager {
         ScriptHookPlayerOffline hook = new ScriptHookPlayerOffline(action);
         hook.setCurrentPlayer(playerHookInputs.get(0));
         hook.setPlayerId(playerHookInputs.get(1));
+        return hook;
+    }
+    // plant block hooks
+    ScriptHookPlantBlockBroken createPlantScriptHookPlantBlockBroken(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> plantBlockHookInputs = createPlantScriptHookPlantBlockInputs(task, section, data);
+        if (plantBlockHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlantBlockBroken hook = new ScriptHookPlantBlockBroken(action);
+        hook.setCurrentBlock(plantBlockHookInputs.get(0));
+        return hook;
+    }
+    // plant chunk hooks
+    ScriptHookPlantChunkLoaded createPlantScriptHookPlantChunkLoaded(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> plantChunkHookInputs = createPlantScriptHookPlantChunkInputs(task, section, data);
+        if (plantChunkHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlantChunkLoaded hook = new ScriptHookPlantChunkLoaded(action);
+        hook.setCurrentBlock(plantChunkHookInputs.get(0));
+        return hook;
+    }
+
+    ScriptHookPlantChunkUnloaded createPlantScriptHookPlantChunkUnloaded(HookAction action, ScriptTask task, ConfigurationSection section, PlantData data) {
+        ArrayList<ScriptBlock> plantChunkHookInputs = createPlantScriptHookPlantChunkInputs(task, section, data);
+        if (plantChunkHookInputs == null) {
+            return null;
+        }
+        ScriptHookPlantChunkUnloaded hook = new ScriptHookPlantChunkUnloaded(action);
+        hook.setCurrentBlock(plantChunkHookInputs.get(0));
         return hook;
     }
     //endregion

@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.util;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.events.PlantBrokenEvent;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import org.bukkit.Bukkit;
@@ -212,6 +213,8 @@ public class BlockHelper {
         if (drops) {
             DropHelper.performDrops(plantBlock.getDropStorage(), block, null, plantBlock);
         }
+        // call PlantBrokenEvent to signal a plant block has been broken
+        performantPlants.getServer().getPluginManager().callEvent(new PlantBrokenEvent(null, plantBlock, block));
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {
             ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());

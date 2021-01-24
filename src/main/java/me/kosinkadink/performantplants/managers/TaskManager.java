@@ -1,7 +1,11 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.hooks.*;
+import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.ChunkLocation;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 import org.bukkit.entity.Player;
 
@@ -17,11 +21,16 @@ public class TaskManager {
     private final HashSet<UUID> taskIdsToDelete = new HashSet<>();
 
     // hook mapping
-    // player hooks; map PlayerUUID to a set of PlantHook ids in hookMap
+    // player hooks; map PlayerUUID to a set of PlantHooks
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerOnlineMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerOfflineMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerAliveMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, HashSet<PlantHook>> hookPlayerDeadMap = new ConcurrentHashMap<>();
+    // block hooks; map block location to a set of PlantHooks
+    private final ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> hookPlantBrokenMap = new ConcurrentHashMap<>();
+    // chunk hooks; map chunk location to a set of PlantHooks
+    private final ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> hookPlantChunkLoadedMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> hookPlantChunkUnloadedMap = new ConcurrentHashMap<>();
 
     public TaskManager(PerformantPlants performantPlants) {
         this.performantPlants = performantPlants;
@@ -213,6 +222,30 @@ public class TaskManager {
         return performHooks(hookIdSet);
     }
 
+    public boolean triggerPlantBrokenHooks(PlantBlock plantBlock) {
+        HashSet<PlantHook> hookIdSet = hookPlantBrokenMap.get(plantBlock.getLocation());
+        if (hookIdSet == null || hookIdSet.isEmpty()) {
+            return false;
+        }
+        return performHooks(hookIdSet);
+    }
+
+    public boolean triggerPlantChunkLoadedHooks(PlantChunk chunk) {
+        HashSet<PlantHook> hookIdSet = hookPlantChunkLoadedMap.get(chunk.getLocation());
+        if (hookIdSet == null || hookIdSet.isEmpty()) {
+            return false;
+        }
+        return performHooks(hookIdSet);
+    }
+
+    public boolean triggerPlantChunkUnloadedHooks(PlantChunk chunk) {
+        HashSet<PlantHook> hookIdSet = hookPlantChunkUnloadedMap.get(chunk.getLocation());
+        if (hookIdSet == null || hookIdSet.isEmpty()) {
+            return false;
+        }
+        return performHooks(hookIdSet);
+    }
+
     private boolean performHooks(HashSet<PlantHook> hookIdSet) {
         for (PlantHook hook : hookIdSet) {
             switch(hook.getAction()) {
@@ -238,13 +271,29 @@ public class TaskManager {
     //region Hook Register/Unregister
     public boolean registerHook(PlantHook hook) {
         if (hook != null) {
-            ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap = null;
             // player hooks
             if (hook instanceof PlantHookPlayer) {
                 PlantHookPlayer hookPlayer = (PlantHookPlayer) hook;
-                plantHookMap = getMatchingPlayerHookMap(hookPlayer);
+                ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlayerHookMap(hookPlayer);
                 if (plantHookMap != null) {
-                    return addHookToMap(hookPlayer, plantHookMap);
+                    return addPlayerHookToMap(hookPlayer, plantHookMap);
+                }
+            }
+            else if (hook instanceof PlantHookPlantBlock) {
+                PlantHookPlantBlock hookPlantBlock = (PlantHookPlantBlock) hook;
+                ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlantBlockHookMap(hookPlantBlock);
+                if (plantHookMap != null) {
+                    return addPlantBlockHookToMap(hookPlantBlock, plantHookMap);
+                }
+            }
+            else if (hook instanceof PlantHookPlantChunk) {
+                PlantHookPlantChunk hookPlantChunk = (PlantHookPlantChunk) hook;
+                ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlantChunkHookMap(hookPlantChunk);
+                if (plantHookMap != null) {
+                    return addPlantChunkHookToMap(hookPlantChunk, plantHookMap);
                 }
             }
         }
@@ -253,14 +302,38 @@ public class TaskManager {
 
     public boolean unregisterHook(PlantHook hook) {
         if (hook != null) {
-            ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap = null;
             // player hooks
             if (hook instanceof PlantHookPlayer) {
                 PlantHookPlayer hookPlayer = (PlantHookPlayer) hook;
-                plantHookMap = getMatchingPlayerHookMap(hookPlayer);
+                ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlayerHookMap(hookPlayer);
                 // if recognized, get HashSet and remove hook
                 if (plantHookMap != null) {
                     HashSet<PlantHook> hookHashSet = plantHookMap.get(hookPlayer.getOfflinePlayer().getUniqueId().toString());
+                    if (hookHashSet != null) {
+                        return hookHashSet.remove(hook);
+                    }
+                }
+            }
+            else if (hook instanceof PlantHookPlantBlock) {
+                PlantHookPlantBlock hookPlantBlock = (PlantHookPlantBlock) hook;
+                ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlantBlockHookMap(hookPlantBlock);
+                // if recognized, get HashSet and remove hook
+                if (plantHookMap != null) {
+                    HashSet<PlantHook> hookHashSet = plantHookMap.get(hookPlantBlock.getBlockLocation());
+                    if (hookHashSet != null) {
+                        return hookHashSet.remove(hook);
+                    }
+                }
+            }
+            else if (hook instanceof PlantHookPlantChunk) {
+                PlantHookPlantChunk hookPlantChunk = (PlantHookPlantChunk) hook;
+                ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> plantHookMap =
+                        getMatchingPlantChunkHookMap(hookPlantChunk);
+                // if recognized, get HashSet and remove hook
+                if (plantHookMap != null) {
+                    HashSet<PlantHook> hookHashSet = plantHookMap.get(hookPlantChunk.getChunkLocation());
                     if (hookHashSet != null) {
                         return hookHashSet.remove(hook);
                     }
@@ -270,15 +343,51 @@ public class TaskManager {
         return false;
     }
 
-    private boolean addHookToMap(PlantHook hook, ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap) {
+    private boolean addPlayerHookToMap(PlantHookPlayer hook, ConcurrentHashMap<String, HashSet<PlantHook>> plantHookMap) {
         if (hook == null || plantHookMap == null) {
             return false;
         }
         // get hook input corresponding to hook type
-        String hookInput = null;
-        if (hook instanceof PlantHookPlayer) {
-            hookInput = ((PlantHookPlayer) hook).getOfflinePlayer().getUniqueId().toString();
+        String hookInput = hook.getOfflinePlayer().getUniqueId().toString();
+        // see if HashSet bound to hook input already exists
+        HashSet<PlantHook> hookHashSet = plantHookMap.get(hookInput);
+        if (hookHashSet != null) {
+            hookHashSet.add(hook);
+        } else {
+            hookHashSet = new HashSet<>();
+            hookHashSet.add(hook);
+            plantHookMap.put(hookInput, hookHashSet);
         }
+        return true;
+    }
+
+    private boolean addPlantBlockHookToMap(PlantHookPlantBlock hook, ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> plantHookMap) {
+        if (hook == null || plantHookMap == null) {
+            return false;
+        }
+        // get hook input corresponding to hook type
+        BlockLocation hookInput = hook.getBlockLocation();
+        if (hookInput == null) {
+            return false;
+        }
+        // see if HashSet bound to hook input already exists
+        HashSet<PlantHook> hookHashSet = plantHookMap.get(hookInput);
+        if (hookHashSet != null) {
+            hookHashSet.add(hook);
+        } else {
+            hookHashSet = new HashSet<>();
+            hookHashSet.add(hook);
+            plantHookMap.put(hookInput, hookHashSet);
+        }
+        return true;
+    }
+
+    private boolean addPlantChunkHookToMap(PlantHookPlantChunk hook, ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> plantHookMap) {
+        if (hook == null || plantHookMap == null) {
+            return false;
+        }
+        // get hook input corresponding to hook type
+        ChunkLocation hookInput = hook.getChunkLocation();
         if (hookInput == null) {
             return false;
         }
@@ -305,6 +414,24 @@ public class TaskManager {
             plantHookMap = hookPlayerAliveMap;
         } else if (hook instanceof PlantHookPlayerDead) {
             plantHookMap = hookPlayerDeadMap;
+        }
+        return plantHookMap;
+    }
+
+    private ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> getMatchingPlantBlockHookMap(PlantHookPlantBlock hook) {
+        ConcurrentHashMap<BlockLocation, HashSet<PlantHook>> plantHookMap = null;
+        if (hook instanceof PlantHookPlantBlockBroken) {
+            plantHookMap = hookPlantBrokenMap;
+        }
+        return plantHookMap;
+    }
+
+    private ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> getMatchingPlantChunkHookMap(PlantHookPlantChunk hook) {
+        ConcurrentHashMap<ChunkLocation, HashSet<PlantHook>> plantHookMap = null;
+        if (hook instanceof PlantHookPlantChunkLoaded) {
+            plantHookMap = hookPlantChunkLoadedMap;
+        } else if (hook instanceof PlantHookPlantChunkUnloaded) {
+            plantHookMap = hookPlantChunkUnloadedMap;
         }
         return plantHookMap;
     }

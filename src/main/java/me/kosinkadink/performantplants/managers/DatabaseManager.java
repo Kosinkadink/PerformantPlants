@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
 import me.kosinkadink.performantplants.hooks.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.ChunkLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScopeParameterIdentifier;
@@ -1645,6 +1646,18 @@ public class DatabaseManager {
                             plantHook = new PlantHookPlayerOffline(task.getTaskId(), action, hookConfigId, jsonString);
                         }
                     }
+                    else if (scriptHook instanceof ScriptHookPlantBlock) {
+                        if (scriptHook instanceof ScriptHookPlantBlockBroken) {
+                            plantHook = new PlantHookPlantBlockBroken(task.getTaskId(), action, hookConfigId, jsonString);
+                        }
+                    }
+                    else if (scriptHook instanceof ScriptHookPlantChunk) {
+                        if (scriptHook instanceof ScriptHookPlantChunkLoaded) {
+                            plantHook = new PlantHookPlantChunkLoaded(task.getTaskId(), action, hookConfigId, jsonString);
+                        } else if (scriptHook instanceof ScriptHookPlantChunkUnloaded) {
+                            plantHook = new PlantHookPlantChunkUnloaded(task.getTaskId(), action, hookConfigId, jsonString);
+                        }
+                    }
                 } catch (PlantHookJsonParseException e) {
                     // invalid data, so mark hook for removal and process next hook
                     hooksToRemove.add(new HookIdentifier(task.getTaskId(), hookConfigId));
@@ -1707,9 +1720,42 @@ public class DatabaseManager {
                     } else if (thisScriptHook instanceof ScriptHookPlayerOffline) {
                         plantHook = new PlantHookPlayerOffline(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, offlinePlayer);
                     }
-                } else {
+                }
+                else if (scriptHook instanceof ScriptHookPlantBlock) {
+                    BlockLocation blockLocation = null;
+                    ScriptHookPlantBlock thisScriptHook = (ScriptHookPlantBlock) scriptHook;
+                    // use task to get block location; if not there, hook cannot be generated; task is invalid
+                    if (task.getBlockLocation() == null) {
+                        return null;
+                    }
+                    blockLocation = task.getBlockLocation();
+                    if (thisScriptHook instanceof ScriptHookPlantBlockBroken) {
+                        plantHook = new PlantHookPlantBlockBroken(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, blockLocation);
+                    }
+                }
+                else if (scriptHook instanceof ScriptHookPlantChunk) {
+                    ChunkLocation chunkLocation = null;
+                    ScriptHookPlantChunk thisScriptHook = (ScriptHookPlantChunk) scriptHook;
+                    // use task to get block location; if not there, hook cannot be generated; task is invalid
+                    if (task.getBlockLocation() == null) {
+                        return null;
+                    }
+                    chunkLocation = new ChunkLocation(task.getBlockLocation());
+                    if (thisScriptHook instanceof ScriptHookPlantChunkLoaded) {
+                        plantHook = new PlantHookPlantChunkLoaded(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, chunkLocation);
+                    } else if (thisScriptHook instanceof ScriptHookPlantChunkUnloaded) {
+                        plantHook = new PlantHookPlantChunkUnloaded(task.getTaskId(), thisScriptHook.getAction(), hookConfigId, chunkLocation);
+                    }
+                }
+                else {
                     performantPlants.getLogger().severe(String.format("BAD_CODE: generatePlantHooksForTasksFromTableHooks: " +
                             "manually generating hook %s results in an unrecognized ScriptHook type; hook will not be included.", hookConfigId));
+                    continue;
+                }
+                // if null, then there must be a subtype omitted in the code
+                if (plantHook == null) {
+                    performantPlants.getLogger().severe(String.format("BAD_CODE: generatePlantHooksForTasksFromTableHooks: " +
+                            "ScriptHook superclass for hook %s recognized, but specific subclass is not; hook will not be included.", hookConfigId));
                     continue;
                 }
                 // add plant hook to list

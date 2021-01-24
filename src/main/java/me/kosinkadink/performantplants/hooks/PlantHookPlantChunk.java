@@ -2,7 +2,7 @@ package me.kosinkadink.performantplants.hooks;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
-import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.ChunkLocation;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
@@ -11,36 +11,34 @@ import org.json.simple.JSONValue;
 
 import java.util.UUID;
 
-public abstract class PlantHookPlantBlock extends PlantHook {
+public abstract class PlantHookPlantChunk extends PlantHook {
 
     protected static final String JSON_X = "x";
-    protected static final String JSON_Y = "y";
     protected static final String JSON_Z = "z";
     protected static final String JSON_WORLD = "w";
 
-    protected BlockLocation blockLocation;
+    protected ChunkLocation chunkLocation;
 
-    public PlantHookPlantBlock(UUID taskId, HookAction action, String hookConfigId, BlockLocation blockLocation) {
+    public PlantHookPlantChunk(UUID taskId, HookAction action, String hookConfigId, ChunkLocation chunkLocation) {
         super(taskId, action, hookConfigId);
-        this.blockLocation = blockLocation;
+        this.chunkLocation = chunkLocation;
     }
 
-    public PlantHookPlantBlock(UUID taskId, HookAction action, String hookConfigId, String jsonString) throws PlantHookJsonParseException {
+    public PlantHookPlantChunk(UUID taskId, HookAction action, String hookConfigId, String jsonString) throws PlantHookJsonParseException {
         super(taskId, action, hookConfigId);
         loadValuesFromJsonString(jsonString);
     }
 
-    public BlockLocation getBlockLocation() {
-        return blockLocation;
+    public ChunkLocation getChunkLocation() {
+        return chunkLocation;
     }
 
     @Override
     public String createJsonString() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(JSON_X, blockLocation.getX());
-        jsonObject.put(JSON_Y, blockLocation.getY());
-        jsonObject.put(JSON_Z, blockLocation.getZ());
-        jsonObject.put(JSON_WORLD, blockLocation.getWorldName());
+        jsonObject.put(JSON_X, chunkLocation.getX());
+        jsonObject.put(JSON_Z, chunkLocation.getZ());
+        jsonObject.put(JSON_WORLD, chunkLocation.getWorldName());
         return jsonObject.toJSONString();
     }
 
@@ -56,10 +54,6 @@ public abstract class PlantHookPlantBlock extends PlantHook {
         if (xObject == null) {
             throw new PlantHookJsonParseException(String.format("%s int not found in JSONObject from String: %s", JSON_X, jsonString));
         }
-        Object yObject = jsonObject.getOrDefault(JSON_Y, null);
-        if (yObject == null) {
-            throw new PlantHookJsonParseException(String.format("%s int not found in JSONObject from String: %s", JSON_Y, jsonString));
-        }
         Object zObject = jsonObject.getOrDefault(JSON_Z, null);
         if (zObject == null) {
             throw new PlantHookJsonParseException(String.format("%s int not found in JSONObject from String: %s", JSON_Z, jsonString));
@@ -69,10 +63,9 @@ public abstract class PlantHookPlantBlock extends PlantHook {
             throw new PlantHookJsonParseException(String.format("%s String not found in JSONObject from String: %s", JSON_WORLD, jsonString));
         }
         int x = ((Long) xObject).intValue();
-        int y = ((Long) yObject).intValue();
         int z = ((Long) zObject).intValue();
         String world = (String) worldObject;
-        blockLocation = new BlockLocation(x, y, z, world);
+        chunkLocation = new ChunkLocation(x, z, world);
     }
 
     @Override
@@ -83,11 +76,10 @@ public abstract class PlantHookPlantBlock extends PlantHook {
                 ScriptBlock scriptBlock = scriptTask.getHookScriptBlock(hookConfigId);
                 if (scriptBlock != null) {
                     // perform script block
-                    scriptBlock.loadValue(PerformantPlants.getInstance().getPlantManager().getPlantBlock(blockLocation), null);
+                    scriptBlock.loadValue(null, null);
                 }
             }
         }
         return true;
     }
-
 }

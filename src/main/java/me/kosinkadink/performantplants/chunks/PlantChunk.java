@@ -2,6 +2,8 @@ package me.kosinkadink.performantplants.chunks;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.events.PlantChunkLoadedEvent;
+import me.kosinkadink.performantplants.events.PlantChunkUnloadedEvent;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 
@@ -10,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlantChunk {
 
     private final ChunkLocation location;
-    private ConcurrentHashMap<BlockLocation, PlantBlock> plantBlocks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<BlockLocation, PlantBlock> plantBlocks = new ConcurrentHashMap<>();
     private boolean loaded = false;
     private boolean loadedSinceSave = false;
 
@@ -62,7 +64,8 @@ public class PlantChunk {
     }
 
     public boolean isChunkLoaded() {
-        return location.getChunk().isLoaded();
+        // using getWorld().isChunkLoaded because it does not load the chunk to check it
+        return location.getWorld().isChunkLoaded(location.getX(), location.getZ());
     }
 
     public void load(PerformantPlants performantPlants) {
@@ -71,12 +74,24 @@ public class PlantChunk {
         loaded = true;
         // mark as loaded since save
         loadedSinceSave = true;
+        // send loaded event
+        if (performantPlants.isPPEnabled()) {
+            performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
+                    performantPlants.getServer().getPluginManager().callEvent(new PlantChunkLoadedEvent(this))
+            );
+        }
     }
 
     public void unload(PerformantPlants performantPlants) {
         // pause task for each plantBlock
         plantBlocks.forEach((blockLocation, plantBlock) -> performantPlants.getPlantManager().pauseGrowthTask(plantBlock));
         loaded = false;
+        // send unloaded event
+        if (performantPlants.isPPEnabled()) {
+             performantPlants.getServer().getScheduler().runTask(performantPlants, () ->
+                    performantPlants.getServer().getPluginManager().callEvent(new PlantChunkUnloadedEvent(this))
+            );
+        }
     }
 
     @Override

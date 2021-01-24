@@ -27,9 +27,12 @@ public class PerformantPlants extends JavaPlugin {
     private VanillaDropManager vanillaDropManager;
     private TaskManager taskManager;
 
+    private boolean enabled;
+
     @Override
     public void onEnable() {
         performantPlants = this;
+        enablePP();
         setupEconomy();
         setupMetrics();
         registerManagers();
@@ -46,6 +49,7 @@ public class PerformantPlants extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        disablePP();
         plantManager.unloadAll(); // unload all plant chunks, pausing any growth tasks
         configManager.getConfigSettings().setDebug(true); // enable debug mode to get extra logging on shutdown
         taskManager.freezeAllTasks(); // freeze tasks so that they can be properly saved in the db
@@ -62,6 +66,8 @@ public class PerformantPlants extends JavaPlugin {
         registerManagers();
         // register commands
         registerCommands();
+        // re-enable status
+        enablePP();
     }
 
     public static PerformantPlants getInstance() {
@@ -180,4 +186,17 @@ public class PerformantPlants extends JavaPlugin {
     public TaskManager getTaskManager() {
         return taskManager;
     }
+
+    public boolean isPPEnabled() {
+        return enabled;
+    }
+
+    private void disablePP() {
+        enabled = false;
+    }
+
+    private void enablePP() {
+        enabled = true;
+    }
+
 }

@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.scripting.ScriptOperation;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 public class ScriptOperationEffects extends ScriptOperation {
@@ -20,7 +21,11 @@ public class ScriptOperationEffects extends ScriptOperation {
     public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
         if (storage != null) {
             if (player == null) {
-                storage.performEffects(plantBlock.getBlock(), plantBlock);
+                if (plantBlock != null) {
+                    storage.performEffects(plantBlock.getBlock(), plantBlock);
+                } else {
+                    storage.performEffects((Block) null, null);
+                }
             } else {
                 storage.performEffects(player, plantBlock);
             }

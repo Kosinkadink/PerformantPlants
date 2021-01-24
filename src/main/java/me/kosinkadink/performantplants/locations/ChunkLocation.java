@@ -16,6 +16,18 @@ public class ChunkLocation {
     private final String world;
 
     /**
+     * @param x: x chunk value
+     * @param z: z chunk value
+     * @param world
+     * Create ChunkLocation from x, z, and world name
+     */
+    public ChunkLocation(int x, int z, String world) {
+        this.x = x;
+        this.z = z;
+        this.world = world;
+    }
+
+    /**
      * @param chunk
      * Create ChunkLocation from Chunk object
      */
@@ -30,7 +42,9 @@ public class ChunkLocation {
      * Create ChunkLocation from Location object
      */
     public ChunkLocation(Location location) {
-        this(location.getChunk());
+        // if getWorld not null, use word name, otherwise use empty string
+        this(location.getBlockX() >> 4, location.getBlockZ() >> 4,
+                location.getWorld() != null ? location.getWorld().getName() : "");
     }
 
     /**
@@ -38,7 +52,7 @@ public class ChunkLocation {
      * Create ChunkLocation from Block object
      */
     public ChunkLocation(Block block) {
-        this(block.getChunk());
+        this(block.getLocation());
     }
 
     /**
@@ -46,7 +60,7 @@ public class ChunkLocation {
      * Create ChunkLocation from BlockLocation object
      */
     public ChunkLocation(BlockLocation blockLocation) {
-        this(blockLocation.getWorld().getBlockAt(blockLocation.getX(),blockLocation.getY(),blockLocation.getZ()));
+        this(blockLocation.getX() >> 4, blockLocation.getZ() >> 4, blockLocation.getWorldName());
     }
 
     /**
