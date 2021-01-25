@@ -37,7 +37,7 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (event.getBlockAgainst().getType() == Material.CAMPFIRE) {
+        if (event.getBlockAgainst().getType() == Material.CAMPFIRE || event.getBlockAgainst().getType() == Material.SOUL_CAMPFIRE) {
             if (performantPlants.getPlantTypeManager().isPlantItemStack(event.getItemInHand())) {
                 event.setCancelled(true);
             }
@@ -174,7 +174,7 @@ public class PlayerInteractListener implements Listener {
                     if (event.getAction() == Action.RIGHT_CLICK_BLOCK &&
                             block != null) {
                         // if block is inventory holder and player is sneaking, open block's inventory
-                        if (block.getType() == Material.CAMPFIRE) {
+                        if (block.getType() == Material.CAMPFIRE || block.getType() == Material.SOUL_CAMPFIRE) {
                             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                                 performantPlants.getLogger().info("Right clicked on campfire holding a plant item");
                             return;

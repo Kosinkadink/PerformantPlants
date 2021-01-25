@@ -1866,8 +1866,8 @@ public class ConfigurationManager {
             plantItem.setAllowLoom(section.getBoolean("allow-loom"));
         }
         // set allow cartographer
-        if (section.isBoolean("allow-cartographer")) {
-            plantItem.setAllowCartography(section.getBoolean("allow-cartographer"));
+        if (section.isBoolean("allow-cartography")) {
+            plantItem.setAllowCartography(section.getBoolean("allow-cartography"));
         }
         // set allow crafting
         if (section.isBoolean("allow-crafting")) {

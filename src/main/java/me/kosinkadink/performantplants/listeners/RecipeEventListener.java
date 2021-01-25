@@ -107,6 +107,7 @@ public class RecipeEventListener implements Listener {
                         event.setCancelled(true);
                     } break;
                 case CAMPFIRE:
+                case SOUL_CAMPFIRE:
                     if (!performantPlants.getRecipeManager().isInputForCampfireRecipe(event.getSource())) {
                         event.setCancelled(true);
                     } break;
