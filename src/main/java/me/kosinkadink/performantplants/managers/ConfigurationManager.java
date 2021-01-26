@@ -863,25 +863,15 @@ public class ConfigurationManager {
     DropSettings loadDropConfig(ConfigurationSection section, PlantData data) {
         if (section != null) {
             DropSettings dropSettings = new DropSettings();
-            // set min and max amounts, if present
-            if (section.isSet("max-amount")) {
-                ScriptBlock value = createPlantScript(section, "max-amount", data);
+            // set amount, if present
+            if (section.isSet("amount")) {
+                ScriptBlock value = createPlantScript(section, "amount", data);
                 if (value == null || !ScriptHelper.isLong(value)) {
-                    performantPlants.getLogger().warning(String.format("max-amount value could not be read or was not ScriptType LONG in drop section: %s",
+                    performantPlants.getLogger().warning(String.format("amount value could not be read or was not ScriptType LONG in drop section: %s",
                             section.getCurrentPath()));
                     return null;
                 } else {
-                    dropSettings.setMaxAmount(value);
-                }
-            }
-            if (section.isSet("min-amount")) {
-                ScriptBlock value = createPlantScript(section, "min-amount", data);
-                if (value == null || !ScriptHelper.isLong(value)) {
-                    performantPlants.getLogger().warning(String.format("min-amount value could not be read or was not ScriptType LONG in drop section: %s",
-                            section.getCurrentPath()));
-                    return null;
-                } else {
-                    dropSettings.setMinAmount(value);
+                    dropSettings.setAmount(value);
                 }
             }
             // set drop do-if, if present
@@ -1787,9 +1777,16 @@ public class ConfigurationManager {
 
     boolean addDropsToDropStorage(ConfigurationSection section, DropStorage dropStorage, PlantData data) {
         // add drop limit, if present
-        if (section.isInt("drop-limit")) {
-            dropStorage.setDropLimit(section.getInt("drop-limit"));
+        if (section.isSet("drop-limit")) {
+            ScriptBlock dropLimit = createPlantScript(section, "drop-limit", data);
+            if (dropLimit == null || !ScriptHelper.isLong(dropLimit)) {
+                performantPlants.getLogger().warning(String.format("Invalid drop-limit, no drop-limit will be set " +
+                                "until fixed; must be ScriptType LONG in section: %s",
+                        section.getCurrentPath()));
+            }
+            dropStorage.setDropLimit(dropLimit);
         }
+        // add drops
         ConfigurationSection dropsConfig = section.getConfigurationSection("drops");
         if (dropsConfig != null) {
             // iterate through drops
@@ -1812,8 +1809,7 @@ public class ConfigurationManager {
                 }
                 Drop drop = new Drop(
                         dropItemSettings.generateItemStack(),
-                        dropSettings.getMinAmount(),
-                        dropSettings.getMaxAmount(),
+                        dropSettings.getAmount(),
                         dropSettings.getDoIf()
                 );
                 dropStorage.addDrop(drop);

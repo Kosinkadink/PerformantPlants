@@ -32,7 +32,7 @@ public class DropHelper {
             return;
         }
         ArrayList<Drop> dropsList = dropStorage.getDrops();
-        int dropLimit = dropStorage.getDropLimit();
+        int dropLimit = dropStorage.getDropLimitValue(player, plantBlock);
         boolean limited = dropLimit >= 1;
         int dropCount = 0;
         for (Drop drop : dropsList) {

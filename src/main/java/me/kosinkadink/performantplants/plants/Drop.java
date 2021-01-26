@@ -10,14 +10,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Drop {
 
     private final ItemStack itemStack;
-    private final ScriptBlock min;
-    private final ScriptBlock max;
+    private final ScriptBlock amount;
     private final ScriptBlock doIf;
 
-    public Drop(ItemStack itemStack, ScriptBlock min, ScriptBlock max, ScriptBlock doIf) {
+    public Drop(ItemStack itemStack, ScriptBlock amount, ScriptBlock doIf) {
         this.itemStack = itemStack;
-        this.min = min;
-        this.max = max;
+        this.amount = amount;
         this.doIf = doIf;
     }
 
@@ -25,20 +23,12 @@ public class Drop {
         return itemStack;
     }
 
-    public ScriptBlock getMin() {
-        return min;
+    public ScriptBlock getAmount() {
+        return amount;
     }
 
-    public int getMinValue(Player player, PlantBlock plantBlock) {
-        return min.loadValue(plantBlock, player).getIntegerValue();
-    }
-
-    public ScriptBlock getMax() {
-        return max;
-    }
-
-    public int getMaxValue(Player player, PlantBlock plantBlock) {
-        return max.loadValue(plantBlock, player).getIntegerValue();
+    public int getAmountValue(Player player, PlantBlock plantBlock) {
+        return amount.loadValue(plantBlock, player).getIntegerValue();
     }
 
     public ScriptBlock getDoIf() {
@@ -53,15 +43,8 @@ public class Drop {
         ItemStack dropStack = itemStack.clone();
         // if doIf true, drop amount
         if (isDoIf(player, plantBlock)) {
-            int min = Math.max(0, getMinValue(player, plantBlock));
-            int max = Math.max(0, getMaxValue(player, plantBlock));
-            if (min == max) {
-                dropStack.setAmount(min);
-            } else if (min < max) {
-                dropStack.setAmount(ThreadLocalRandom.current().nextInt(min, max + 1));
-            } else {
-                dropStack.setAmount(ThreadLocalRandom.current().nextInt(max, min + 1));
-            }
+            int amount = Math.max(0, getAmountValue(player, plantBlock));
+            dropStack.setAmount(amount);
             return dropStack;
         }
         // otherwise drop zero

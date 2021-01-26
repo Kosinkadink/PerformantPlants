@@ -14,9 +14,9 @@ public class RandomHelper {
             return min;
         }
         else if (min > max) {
-            return ThreadLocalRandom.current().nextInt(max, min);
+            return ThreadLocalRandom.current().nextInt(max, min+1);
         }
-        return ThreadLocalRandom.current().nextInt(min, max);
+        return ThreadLocalRandom.current().nextInt(min, max+1);
     }
 
     public static long generateRandomLongInRange(long min, long max) {
@@ -24,9 +24,9 @@ public class RandomHelper {
             return min;
         }
         else if (min > max) {
-            return ThreadLocalRandom.current().nextLong(max, min);
+            return ThreadLocalRandom.current().nextLong(max, min+1);
         }
-        return ThreadLocalRandom.current().nextLong(min, max);
+        return ThreadLocalRandom.current().nextLong(min, max+1);
     }
 
     public static double generateRandomDoubleInRange(double min, double max) {

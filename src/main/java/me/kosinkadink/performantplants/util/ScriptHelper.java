@@ -61,6 +61,10 @@ public class ScriptHelper {
         return scriptBlock == null || scriptBlock.getType() == ScriptType.NULL;
     }
 
+    public static boolean isNotNull(ScriptBlock scriptBlock) {
+        return !isNull(scriptBlock);
+    }
+
     public static boolean isSupportedType(ScriptType scriptType) {
         return scriptType == ScriptType.BOOLEAN || scriptType == ScriptType.STRING
                 || scriptType == ScriptType.LONG || scriptType == ScriptType.DOUBLE;
