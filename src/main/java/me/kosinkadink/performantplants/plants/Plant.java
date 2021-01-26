@@ -1,8 +1,10 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
@@ -15,7 +17,6 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Plant {
 
@@ -35,8 +36,7 @@ public class Plant {
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
     private RequirementStorage growthRequirementStorage = new RequirementStorage();
     // growth time - overridden by specific stage growth times
-    private long minGrowthTime = -1;
-    private long maxGrowthTime = -1;
+    private ScriptBlock growthTime = new ScriptResult(-1);
 
 
     public Plant(String id, PlantItem plantItem) {
@@ -245,27 +245,22 @@ public class Plant {
         return false;
     }
 
-    public void setMinGrowthTime(long time) {
-        minGrowthTime = time;
+    public void setGrowthTime(ScriptBlock growthTime) {
+        this.growthTime = growthTime;
     }
 
-    public void setMaxGrowthTime(long time) {
-        maxGrowthTime = time;
-    }
-
-    public long generateGrowthTime(int stageIndex) {
+    public long generateGrowthTime(int stageIndex, PlantBlock plantBlock) {
         if (isValidStage(stageIndex)) {
             // first check if stage has it's own growth time
             GrowthStage growthStage = getGrowthStage(stageIndex);
-            if (growthStage.hasValidGrowthTimeSet()) {
-                return growthStage.generateGrowthTime();
+            long growthTimeValue = growthStage.generateGrowthTime(plantBlock);
+            if (growthTimeValue >= 0) {
+                return growthTimeValue;
             }
             // otherwise use plant's growth time
-            if (minGrowthTime >= 0 && maxGrowthTime >= 0) {
-                if (minGrowthTime == maxGrowthTime) {
-                    return minGrowthTime;
-                }
-                return ThreadLocalRandom.current().nextLong(minGrowthTime, maxGrowthTime + 1);
+            growthTimeValue = growthTime.loadValue(plantBlock).getLongValue();
+            if (growthTimeValue >= 0) {
+                return growthTimeValue;
             }
         }
         return 0;

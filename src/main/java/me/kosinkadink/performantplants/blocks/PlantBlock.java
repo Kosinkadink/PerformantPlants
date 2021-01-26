@@ -444,7 +444,7 @@ public class PlantBlock {
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
-        duration = plant.generateGrowthTime(stageIndex);
+        duration = plant.generateGrowthTime(stageIndex, this);
         // set grows to true
         // set execute to false
         grows = true;
@@ -628,7 +628,7 @@ public class PlantBlock {
             if (forcedToGrow) {
                 duration = 0;
             } else {
-                duration = plant.generateGrowthTime(stageIndex);
+                duration = plant.generateGrowthTime(stageIndex, this);
             }
             // queue up new task
             growthTask = performantPlants.getServer().getScheduler().runTaskLater(performantPlants, () -> performGrowth(performantPlants, true), duration);

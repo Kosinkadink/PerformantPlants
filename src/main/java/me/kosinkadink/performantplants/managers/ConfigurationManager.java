@@ -277,13 +277,19 @@ public class ConfigurationManager {
                 }
                 // if seed item has been set, get growth requirements + stages
                 if (plant.getSeedItem() != null) {
-                    // set growth bounds for general growth (overridable by stage-specific min/max growth time)
-                    if (!growingConfig.isInt("min-growth-time") || !growingConfig.isInt("max-growth-time")) {
-                        performantPlants.getLogger().warning("Growth time bounds not set/integer for growing for plant: " + plantId);
+                    // set general plant growth time (overridable by stage-specific growth time)
+                    if (growingConfig.isSet("growth-time")) {
+                        ScriptBlock growthTime = createPlantScript(growingConfig, "growth-time", plant.getPlantData());
+                        if (growthTime == null || !ScriptHelper.isLong(growthTime)) {
+                            performantPlants.getLogger().warning(String.format("Invalid growth-time; it is required and must be ScriptType LONG in section: %s",
+                                    growingConfig.getCurrentPath()));
+                            return;
+                        }
+                        plant.setGrowthTime(growthTime);
+                    } else {
+                        performantPlants.getLogger().warning("No growth-time found for growing for plant: " + plantId);
                         return;
                     }
-                    plant.setMinGrowthTime(growingConfig.getLong("min-growth-time"));
-                    plant.setMaxGrowthTime(growingConfig.getLong("max-growth-time"));
                     // set plant requirements, if present
                     if (growingConfig.isConfigurationSection("plant-requirements")) {
                         if (!addRequirementsToStorage(growingConfig.getConfigurationSection("plant-requirements"),
@@ -327,12 +333,18 @@ public class ConfigurationManager {
                                 return;
                             }
                             GrowthStage growthStage = new GrowthStage(stageId);
-                            // set min and max growth times, if present for stage
-                            if (stageConfig.isInt("min-growth-time") && stageConfig.isInt("max-growth-time")) {
-                                long stageMinGrowthTime = stageConfig.getLong("min-growth-time");
-                                long stageMaxGrowthTime = stageConfig.getLong("max-growth-time");
-                                growthStage.setMinGrowthTime(stageMinGrowthTime);
-                                growthStage.setMaxGrowthTime(stageMaxGrowthTime);
+                            // set stage growth time, if present for stage
+                            if (stageConfig.isSet("growth-time")) {
+                                ScriptBlock growthTime = createPlantScript(stageConfig, "growth-time", plant.getPlantData());
+                                if (growthTime == null || !ScriptHelper.isLong(growthTime)) {
+                                    performantPlants.getLogger().warning(String.format("Invalid stage growth-time; " +
+                                                    "for now this stage-specific growth-time will be ignored and " +
+                                                    "plant growth-time will be used instead. Growth time must be " +
+                                                    "ScriptType LONG in section: %s",
+                                            stageConfig.getCurrentPath()));
+                                } else {
+                                    growthStage.setGrowthTime(growthTime);
+                                }
                             }
                             // set drops and/or drop limit
                             if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage(), plant.getPlantData())) {

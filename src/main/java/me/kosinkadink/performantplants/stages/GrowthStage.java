@@ -1,19 +1,20 @@
 package me.kosinkadink.performantplants.stages;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
+import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 
 import java.util.HashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class GrowthStage {
 
     private final String id;
     private final HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
-    private long minGrowthTime = -1;
-    private long maxGrowthTime = -1;
+    private ScriptBlock growthTime = new ScriptResult(-1);
     private boolean growthCheckpoint = false;
     private DropStorage dropStorage = new DropStorage();
     private RequirementStorage requirementStorage = new RequirementStorage();
@@ -56,26 +57,16 @@ public class GrowthStage {
         return blocks;
     }
 
-    public void setMinGrowthTime(long time) {
-        minGrowthTime = time;
+    public void setGrowthTime(ScriptBlock growthTime) {
+        this.growthTime = growthTime;
     }
 
-    public void setMaxGrowthTime(long time) {
-        maxGrowthTime = time;
+    public boolean hasValidGrowthTimeSet(PlantBlock plantBlock) {
+        return growthTime.loadValue(plantBlock).getLongValue() >= 0;
     }
 
-    public boolean hasValidGrowthTimeSet() {
-        return minGrowthTime >= 0 && maxGrowthTime >= 0;
-    }
-
-    public long generateGrowthTime() {
-        if (minGrowthTime >= 0 && maxGrowthTime >= 0) {
-            if (minGrowthTime == maxGrowthTime) {
-                return minGrowthTime;
-            }
-            return ThreadLocalRandom.current().nextLong(minGrowthTime, maxGrowthTime + 1);
-        }
-        return 0;
+    public long generateGrowthTime(PlantBlock plantBlock) {
+        return growthTime.loadValue(plantBlock).getLongValue();
     }
 
     public boolean isGrowthCheckpoint() {

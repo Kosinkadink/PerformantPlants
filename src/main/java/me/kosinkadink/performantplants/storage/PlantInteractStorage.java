@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 public class PlantInteractStorage {
 
-    private ArrayList<PlantInteract> interactList = new ArrayList<>();
+    private final ArrayList<PlantInteract> interactList = new ArrayList<>();
     private PlantInteract defaultInteract = null;
 
     public PlantInteractStorage() { }
