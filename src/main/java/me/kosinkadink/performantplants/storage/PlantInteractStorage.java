@@ -20,11 +20,11 @@ public class PlantInteractStorage {
         return interactList;
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack, ExecutionContext context) {
-        return getPlantInteract(itemStack, context, null);
+    public PlantInteract getPlantInteract(ExecutionContext context) {
+        return getPlantInteract(context, null);
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
+    public PlantInteract getPlantInteract(ExecutionContext context, BlockFace blockFace) {
         PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
             // if blockFace provided and plantInteract has a blockFace requirement, check it
@@ -37,6 +37,8 @@ public class PlantInteractStorage {
             if (!plantInteract.isConditionMet(context)) {
                 continue;
             }
+            // TODO: remove once PlantScript that accomplishes this is added
+            ItemStack itemStack = context.getItemStack();
             // if no match interact and less exclusive properties should be checked, check them
             if (plantInteract.isMatchMaterial() || plantInteract.isMatchEnchantments()) {
                 if (plantInteract.isMatchMaterial()) {

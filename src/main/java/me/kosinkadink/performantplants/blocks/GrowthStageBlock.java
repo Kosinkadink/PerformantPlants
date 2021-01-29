@@ -135,9 +135,9 @@ public class GrowthStageBlock {
         return onInteract;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
+    public PlantInteract getOnInteract(ExecutionContext context, BlockFace blockFace) {
         if (onInteract != null) {
-            return onInteract.getPlantInteract(itemStack, context, blockFace);
+            return onInteract.getPlantInteract(context, blockFace);
         }
         return null;
     }
@@ -150,9 +150,9 @@ public class GrowthStageBlock {
         return onClick;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
+    public PlantInteract getOnClick(ExecutionContext context, BlockFace blockFace) {
         if (onClick != null) {
-            return onClick.getPlantInteract(itemStack, context, blockFace);
+            return onClick.getPlantInteract(context, blockFace);
         }
         return null;
     }
@@ -165,9 +165,9 @@ public class GrowthStageBlock {
         return onBreak;
     }
 
-    public PlantInteract getOnBreak(ItemStack itemStack, ExecutionContext context) {
+    public PlantInteract getOnBreak(ExecutionContext context) {
         if (onBreak != null) {
-            return onBreak.getPlantInteract(itemStack, context);
+            return onBreak.getPlantInteract(context);
         }
         return null;
     }

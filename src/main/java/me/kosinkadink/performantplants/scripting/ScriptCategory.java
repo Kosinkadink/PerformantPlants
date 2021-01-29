@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.scripting;
 
 public enum ScriptCategory {
-    NONE, RESULT, ACTION, CAST, COMPARE, FLOW, FUNCTION, LOGIC, MATH, RANDOM, PLAYER, BLOCK, WORLD, INVENTORY;
+    NONE, RESULT, ACTION, CAST, COMPARE, FLOW, FUNCTION, LOGIC, MATH, RANDOM, PLAYER, BLOCK, WORLD, INVENTORY, ITEM;
 
     public static ScriptCategory fromString(String category) {
         try {

@@ -21,7 +21,7 @@ public class ScriptOperationChoice extends ScriptOperation {
             return inputs[0].loadValue(context);
         } else {
             // otherwise generate random index and use that input
-            int index = RandomHelper.generateRandomIntInRange(0, inputs.length);
+            int index = RandomHelper.generateRandomIntInRange(0, inputs.length-1);
             ScriptResult result = inputs[index].loadValue(context);
             // if result type does not match input, convert it
             if (result.getType() != type) {

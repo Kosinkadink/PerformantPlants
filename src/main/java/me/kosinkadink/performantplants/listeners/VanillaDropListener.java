@@ -39,8 +39,8 @@ public class VanillaDropListener implements Listener {
             } else {
                 heldItem = player.getInventory().getItemInMainHand();
             }
-            ExecutionContext context = new ExecutionContext().set(player);
-            PlantInteract interact = storage.getPlantInteract(heldItem, context, null);
+            ExecutionContext context = new ExecutionContext().set(player).set(heldItem);
+            PlantInteract interact = storage.getPlantInteract(context, null);
             if (interact != null) {
                 // perform drops
                 DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation(), context);
@@ -76,8 +76,9 @@ public class VanillaDropListener implements Listener {
             ItemStack heldItem = player.getInventory().getItemInMainHand();
             ExecutionContext context = new ExecutionContext()
                     .set(player)
-                    .set(PlantBlock.wrapBlock(block));
-            PlantInteract interact = storage.getPlantInteract(heldItem, context, null);
+                    .set(PlantBlock.wrapBlock(block))
+                    .set(heldItem);
+            PlantInteract interact = storage.getPlantInteract(context, null);
             if (interact != null) {
                 // perform drops
                 DropHelper.performDrops(interact.getDropStorage(), block.getLocation(), context);

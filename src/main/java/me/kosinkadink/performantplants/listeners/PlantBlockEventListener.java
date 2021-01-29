@@ -98,12 +98,13 @@ public class PlantBlockEventListener implements Listener {
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
-            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack, event.getPlayer());
+            ExecutionContext context = new ExecutionContext()
+                    .set(event.getPlayer())
+                    .set(event.getPlantBlock())
+                    .set(itemStack);
+            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(context);
             if (plantInteract != null) {
                 // see if should do
-                ExecutionContext context = new ExecutionContext()
-                        .set(event.getPlayer())
-                        .set(event.getPlantBlock());
                 boolean shouldDo = plantInteract.generateDoIf(context);
                 boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(context);
                 boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(context);
@@ -186,22 +187,28 @@ public class PlantBlockEventListener implements Listener {
             }
             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                 performantPlants.getLogger().info("Reviewing PlantInteractEvent for block: " + event.getBlock().getLocation().toString());
+            // create context
+            ExecutionContext context = new ExecutionContext()
+                    .set(event.getPlayer())
+                    .set(event.getPlantBlock());
             // get item in main hand
             EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+            context.set(itemStack);
             // get PlantInteract to use
             PlantInteract plantInteract;
             if (!event.isUseOnClick()) {
                 // get PlantInteract behavior for main hand, if any
-                plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getPlayer(), event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnInteract(context, event.getBlockFace());
                 // if no plant interact behavior, try again for the offhand
                 if (plantInteract == null) {
                     hand = EquipmentSlot.OFF_HAND;
                     itemStack = event.getPlayer().getInventory().getItemInOffHand();
-                    plantInteract = event.getPlantBlock().getOnInteract(itemStack, event.getPlayer(), event.getBlockFace());
+                    context.set(itemStack);
+                    plantInteract = event.getPlantBlock().getOnInteract(context, event.getBlockFace());
                 }
             } else {
-                plantInteract = event.getPlantBlock().getOnClick(itemStack, event.getPlayer(), event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnClick(context, event.getBlockFace());
             }
             // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {
@@ -210,9 +217,6 @@ public class PlantBlockEventListener implements Listener {
             }
             PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
             PlantConsumable consumable = null;
-            ExecutionContext context = new ExecutionContext()
-                    .set(event.getPlayer())
-                    .set(event.getPlantBlock());
             if (consumableStorage != null) {
                 consumable = consumableStorage.getConsumable(context, event.getHand());
                 if (consumable == null) {

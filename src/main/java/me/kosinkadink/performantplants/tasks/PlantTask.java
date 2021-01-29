@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
+import me.kosinkadink.performantplants.util.PlayerHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitTask;
@@ -74,7 +75,9 @@ public class PlantTask {
         bukkitTask = PerformantPlants.getInstance().getServer().getScheduler().runTaskLater(PerformantPlants.getInstance(),
                 () -> {
                     try {
-                        scriptTask.getTaskScriptBlock().loadValue(new ExecutionContext().set(getPlantBlock()));
+                        scriptTask.getTaskScriptBlock().loadValue(new ExecutionContext()
+                                .set(getPlantBlock())
+                                .set(PlayerHelper.getFreshPlayer(offlinePlayer)));
                     } catch (Exception e) {
                         // do nothing
                     }

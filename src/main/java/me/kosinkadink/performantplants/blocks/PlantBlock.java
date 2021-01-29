@@ -318,49 +318,49 @@ public class PlantBlock {
         return false;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack, Player player, BlockFace blockFace) {
+    public PlantInteract getOnInteract(ExecutionContext context, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract(itemStack, new ExecutionContext().set(player).set(this), blockFace);
+                return stageBlock.getOnInteract(context, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract(itemStack, new ExecutionContext().set(player).set(this), blockFace);
+                return growthStageBlock.getOnInteract(context, blockFace);
             }
         }
         return null;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack, Player player, BlockFace blockFace) {
+    public PlantInteract getOnClick(ExecutionContext context, BlockFace blockFace) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick(itemStack, new ExecutionContext().set(player).set(this), blockFace);
+                return stageBlock.getOnClick(context, blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick(itemStack, new ExecutionContext().set(player).set(this), blockFace);
+                return growthStageBlock.getOnClick(context, blockFace);
             }
         }
         return null;
     }
 
-    public PlantInteract getOnBreak(ItemStack itemStack, Player player) {
+    public PlantInteract getOnBreak(ExecutionContext context) {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnBreak(itemStack, new ExecutionContext().set(player).set(this));
+                return stageBlock.getOnBreak(context);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnBreak(itemStack, new ExecutionContext().set(player).set(this));
+                return growthStageBlock.getOnBreak(context);
             }
         }
         return null;

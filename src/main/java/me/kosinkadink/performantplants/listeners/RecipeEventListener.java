@@ -55,9 +55,10 @@ public class RecipeEventListener implements Listener {
             }
             PlantInteractStorage storage = plantRecipe.getStorage();
             if (storage != null) {
-                ExecutionContext context = new ExecutionContext().set((Player) event.getWhoClicked());
-                PlantInteract interact = storage.getPlantInteract(event.getWhoClicked().getInventory().getItemInMainHand(),
-                        context, null);
+                ExecutionContext context = new ExecutionContext()
+                        .set((Player) event.getWhoClicked())
+                        .set(event.getWhoClicked().getInventory().getItemInMainHand());
+                PlantInteract interact = storage.getPlantInteract(context, null);
                 if (interact != null) {
                     if (plantRecipe.isIgnoreResult()) {
                         event.setCurrentItem(new ItemStack(Material.AIR));

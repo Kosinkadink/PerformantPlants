@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
+import me.kosinkadink.performantplants.util.PlayerHelper;
 import org.bukkit.OfflinePlayer;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -71,7 +72,8 @@ public abstract class PlantHookPlayer extends PlantHook {
                     // perform script block
                     scriptBlock.loadValue(
                             new ExecutionContext()
-                                    .set(task.getPlantBlock()));
+                                    .set(task.getPlantBlock())
+                                    .set(PlayerHelper.getFreshPlayer(getOfflinePlayer())));
                 }
             }
         }
