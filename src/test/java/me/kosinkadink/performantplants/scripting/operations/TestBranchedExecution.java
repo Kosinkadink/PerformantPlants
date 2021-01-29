@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.math.ScriptOperationAdd;
 import me.kosinkadink.performantplants.scripting.operations.math.ScriptOperationAddTo;
 import org.json.simple.JSONObject;
@@ -30,10 +27,10 @@ public class TestBranchedExecution {
         ScriptOperationAdd mainOperation = new ScriptOperationAdd(operationL, operationR);
         // left operation should be simplified into 35L
         assertTrue(mainOperation.getLeft() instanceof ScriptResult);
-        assertEquals(35L, mainOperation.getLeft().loadValue(null).getLongValue().longValue());
+        assertEquals(35L, mainOperation.getLeft().loadValue(new ExecutionContext()).getLongValue().longValue());
         // right operation should be simplified into 80L
         assertTrue(mainOperation.getRight() instanceof ScriptResult);
-        assertEquals(80L, mainOperation.getRight().loadValue(null).getLongValue().longValue());
+        assertEquals(80L, mainOperation.getRight().loadValue(new ExecutionContext()).getLongValue().longValue());
     }
 
     @Test
@@ -58,6 +55,7 @@ public class TestBranchedExecution {
         jsonObject.put("left", 0L);
         PlantBlock plantBlock = new PlantBlock(null, null, false);
         plantBlock.setPlantData(new PlantData(jsonObject));
+        ExecutionContext context = new ExecutionContext().set(plantBlock);
         // create variable
         ScriptResult variable = new ScriptResult("left", ScriptType.LONG);
         // create right branch -> -20 + 100 = 80
@@ -66,9 +64,9 @@ public class TestBranchedExecution {
         ScriptOperation operationR = new ScriptOperationAdd(r_left, r_right);
         // add together -> var["left"] += 80
         ScriptOperation mainOperation = new ScriptOperationAddTo(variable, operationR);
-        ScriptResult result = mainOperation.perform(plantBlock);
+        ScriptResult result = mainOperation.perform(context);
         // confirm that value of variable has changed to value of right branch
-        assertEquals(80L, variable.loadValue(plantBlock).getLongValue().longValue());
+        assertEquals(80L, variable.loadValue(context).getLongValue().longValue());
         assertEquals(80L, result.getLongValue().longValue());
     }
 

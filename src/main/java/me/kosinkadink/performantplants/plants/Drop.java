@@ -1,11 +1,8 @@
 package me.kosinkadink.performantplants.plants;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Drop {
 
@@ -27,23 +24,23 @@ public class Drop {
         return amount;
     }
 
-    public int getAmountValue(Player player, PlantBlock plantBlock) {
-        return amount.loadValue(plantBlock, player).getIntegerValue();
+    public int getAmountValue(ExecutionContext context) {
+        return amount.loadValue(context).getIntegerValue();
     }
 
     public ScriptBlock getDoIf() {
         return doIf;
     }
 
-    public boolean isDoIf(Player player, PlantBlock plantBlock) {
-        return doIf.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isDoIf(ExecutionContext context) {
+        return doIf.loadValue(context).getBooleanValue();
     }
 
-    public ItemStack generateDrop(Player player, PlantBlock plantBlock) {
+    public ItemStack generateDrop(ExecutionContext context) {
         ItemStack dropStack = itemStack.clone();
         // if doIf true, drop amount
-        if (isDoIf(player, plantBlock)) {
-            int amount = Math.max(0, getAmountValue(player, plantBlock));
+        if (isDoIf(context)) {
+            int amount = Math.max(0, getAmountValue(context));
             dropStack.setAmount(amount);
             return dropStack;
         }

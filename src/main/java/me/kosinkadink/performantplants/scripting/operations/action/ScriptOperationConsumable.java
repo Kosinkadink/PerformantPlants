@@ -1,10 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 
 public class ScriptOperationConsumable extends ScriptOperation {
@@ -28,12 +26,12 @@ public class ScriptOperationConsumable extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         if (storage != null) {
-            EquipmentSlot hand = getHand(getUseMainHand().loadValue(plantBlock, player).getBooleanValue());
-            PlantConsumable consumable = storage.getConsumable(player, hand);
+            EquipmentSlot hand = getHand(getUseMainHand().loadValue(context).getBooleanValue());
+            PlantConsumable consumable = storage.getConsumable(context, hand);
             if (consumable != null) {
-                consumable.getEffectStorage().performEffects(player, plantBlock);
+                consumable.getEffectStorage().performEffectsDynamic(context);
             }
         }
         return ScriptResult.TRUE;

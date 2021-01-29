@@ -1,12 +1,10 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -31,21 +29,21 @@ public class ScriptOperationInteract extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         if (storage != null) {
-            EquipmentSlot hand = getHand(getUseMainHand().loadValue(plantBlock, player).getBooleanValue());
+            EquipmentSlot hand = getHand(getUseMainHand().loadValue(context).getBooleanValue());
             ItemStack itemStack;
-            if (player != null) {
-                itemStack = player.getInventory().getItem(hand);
+            if (context.isPlayerSet()) {
+                itemStack = context.getPlayer().getInventory().getItem(hand);
             } else {
                 itemStack = new ItemStack(Material.AIR);
             }
-            PlantInteract interact = storage.getPlantInteract(itemStack, player, plantBlock);
+            PlantInteract interact = storage.getPlantInteract(itemStack, context);
             if (interact != null) {
-                interact.getEffectStorage().performEffects(plantBlock.getBlock(), plantBlock);
-                if (player != null && interact.getConsumableStorage() != null) {
-                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(player, hand);
-                    consumable.getEffectStorage().performEffects(player, plantBlock);
+                interact.getEffectStorage().performEffectsBlock(context);
+                if (context.isPlayerSet() && interact.getConsumableStorage() != null) {
+                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(context, hand);
+                    consumable.getEffectStorage().performEffectsPlayer(context);
                 }
             }
         }

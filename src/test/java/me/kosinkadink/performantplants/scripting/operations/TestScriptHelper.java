@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.bukkit.Material;
@@ -27,7 +28,7 @@ public class TestScriptHelper {
         // create expectations
         String replaceOne = "There are $amount$ apples here.";
         String replaceOneExpected = "There are 24 apples here.";
-        assertEquals(replaceOneExpected, ScriptHelper.setVariables(plantBlock, replaceOne));
+        assertEquals(replaceOneExpected, ScriptHelper.setVariables(new ExecutionContext().set(plantBlock), replaceOne));
         }
 
     @Test
@@ -42,7 +43,7 @@ public class TestScriptHelper {
         // create expectations
         String replaceMultipleSame = "There are $amount$, and I mean $amount$ apples here.";
         String replaceMultipleSameExpected = "There are 24, and I mean 24 apples here.";
-        assertEquals(replaceMultipleSameExpected, ScriptHelper.setVariables(plantBlock, replaceMultipleSame));
+        assertEquals(replaceMultipleSameExpected, ScriptHelper.setVariables(new ExecutionContext().set(plantBlock), replaceMultipleSame));
     }
 
     @Test
@@ -57,7 +58,7 @@ public class TestScriptHelper {
         // create expectations
         String replaceMultipleDifferent = "There are $amount$ apples in $playerName$'s inventory.";
         String replaceMultipleDifferentExpected = "There are 24 apples in TESTPLAYER's inventory.";
-        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(plantBlock, replaceMultipleDifferent));
+        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(new ExecutionContext().set(plantBlock), replaceMultipleDifferent));
     }
 
     @Test
@@ -72,7 +73,7 @@ public class TestScriptHelper {
         // create expectations
         String replaceMultipleDifferent = "There are $amount$ apples in $playerNameBad$'s inventory.";
         String replaceMultipleDifferentExpected = "There are 24 apples in $playerNameBad$'s inventory.";
-        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(plantBlock, replaceMultipleDifferent));
+        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(new ExecutionContext().set(plantBlock), replaceMultipleDifferent));
     }
 
     @Test
@@ -87,7 +88,7 @@ public class TestScriptHelper {
         // create expectations
         String replaceMultipleDifferent = "There are $amount$ apples in $playerName$'s inventory at coords: ($_x$,$_y$,$_z$) in world: $_world$ with plant id: $_plant_id$.";
         String replaceMultipleDifferentExpected = "There are 24 apples in TESTPLAYER's inventory at coords: (25,50,75) in world: Test with plant id: testPlant.";
-        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(plantBlock, replaceMultipleDifferent));
+        assertEquals(replaceMultipleDifferentExpected, ScriptHelper.setVariables(new ExecutionContext().set(plantBlock), replaceMultipleDifferent));
     }
 
 }

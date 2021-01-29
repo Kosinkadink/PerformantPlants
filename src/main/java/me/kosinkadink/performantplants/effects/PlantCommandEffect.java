@@ -1,13 +1,11 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
 
 public class PlantCommandEffect extends PlantEffect {
 
@@ -17,13 +15,13 @@ public class PlantCommandEffect extends PlantEffect {
     public PlantCommandEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        ScriptResult commandResult = command.loadValue(plantBlock, player);
+    void performEffectActionPlayer(ExecutionContext context) {
+        ScriptResult commandResult = command.loadValue(context);
         String commandString = commandResult.getStringValue();
         if (!commandResult.isHasPlaceholder()) {
-            commandString = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, player, commandString);
+            commandString = PlaceholderHelper.setVariablesAndPlaceholders(context, commandString);
         }
-        if (isConsole(player, plantBlock)) {
+        if (isConsole(context)) {
             try {
                 ConsoleCommandSender console = Bukkit.getServer().getConsoleSender();
                 Bukkit.dispatchCommand(console, commandString);
@@ -31,16 +29,16 @@ public class PlantCommandEffect extends PlantEffect {
                 // do nothing, just make sure this doesn't cause bad stuff to happen
             }
         } else {
-            player.sendMessage("/" + commandString);
+            context.getPlayer().sendMessage("/" + commandString);
         }
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
-        ScriptResult commandResult = command.loadValue(plantBlock, null);
+    void performEffectActionBlock(ExecutionContext context) {
+        ScriptResult commandResult = command.loadValue(context);
         String commandString = commandResult.getStringValue();
         if (!commandResult.isHasPlaceholder()) {
-            commandString = PlaceholderHelper.setVariablesAndPlaceholders(plantBlock, null, commandString);
+            commandString = PlaceholderHelper.setVariablesAndPlaceholders(context, commandString);
         }
         try {
             ConsoleCommandSender console = Bukkit.getServer().getConsoleSender();
@@ -54,8 +52,8 @@ public class PlantCommandEffect extends PlantEffect {
         return command;
     }
 
-    public String getCommandValue(Player player, PlantBlock plantBlock) {
-        return command.loadValue(plantBlock, player).getStringValue();
+    public String getCommandValue(ExecutionContext context) {
+        return command.loadValue(context).getStringValue();
     }
 
     public void setCommand(ScriptBlock command) {
@@ -66,8 +64,8 @@ public class PlantCommandEffect extends PlantEffect {
         return console;
     }
 
-    public boolean isConsole(Player player, PlantBlock plantBlock) {
-        return console.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isConsole(ExecutionContext context) {
+        return console.loadValue(context).getBooleanValue();
     }
 
     public void setConsole(ScriptBlock console) {

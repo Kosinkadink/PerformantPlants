@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.hooks;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
 import me.kosinkadink.performantplants.tasks.PlantTask;
-import org.json.simple.JSONObject;
 
 import java.util.Objects;
 import java.util.UUID;

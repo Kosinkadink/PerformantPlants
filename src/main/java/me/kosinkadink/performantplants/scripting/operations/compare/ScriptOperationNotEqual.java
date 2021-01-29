@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.compare;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationNotEqual extends ScriptOperationEqual {
 
@@ -12,8 +11,8 @@ public class ScriptOperationNotEqual extends ScriptOperationEqual {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        ScriptResult result = super.perform(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) {
+        ScriptResult result = super.perform(context);
         if (result == null) {
             return null;
         }

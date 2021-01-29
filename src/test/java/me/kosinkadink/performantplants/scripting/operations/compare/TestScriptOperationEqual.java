@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.compare;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +66,7 @@ public class TestScriptOperationEqual {
         ScriptResult left = new ScriptResult("leftString", ScriptType.STRING);
         ScriptResult right = new ScriptResult("rightString", ScriptType.STRING);
         ScriptOperation operation = new ScriptOperationEqual(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(new ExecutionContext().set(plantBlock));
         assertTrue(result.getBooleanValue());
     }
 
@@ -83,7 +80,7 @@ public class TestScriptOperationEqual {
         ScriptResult left = new ScriptResult("leftString", ScriptType.STRING);
         ScriptResult right = new ScriptResult("rightString", ScriptType.STRING);
         ScriptOperation operation = new ScriptOperationEqual(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(new ExecutionContext().set(plantBlock));
         assertFalse(result.getBooleanValue());
     }
 

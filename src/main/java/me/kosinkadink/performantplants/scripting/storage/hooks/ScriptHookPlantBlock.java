@@ -1,11 +1,10 @@
 package me.kosinkadink.performantplants.scripting.storage.hooks;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 
 public abstract class ScriptHookPlantBlock extends ScriptHook {
 
@@ -19,18 +18,18 @@ public abstract class ScriptHookPlantBlock extends ScriptHook {
         return currentBlock;
     }
 
-    public boolean getCurrentBlockValue(Player player, PlantBlock plantBlock) {
-        return currentBlock.loadValue(plantBlock, player).getBooleanValue();
+    public boolean getCurrentBlockValue(ExecutionContext context) {
+        return currentBlock.loadValue(context).getBooleanValue();
     }
 
     public void setCurrentBlock(ScriptBlock currentBlock) {
         this.currentBlock = currentBlock;
     }
 
-    protected BlockLocation createBlockLocation(Player player, PlantBlock plantBlock) {
+    protected BlockLocation createBlockLocation(ExecutionContext context) {
         BlockLocation blockLocation = null;
-        if (getCurrentBlockValue(player, plantBlock)) {
-            blockLocation = plantBlock.getLocation();
+        if (getCurrentBlockValue(context)) {
+            blockLocation = context.getPlantBlock().getLocation();
         }
         return blockLocation;
     }

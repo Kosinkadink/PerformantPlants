@@ -1,11 +1,9 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 public abstract class PlantEffect {
@@ -13,16 +11,24 @@ public abstract class PlantEffect {
     protected ScriptBlock doIf = ScriptResult.TRUE;
     protected ScriptBlock delay = ScriptResult.ZERO;
 
-    public boolean performEffect(Player player, PlantBlock plantBlock) {
-        if (getDoIfValue(player, plantBlock)) {
-            int delayValue = getDelayValue(player, plantBlock);
+    public boolean performEffect(ExecutionContext context) {
+        if (context.isPlayerSet()) {
+            return performEffectPlayer(context);
+        } else {
+            return performEffectBlock(context);
+        }
+    }
+
+    public boolean performEffectPlayer(ExecutionContext context) {
+        if (getDoIfValue(context)) {
+            int delayValue = getDelayValue(context);
             if (delayValue == 0) {
-                performEffectAction(player, plantBlock);
+                performEffectActionPlayer(context);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffectAction(player, plantBlock),
+                            () -> performEffectActionPlayer(context),
                             delayValue
                     );
                 } else {
@@ -35,16 +41,16 @@ public abstract class PlantEffect {
         return false;
     }
 
-    public boolean performEffect(Block block, PlantBlock plantBlock) {
-        if (getDoIfValue(null, plantBlock)) {
-            int delayValue = getDelayValue(null, plantBlock);
+    public boolean performEffectBlock(ExecutionContext context) {
+        if (getDoIfValue(context)) {
+            int delayValue = getDelayValue(context);
             if (delayValue == 0) {
-                performEffectAction(block, plantBlock);
+                performEffectActionBlock(context);
             } else {
                 Plugin pp = Bukkit.getPluginManager().getPlugin("performantplants");
                 if (pp != null) {
                     Bukkit.getScheduler().runTaskLater(pp,
-                            () -> performEffectAction(block, plantBlock),
+                            () -> performEffectActionBlock(context),
                             delayValue
                     );
                 } else {
@@ -57,16 +63,16 @@ public abstract class PlantEffect {
         return false;
     }
 
-    void performEffectAction(Player player, PlantBlock plantBlock) { }
+    void performEffectActionPlayer(ExecutionContext context) { }
 
-    void performEffectAction(Block block, PlantBlock plantBlock) { }
+    void performEffectActionBlock(ExecutionContext context) { }
 
     public ScriptBlock getDoIf() {
         return doIf;
     }
 
-    public boolean getDoIfValue(Player player, PlantBlock plantBlock) {
-        return doIf.loadValue(plantBlock, player).getBooleanValue();
+    public boolean getDoIfValue(ExecutionContext context) {
+        return doIf.loadValue(context).getBooleanValue();
     }
 
     public void setDoIf(ScriptBlock doIf) {
@@ -77,8 +83,8 @@ public abstract class PlantEffect {
         return delay;
     }
 
-    public int getDelayValue(Player player, PlantBlock plantBlock) {
-        return Math.max(0, delay.loadValue(plantBlock, player).getIntegerValue());
+    public int getDelayValue(ExecutionContext context) {
+        return Math.max(0, delay.loadValue(context).getIntegerValue());
     }
 
     public void setDelay(ScriptBlock delay) {

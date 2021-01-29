@@ -1,17 +1,12 @@
 package me.kosinkadink.performantplants.scripting.operations.player;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
-import org.bukkit.entity.Player;
+import me.kosinkadink.performantplants.scripting.*;
 
 public class ScriptOperationIsPlayerSneaking extends ScriptOperation {
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        return new ScriptResult(player != null && player.isSneaking());
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        return new ScriptResult(context.isPlayerSet() && context.getPlayer().isSneaking());
     }
 
     @Override

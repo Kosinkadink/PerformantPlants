@@ -1,11 +1,8 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -21,19 +18,19 @@ public class PlantPotionEffect extends PlantEffect {
     public PlantPotionEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        PotionEffectType potionEffectType = getPotionEffectType(player, plantBlock);
+    void performEffectActionPlayer(ExecutionContext context) {
+        PotionEffectType potionEffectType = getPotionEffectType(context);
         // if can't recognize type, do nothing
         if (potionEffectType == null) {
             return;
         }
-        player.addPotionEffect(new PotionEffect(
+        context.getPlayer().addPotionEffect(new PotionEffect(
                 potionEffectType,
-                getDurationValue(player, plantBlock),
-                getAmplifierValue(player, plantBlock),
-                isAmbient(player, plantBlock),
-                isParticles(player, plantBlock),
-                isIcon(player, plantBlock)
+                getDurationValue(context),
+                getAmplifierValue(context),
+                isAmbient(context),
+                isParticles(context),
+                isIcon(context)
         ));
     }
 
@@ -41,9 +38,9 @@ public class PlantPotionEffect extends PlantEffect {
         return potionEffectTypeName;
     }
 
-    public PotionEffectType getPotionEffectType(Player player, PlantBlock plantBlock) {
+    public PotionEffectType getPotionEffectType(ExecutionContext context) {
         return PotionEffectType.getByName(
-                potionEffectTypeName.loadValue(plantBlock, player).getStringValue().toUpperCase()
+                potionEffectTypeName.loadValue(context).getStringValue().toUpperCase()
         );
     }
 
@@ -55,8 +52,8 @@ public class PlantPotionEffect extends PlantEffect {
         return duration;
     }
 
-    public int getDurationValue(Player player, PlantBlock plantBlock) {
-        return duration.loadValue(plantBlock, player).getIntegerValue();
+    public int getDurationValue(ExecutionContext context) {
+        return duration.loadValue(context).getIntegerValue();
     }
 
     public void setDuration(ScriptBlock duration) {
@@ -67,8 +64,8 @@ public class PlantPotionEffect extends PlantEffect {
         return amplifier;
     }
 
-    public int getAmplifierValue(Player player, PlantBlock plantBlock) {
-        return amplifier.loadValue(plantBlock, player).getIntegerValue()-1;
+    public int getAmplifierValue(ExecutionContext context) {
+        return amplifier.loadValue(context).getIntegerValue()-1;
     }
 
     public void setAmplifier(ScriptBlock amplifier) {
@@ -79,8 +76,8 @@ public class PlantPotionEffect extends PlantEffect {
         return ambient;
     }
 
-    public boolean isAmbient(Player player, PlantBlock plantBlock) {
-        return ambient.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isAmbient(ExecutionContext context) {
+        return ambient.loadValue(context).getBooleanValue();
     }
 
     public void setAmbient(ScriptBlock ambient) {
@@ -91,8 +88,8 @@ public class PlantPotionEffect extends PlantEffect {
         return particles;
     }
 
-    public boolean isParticles(Player player, PlantBlock plantBlock) {
-        return particles.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isParticles(ExecutionContext context) {
+        return particles.loadValue(context).getBooleanValue();
     }
 
     public void setParticles(ScriptBlock particles) {
@@ -103,8 +100,8 @@ public class PlantPotionEffect extends PlantEffect {
         return icon;
     }
 
-    public boolean isIcon(Player player, PlantBlock plantBlock) {
-        return icon.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isIcon(ExecutionContext context) {
+        return icon.loadValue(context).getBooleanValue();
     }
 
     public void setIcon(ScriptBlock icon) {

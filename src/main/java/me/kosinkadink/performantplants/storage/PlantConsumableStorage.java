@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.storage;
 
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.RequiredItem;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.PlayerHelper;
 import org.bukkit.entity.Player;
@@ -20,17 +21,18 @@ public class PlantConsumableStorage {
         return consumableList;
     }
 
-    public PlantConsumable getConsumable(Player player, EquipmentSlot hand) {
+    public PlantConsumable getConsumable(ExecutionContext context, EquipmentSlot hand) {
         PlantConsumable matchConsumable = null;
+        Player player = context.getPlayer();
         for (PlantConsumable plantConsumable : consumableList) {
             // if needs messing food and is full, continue searching
-            if (plantConsumable.isMissingFood(player, null)) {
+            if (plantConsumable.isMissingFood(context)) {
                 if (!PlayerHelper.hasMissingFood(player)) {
                     continue;
                 }
             }
             // if condition not met, continue searching
-            if (!plantConsumable.isConditionMet(player, null)) {
+            if (!plantConsumable.isConditionMet(context)) {
                 continue;
             }
             // if no requirement, set match to this and continue searching
@@ -52,7 +54,7 @@ public class PlantConsumableStorage {
             boolean matches = true;
             for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
                 // if in hand required, check that other hand contains item
-                if (requirement.isInHand(player, null)) {
+                if (requirement.isInHand(context)) {
                     matches = ItemHelper.checkIfMatches(requirement.getItemStack(), otherStack);
                 } // else check that item exists somewhere in player's inventory
                 else {
@@ -63,7 +65,7 @@ public class PlantConsumableStorage {
                     break;
                 }
                 // if condition not met, stop searching since this isn't it
-                if (!requirement.isConditionMet(player, null)) {
+                if (!requirement.isConditionMet(context)) {
                     break;
                 }
             }

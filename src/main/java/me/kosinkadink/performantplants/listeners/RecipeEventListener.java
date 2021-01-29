@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.recipes.*;
 import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.RecipeHelper;
@@ -54,7 +55,9 @@ public class RecipeEventListener implements Listener {
             }
             PlantInteractStorage storage = plantRecipe.getStorage();
             if (storage != null) {
-                PlantInteract interact = storage.getPlantInteract(event.getWhoClicked().getInventory().getItemInMainHand(), (Player) event.getWhoClicked(), null);
+                ExecutionContext context = new ExecutionContext().set((Player) event.getWhoClicked());
+                PlantInteract interact = storage.getPlantInteract(event.getWhoClicked().getInventory().getItemInMainHand(),
+                        context, null);
                 if (interact != null) {
                     if (plantRecipe.isIgnoreResult()) {
                         event.setCurrentItem(new ItemStack(Material.AIR));
@@ -70,15 +73,15 @@ public class RecipeEventListener implements Listener {
                     Block block = null;
                     try {
                         block = event.getInventory().getLocation().getBlock();
-                        interact.getEffectStorage().performEffects(block, PlantBlock.wrapBlock(block));
+                        context.setPlantBlock(PlantBlock.wrapBlock(block));
+                        interact.getEffectStorage().performEffectsBlock(context);
                     } catch (NullPointerException ignored) { }
                     // perform effects on player, if any
                     PlantConsumableStorage consumableStorage = interact.getConsumableStorage();
                     if (consumableStorage != null) {
-                        Player player = (Player) event.getWhoClicked();
-                        PlantConsumable consumable = consumableStorage.getConsumable(player, EquipmentSlot.HAND);
+                        PlantConsumable consumable = consumableStorage.getConsumable(context, EquipmentSlot.HAND);
                         if (consumable != null) {
-                            consumable.getEffectStorage().performEffects(player, PlantBlock.wrapBlock(block));
+                            consumable.getEffectStorage().performEffectsPlayer(context);
                         }
                     }
                 }

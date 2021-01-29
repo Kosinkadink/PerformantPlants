@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.builders.ItemBuilder;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -21,7 +22,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class VanillaDropListener implements Listener {
 
-    private PerformantPlants performantPlants;
+    private final PerformantPlants performantPlants;
 
     public VanillaDropListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
@@ -38,17 +39,19 @@ public class VanillaDropListener implements Listener {
             } else {
                 heldItem = player.getInventory().getItemInMainHand();
             }
-            PlantInteract interact = storage.getPlantInteract(heldItem, player, null);
+            ExecutionContext context = new ExecutionContext().set(player);
+            PlantInteract interact = storage.getPlantInteract(heldItem, context, null);
             if (interact != null) {
                 // perform drops
-                DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation(), player, null);
+                DropHelper.performDrops(interact.getDropStorage(), event.getEntity().getLocation(), context);
                 // perform effects
-                interact.getEffectStorage().performEffects(event.getEntity().getLocation().getBlock(), null);
+                context.setPlantBlock(PlantBlock.wrapBlock(event.getEntity().getLocation().getBlock()));
+                interact.getEffectStorage().performEffectsBlock(context);
                 // perform consumable, if killer is not null
                 if (player != null && interact.getConsumableStorage() != null ) {
-                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(player, EquipmentSlot.HAND);
+                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(context, EquipmentSlot.HAND);
                     if (consumable != null) {
-                        consumable.getEffectStorage().performEffects(player, null);
+                        consumable.getEffectStorage().performEffectsPlayer(context);
                     }
                 }
             }
@@ -71,17 +74,20 @@ public class VanillaDropListener implements Listener {
         if (storage != null) {
             Player player = event.getPlayer();
             ItemStack heldItem = player.getInventory().getItemInMainHand();
-            PlantInteract interact = storage.getPlantInteract(heldItem, player, null);
+            ExecutionContext context = new ExecutionContext()
+                    .set(player)
+                    .set(PlantBlock.wrapBlock(block));
+            PlantInteract interact = storage.getPlantInteract(heldItem, context, null);
             if (interact != null) {
                 // perform drops
-                DropHelper.performDrops(interact.getDropStorage(), block, player, PlantBlock.wrapBlock(block));
+                DropHelper.performDrops(interact.getDropStorage(), block.getLocation(), context);
                 // perform effects
-                interact.getEffectStorage().performEffects(block, PlantBlock.wrapBlock(block));
+                interact.getEffectStorage().performEffectsBlock(context);
                 // perform consumable, if killer is not null
                 if (interact.getConsumableStorage() != null ) {
-                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(player, EquipmentSlot.HAND);
+                    PlantConsumable consumable = interact.getConsumableStorage().getConsumable(context, EquipmentSlot.HAND);
                     if (consumable != null) {
-                        consumable.getEffectStorage().performEffects(player, PlantBlock.wrapBlock(block));
+                        consumable.getEffectStorage().performEffectsPlayer(context);
                     }
                 }
             }

@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants.scripting;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import org.bukkit.entity.Player;
+import javax.annotation.Nonnull;
 
 public abstract class ScriptOperation extends ScriptBlock {
 
@@ -13,14 +12,10 @@ public abstract class ScriptOperation extends ScriptBlock {
     }
 
     public ScriptResult perform() throws IllegalArgumentException {
-        return perform(null, null);
+        return perform(new ExecutionContext());
     }
 
-    public ScriptResult perform(PlantBlock plantBlock) throws IllegalArgumentException {
-        return perform(plantBlock, null);
-    }
-
-    public abstract ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException;
+    public abstract ScriptResult perform(ExecutionContext context) throws IllegalArgumentException;
 
     @Override
     public boolean containsVariable() {
@@ -70,8 +65,8 @@ public abstract class ScriptOperation extends ScriptBlock {
     }
 
     @Override
-    public ScriptResult loadValue(PlantBlock plantBlock, Player player) {
-        return perform(plantBlock, player);
+    public ScriptResult loadValue(@Nonnull ExecutionContext context) {
+        return perform(context);
     }
 
     @Override

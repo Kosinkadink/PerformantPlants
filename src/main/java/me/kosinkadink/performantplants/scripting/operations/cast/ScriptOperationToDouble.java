@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.scripting.operations.cast;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationToDouble extends ScriptOperationCast {
 
@@ -18,8 +17,8 @@ public class ScriptOperationToDouble extends ScriptOperationCast {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        return new ScriptResult(getInput().loadValue(plantBlock, player).getDoubleValue());
+    public ScriptResult perform(ExecutionContext context) {
+        return new ScriptResult(getInput().loadValue(context).getDoubleValue());
     }
 
 }

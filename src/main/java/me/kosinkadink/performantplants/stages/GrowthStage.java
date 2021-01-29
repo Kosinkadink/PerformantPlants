@@ -1,8 +1,8 @@
 package me.kosinkadink.performantplants.stages;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.DropStorage;
@@ -61,12 +61,12 @@ public class GrowthStage {
         this.growthTime = growthTime;
     }
 
-    public boolean hasValidGrowthTimeSet(PlantBlock plantBlock) {
-        return growthTime.loadValue(plantBlock).getLongValue() >= 0;
+    public boolean hasValidGrowthTimeSet(ExecutionContext context) {
+        return growthTime.loadValue(context).getLongValue() >= 0;
     }
 
-    public long generateGrowthTime(PlantBlock plantBlock) {
-        return growthTime.loadValue(plantBlock).getLongValue();
+    public long generateGrowthTime(ExecutionContext context) {
+        return growthTime.loadValue(context).getLongValue();
     }
 
     public boolean isGrowthCheckpoint() {

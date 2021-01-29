@@ -1,12 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.logic;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationNot extends ScriptOperationUnary {
 
@@ -15,8 +10,8 @@ public class ScriptOperationNot extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        return new ScriptResult(!getInput().loadValue(plantBlock, player).getBooleanValue());
+    public ScriptResult perform(ExecutionContext context) {
+        return new ScriptResult(!getInput().loadValue(context).getBooleanValue());
     }
 
     @Override

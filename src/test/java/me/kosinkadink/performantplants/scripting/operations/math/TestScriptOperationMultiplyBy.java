@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.math;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -20,12 +17,13 @@ public class TestScriptOperationMultiplyBy {
         jsonObject.put("right", 20L);
         PlantBlock plantBlock = new PlantBlock(null, null, false);
         plantBlock.setPlantData(new PlantData(jsonObject));
+        ExecutionContext context = new ExecutionContext().set(plantBlock);
         ScriptResult left = new ScriptResult("left", ScriptType.LONG);
         ScriptResult right = new ScriptResult("right", ScriptType.LONG);
         ScriptOperation operation = new ScriptOperationMultiplyBy(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(context);
         assertEquals(200L, result.getLongValue().longValue());
-        assertEquals(200L, left.loadValue(plantBlock).getLongValue().longValue());
+        assertEquals(200L, left.loadValue(context).getLongValue().longValue());
         assertEquals(200L, jsonObject.get("left"));
     }
 
@@ -36,12 +34,13 @@ public class TestScriptOperationMultiplyBy {
         jsonObject.put("right", 12.725);
         PlantBlock plantBlock = new PlantBlock(null, null, false);
         plantBlock.setPlantData(new PlantData(jsonObject));
+        ExecutionContext context = new ExecutionContext().set(plantBlock);
         ScriptResult left = new ScriptResult("left", ScriptType.DOUBLE);
         ScriptResult right = new ScriptResult("right", ScriptType.DOUBLE);
         ScriptOperation operation = new ScriptOperationMultiplyBy(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(context);
         assertEquals(25.45, result.getDoubleValue().doubleValue());
-        assertEquals(25.45, left.loadValue(plantBlock).getDoubleValue().doubleValue());
+        assertEquals(25.45, left.loadValue(context).getDoubleValue().doubleValue());
         assertEquals(25.45, jsonObject.get("left"));
     }
 

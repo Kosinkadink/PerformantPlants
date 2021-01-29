@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.math;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +80,7 @@ public class TestScriptOperationDivide {
         ScriptResult left = new ScriptResult("amount", ScriptType.LONG);
         ScriptResult right = new ScriptResult("otherAmount", ScriptType.LONG);
         ScriptOperation operation = new ScriptOperationDivide(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(new ExecutionContext().set(plantBlock));
         assertEquals(4L, result.getLongValue().longValue());
         assertEquals(ScriptType.LONG, result.getType());
     }
@@ -98,7 +95,7 @@ public class TestScriptOperationDivide {
         ScriptResult left = new ScriptResult("amount", ScriptType.LONG);
         ScriptResult right = new ScriptResult("otherAmount", ScriptType.DOUBLE);
         ScriptOperation operation = new ScriptOperationDivide(left, right);
-        ScriptResult result = operation.perform(plantBlock);
+        ScriptResult result = operation.perform(new ExecutionContext().set(plantBlock));
         assertEquals(2.5, result.getDoubleValue().doubleValue());
         assertEquals(ScriptType.DOUBLE, result.getType());
     }

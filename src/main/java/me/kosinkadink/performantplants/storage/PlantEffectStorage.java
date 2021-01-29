@@ -1,10 +1,7 @@
 package me.kosinkadink.performantplants.storage;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.effects.PlantEffect;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 
 import java.util.ArrayList;
 
@@ -31,11 +28,19 @@ public class PlantEffectStorage {
         return effects;
     }
 
-    public void performEffects(Player player, PlantBlock plantBlock) {
+    public void performEffectsDynamic(ExecutionContext context) {
+        if (context.isPlayerSet()) {
+            performEffectsPlayer(context);
+        } else {
+            performEffectsBlock(context);
+        }
+    }
+
+    public void performEffectsPlayer(ExecutionContext context) {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(player, plantBlock);
+            boolean triggered = effect.performEffect(context);
             // add to count if triggered
             if (triggered) {
                 effectCount++;
@@ -47,11 +52,11 @@ public class PlantEffectStorage {
         }
     }
 
-    public void performEffects(Block block, PlantBlock plantBlock) {
+    public void performEffectsBlock(ExecutionContext context) {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(block, plantBlock);
+            boolean triggered = effect.performEffect(context);
             // add to count if triggered
             if (triggered) {
                 effectCount++;

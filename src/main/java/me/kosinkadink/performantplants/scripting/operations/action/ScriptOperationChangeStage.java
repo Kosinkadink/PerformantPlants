@@ -4,7 +4,6 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.StageStorage;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationChangeStage extends ScriptOperation {
 
@@ -24,15 +23,16 @@ public class ScriptOperationChangeStage extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         // if no block or is a child (has parent), do nothing
-        if (plantBlock == null) {
+        if (!context.isPlantBlockSet()) {
             return ScriptResult.TRUE;
         }
         // use self or parent block, if has one
-        PlantBlock effectivePlantBlock = plantBlock.getEffectivePlantBlock();
-        String stageName = getStage().loadValue(effectivePlantBlock, player).getStringValue();
-        boolean ifNext = getIfNext().loadValue(effectivePlantBlock, player).getBooleanValue();
+        PlantBlock effectivePlantBlock = context.getEffectivePlantBlock();
+        ExecutionContext effectiveContext = context.copy().set(effectivePlantBlock);
+        String stageName = getStage().loadValue(effectiveContext).getStringValue();
+        boolean ifNext = getIfNext().loadValue(effectiveContext).getBooleanValue();
         // try to go to stage or next stage; if worked, return true; otherwise return false
         boolean success = false;
         if (!stageName.isEmpty()) {
@@ -42,7 +42,7 @@ public class ScriptOperationChangeStage extends ScriptOperation {
                 success = effectivePlantBlock.goToStageForcefully(performantPlants, stageIndex);
             } else {
                 performantPlants.getLogger().warning(String.format("OperationChangeStage: stage name '%s' not recognized for " +
-                        "block: %s", stageName, plantBlock.toString()));
+                        "block: %s", stageName, effectivePlantBlock.toString()));
             }
         }
         // if goToNext is set to true, then advance to next growth stage as if plant grew

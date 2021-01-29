@@ -3,10 +3,10 @@ package me.kosinkadink.performantplants.scripting;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
-import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class ScriptResult extends ScriptBlock {
@@ -171,29 +171,29 @@ public class ScriptResult extends ScriptBlock {
         }
     }
 
-    protected ScriptResult loadVariable(PlantBlock plantBlock, Player player) {
+    protected ScriptResult loadVariable(ExecutionContext context) {
         if (!isVariable()) {
             // if has placeholder and is string, return evaluated string
             if (type == ScriptType.STRING && hasPlaceholder) {
                 return new ScriptResult(PlaceholderHelper.setVariablesAndPlaceholders(
-                        plantBlock, player, this.getStringValue()));
+                        context, this.getStringValue()));
             }
             return this;
         }
-        PlantBlock effectivePlantBlock = null;
+        PlantBlock effectivePlantBlock;
         PlantData plantData = null;
-        if (plantBlock != null) {
-            effectivePlantBlock = plantBlock.getEffectivePlantBlock();
+        if (context.isPlantBlockSet()) {
+            effectivePlantBlock = context.getEffectivePlantBlock();
             plantData = effectivePlantBlock.getPlantData();
         }
         Object variableValue = ScriptHelper.getGlobalPlantDataVariableValue(plantData,
-                PlaceholderHelper.setVariablesAndPlaceholders(effectivePlantBlock, player, variableName));
+                PlaceholderHelper.setVariablesAndPlaceholders(context, variableName));
         return new ScriptResult(variableValue);
     }
 
     @Override
-    public ScriptResult loadValue(PlantBlock plantBlock, Player player) {
-        return loadVariable(plantBlock, player);
+    public ScriptResult loadValue(@Nonnull ExecutionContext context) {
+        return loadVariable(context);
     }
 
     @Override

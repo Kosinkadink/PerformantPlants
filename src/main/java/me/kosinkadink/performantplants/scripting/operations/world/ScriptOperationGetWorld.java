@@ -1,26 +1,21 @@
 package me.kosinkadink.performantplants.scripting.operations.world;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationGetWorld extends ScriptOperation {
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         World world;
-        if (player != null) {
-            world = player.getLocation().getWorld();
+        if (context.isPlayerSet()) {
+            world = context.getPlayer().getLocation().getWorld();
             if (world != null) {
                 return new ScriptResult(world.getName());
             }
         }
-        else if (plantBlock != null) {
-            world = plantBlock.getLocation().getWorld();
+        else if (context.isPlantBlockSet()) {
+            world = context.getPlantBlock().getLocation().getWorld();
             if (world != null) {
                 return new ScriptResult(world.getName());
             }

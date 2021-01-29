@@ -1,11 +1,10 @@
 package me.kosinkadink.performantplants.scripting.operations.math;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationSetValue;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationPowerOf extends ScriptOperationPower {
 
@@ -14,12 +13,12 @@ public class ScriptOperationPowerOf extends ScriptOperationPower {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        ScriptResult result = super.perform(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) {
+        ScriptResult result = super.perform(context);
         // if left was a variable, set the result to its new value
         if (getLeft() instanceof ScriptResult && getLeft().containsVariable()) {
             // perform set value
-            new ScriptOperationSetValue(getLeft(), result).perform(plantBlock, player);
+            new ScriptOperationSetValue(getLeft(), result).perform(context);
         }
         return result;
     }

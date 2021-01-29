@@ -1,13 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.random;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 import me.kosinkadink.performantplants.util.RandomHelper;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationRandomDouble extends ScriptOperationBinary {
 
@@ -16,9 +11,9 @@ public class ScriptOperationRandomDouble extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
-        ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        ScriptResult leftInstance = getLeft().loadValue(context);
+        ScriptResult rightInstance = getRight().loadValue(context);
         // perform the random generation
         return new ScriptResult(RandomHelper.generateRandomDoubleInRange(
                 leftInstance.getDoubleValue(), rightInstance.getDoubleValue()

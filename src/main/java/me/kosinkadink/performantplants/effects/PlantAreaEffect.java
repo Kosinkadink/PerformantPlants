@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.storage.ScriptColor;
@@ -27,37 +27,39 @@ public class PlantAreaEffect extends PlantEffect {
     private ScriptBlock radiusPerTick = ScriptResult.ZERO;
     private ScriptBlock reapplicationDelay = new ScriptResult(5);
 
-    private Consumer<AreaEffectCloud> getConsumer(Player player, PlantBlock plantBlock) {
+    private Consumer<AreaEffectCloud> getConsumer(ExecutionContext context) {
         return cloud -> {
             for (PotionEffect potionEffect : potionEffects) {
                 cloud.addCustomEffect(potionEffect, false);
             }
             if (color != null) {
-                cloud.setColor(getColorValue(player, plantBlock));
+                cloud.setColor(getColorValue(context));
             }
-            Particle particle = getParticleValue(player, plantBlock);
+            Particle particle = getParticleValue(context);
             if (particle != null) {
                 cloud.setParticle(particle);
             }
-            cloud.setDuration(getDurationValue(player, plantBlock));
-            cloud.setDurationOnUse(getDurationOnUseValue(player, plantBlock));
-            cloud.setRadius(getRadiusValue(player, plantBlock));
-            cloud.setRadiusOnUse(getRadiusOnUseValue(player, plantBlock));
-            cloud.setRadiusPerTick(getRadiusPerTickValue(player, plantBlock));
-            cloud.setReapplicationDelay(getReapplicationDelayValue(player, plantBlock));
+            cloud.setDuration(getDurationValue(context));
+            cloud.setDurationOnUse(getDurationOnUseValue(context));
+            cloud.setRadius(getRadiusValue(context));
+            cloud.setRadiusOnUse(getRadiusOnUseValue(context));
+            cloud.setRadiusPerTick(getRadiusPerTickValue(context));
+            cloud.setReapplicationDelay(getReapplicationDelayValue(context));
         };
     }
 
     public PlantAreaEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        player.getWorld().spawn(player.getLocation(), AreaEffectCloud.class, getConsumer(player, plantBlock));
+    void performEffectActionPlayer(ExecutionContext context) {
+        Player player = context.getPlayer();
+        player.getWorld().spawn(player.getLocation(), AreaEffectCloud.class, getConsumer(context));
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
-        block.getWorld().spawn(BlockHelper.getCenter(block), AreaEffectCloud.class, getConsumer(null, plantBlock));
+    void performEffectActionBlock(ExecutionContext context) {
+        Block block = context.getPlantBlock().getBlock();
+        block.getWorld().spawn(BlockHelper.getCenter(block), AreaEffectCloud.class, getConsumer(context));
     }
 
     public void addPotionEffect(PotionEffect potionEffect) {
@@ -68,8 +70,8 @@ public class PlantAreaEffect extends PlantEffect {
         return color;
     }
 
-    public Color getColorValue(Player player, PlantBlock plantBlock) {
-        return color.getColor(player, plantBlock);
+    public Color getColorValue(ExecutionContext context) {
+        return color.getColor(context);
     }
 
     public void setColor(ScriptColor color) {
@@ -80,8 +82,8 @@ public class PlantAreaEffect extends PlantEffect {
         return duration;
     }
 
-    public int getDurationValue(Player player, PlantBlock plantBlock) {
-        return duration.loadValue(plantBlock, player).getIntegerValue();
+    public int getDurationValue(ExecutionContext context) {
+        return duration.loadValue(context).getIntegerValue();
     }
 
     public void setDuration(ScriptBlock duration) {
@@ -92,8 +94,8 @@ public class PlantAreaEffect extends PlantEffect {
         return durationOnUse;
     }
 
-    public int getDurationOnUseValue(Player player, PlantBlock plantBlock) {
-        return durationOnUse.loadValue(plantBlock, player).getIntegerValue();
+    public int getDurationOnUseValue(ExecutionContext context) {
+        return durationOnUse.loadValue(context).getIntegerValue();
     }
 
     public void setDurationOnUse(ScriptBlock durationOnUse) {
@@ -104,12 +106,12 @@ public class PlantAreaEffect extends PlantEffect {
         return particleName;
     }
 
-    public Particle getParticleValue(Player player, PlantBlock plantBlock) {
+    public Particle getParticleValue(ExecutionContext context) {
         if (particleName == null) {
             return null;
         }
         try {
-            return Particle.valueOf(particleName.loadValue(plantBlock, player).getStringValue().toUpperCase());
+            return Particle.valueOf(particleName.loadValue(context).getStringValue().toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -123,8 +125,8 @@ public class PlantAreaEffect extends PlantEffect {
         return radius;
     }
 
-    public float getRadiusValue(Player player, PlantBlock plantBlock) {
-        return radius.loadValue(plantBlock, player).getFloatValue();
+    public float getRadiusValue(ExecutionContext context) {
+        return radius.loadValue(context).getFloatValue();
     }
 
     public void setRadius(ScriptBlock radius) {
@@ -135,8 +137,8 @@ public class PlantAreaEffect extends PlantEffect {
         return radiusOnUse;
     }
 
-    public float getRadiusOnUseValue(Player player, PlantBlock plantBlock) {
-        return radiusOnUse.loadValue(plantBlock, player).getFloatValue();
+    public float getRadiusOnUseValue(ExecutionContext context) {
+        return radiusOnUse.loadValue(context).getFloatValue();
     }
 
     public void setRadiusOnUse(ScriptBlock radiusOnUse) {
@@ -147,8 +149,8 @@ public class PlantAreaEffect extends PlantEffect {
         return radiusPerTick;
     }
 
-    public float getRadiusPerTickValue(Player player, PlantBlock plantBlock) {
-        return radiusPerTick.loadValue(plantBlock, player).getFloatValue();
+    public float getRadiusPerTickValue(ExecutionContext context) {
+        return radiusPerTick.loadValue(context).getFloatValue();
     }
 
     public void setRadiusPerTick(ScriptBlock radiusPerTick) {
@@ -159,8 +161,8 @@ public class PlantAreaEffect extends PlantEffect {
         return reapplicationDelay;
     }
 
-    public int getReapplicationDelayValue(Player player, PlantBlock plantBlock) {
-        return reapplicationDelay.loadValue(plantBlock, player).getIntegerValue();
+    public int getReapplicationDelayValue(ExecutionContext context) {
+        return reapplicationDelay.loadValue(context).getIntegerValue();
     }
 
     public void setReapplicationDelay(ScriptBlock reapplicationDelay) {

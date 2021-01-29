@@ -1,11 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.cast;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
-import org.bukkit.entity.Player;
 
 public abstract class ScriptOperationCast extends ScriptOperationUnary {
 

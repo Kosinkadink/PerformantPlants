@@ -15,7 +15,10 @@ import org.bukkit.event.block.BlockDispenseArmorEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.*;
+import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.SmithingInventory;
 
 import java.util.Collection;
 import java.util.Map;

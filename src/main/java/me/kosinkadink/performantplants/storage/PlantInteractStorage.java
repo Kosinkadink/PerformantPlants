@@ -1,11 +1,10 @@
 package me.kosinkadink.performantplants.storage;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -21,11 +20,11 @@ public class PlantInteractStorage {
         return interactList;
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack, Player player, PlantBlock plantBlock) {
-        return getPlantInteract(itemStack, player, plantBlock, null);
+    public PlantInteract getPlantInteract(ItemStack itemStack, ExecutionContext context) {
+        return getPlantInteract(itemStack, context, null);
     }
 
-    public PlantInteract getPlantInteract(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
+    public PlantInteract getPlantInteract(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
         PlantInteract matchInteract = null;
         for (PlantInteract plantInteract : interactList) {
             // if blockFace provided and plantInteract has a blockFace requirement, check it
@@ -35,7 +34,7 @@ public class PlantInteractStorage {
                 }
             }
             // if condition not met, continue searching
-            if (!plantInteract.isConditionMet(player, plantBlock)) {
+            if (!plantInteract.isConditionMet(context)) {
                 continue;
             }
             // if no match interact and less exclusive properties should be checked, check them

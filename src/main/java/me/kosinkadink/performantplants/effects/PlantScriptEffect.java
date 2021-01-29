@@ -1,10 +1,8 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 public class PlantScriptEffect extends PlantEffect {
 
@@ -13,21 +11,21 @@ public class PlantScriptEffect extends PlantEffect {
     public PlantScriptEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        getScriptBlockValue(player, plantBlock);
+    void performEffectActionPlayer(ExecutionContext context) {
+        getScriptBlockValue(context);
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
-        getScriptBlockValue(null, plantBlock);
+    void performEffectActionBlock(ExecutionContext context) {
+        getScriptBlockValue(context);
     }
 
     public ScriptBlock getScriptBlock() {
         return scriptBlock;
     }
 
-    public ScriptResult getScriptBlockValue(Player player, PlantBlock plantBlock) {
-        return scriptBlock.loadValue(plantBlock, player);
+    public ScriptResult getScriptBlockValue(ExecutionContext context) {
+        return scriptBlock.loadValue(context);
     }
 
     public void setScriptBlock(ScriptBlock scriptBlock) {

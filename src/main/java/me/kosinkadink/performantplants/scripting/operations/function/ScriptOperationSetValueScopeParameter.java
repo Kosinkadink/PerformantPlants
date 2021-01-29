@@ -1,13 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.function;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.ScriptHelper;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationSetValueScopeParameter extends ScriptOperation {
 
@@ -36,12 +31,12 @@ public class ScriptOperationSetValueScopeParameter extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        String plantId = getPlantId().loadValue(plantBlock, player).getStringValue();
-        String scope = getScope().loadValue(plantBlock, player).getStringValue();
-        String parameter = getParameter().loadValue(plantBlock, player).getStringValue();
-        String variableName = getVariableName().loadValue(plantBlock, player).getStringValue();
-        Object value = getValue().loadValue(plantBlock, player).getValue();
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        String plantId = getPlantId().loadValue(context).getStringValue();
+        String scope = getScope().loadValue(context).getStringValue();
+        String parameter = getParameter().loadValue(context).getStringValue();
+        String variableName = getVariableName().loadValue(context).getStringValue();
+        Object value = getValue().loadValue(context).getValue();
         return new ScriptResult(PerformantPlants.getInstance().getPlantTypeManager().updateVariable(plantId, scope, parameter, variableName, value));
     }
 

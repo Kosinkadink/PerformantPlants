@@ -1,11 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.flow;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
+import me.kosinkadink.performantplants.scripting.*;
 
 import java.util.HashMap;
 
@@ -34,15 +29,15 @@ public class ScriptOperationSwitch extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        ScriptResult condition = getCondition().loadValue(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        ScriptResult condition = getCondition().loadValue(context);
         ScriptBlock action = caseMap.get(condition);
         if (action != null) {
-            return action.loadValue(plantBlock, player);
+            return action.loadValue(context);
         }
         action = getDefault();
         if (action != null) {
-            return action.loadValue(plantBlock, player);
+            return action.loadValue(context);
         }
         return ScriptResult.getDefaultOfType(getType());
     }

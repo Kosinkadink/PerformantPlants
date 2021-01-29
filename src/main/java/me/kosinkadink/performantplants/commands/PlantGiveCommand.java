@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants.commands;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.plants.Plant;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;

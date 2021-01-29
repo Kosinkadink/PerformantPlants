@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.util;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -27,12 +26,12 @@ public class DropHelper {
         droppedItem.setVelocity(player.getEyeLocation().getDirection().normalize().multiply(0.3));
     }
 
-    public static void performDrops(DropStorage dropStorage, Location location, Player player, PlantBlock plantBlock) {
+    public static void performDrops(DropStorage dropStorage, Location location, ExecutionContext context) {
         if (location == null) {
             return;
         }
         ArrayList<Drop> dropsList = dropStorage.getDrops();
-        int dropLimit = dropStorage.getDropLimitValue(player, plantBlock);
+        int dropLimit = dropStorage.getDropLimitValue(context);
         boolean limited = dropLimit >= 1;
         int dropCount = 0;
         for (Drop drop : dropsList) {
@@ -40,7 +39,7 @@ public class DropHelper {
             if (limited && dropCount >= dropLimit) {
                 break;
             }
-            ItemStack dropStack = drop.generateDrop(player, plantBlock);
+            ItemStack dropStack = drop.generateDrop(context);
             if (dropStack.getAmount() != 0) {
                 dropCount++;
                 location.getWorld().dropItemNaturally(location, dropStack);
@@ -48,7 +47,4 @@ public class DropHelper {
         }
     }
 
-    public static void performDrops(DropStorage dropStorage, Block block, Player player, PlantBlock plantBlock) {
-        performDrops(dropStorage, block.getLocation(), player, plantBlock);
-    }
 }

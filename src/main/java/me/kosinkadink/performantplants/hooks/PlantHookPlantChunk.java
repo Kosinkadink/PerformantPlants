@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.hooks;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
@@ -76,7 +77,7 @@ public abstract class PlantHookPlantChunk extends PlantHook {
                 ScriptBlock scriptBlock = scriptTask.getHookScriptBlock(hookConfigId);
                 if (scriptBlock != null) {
                     // perform script block
-                    scriptBlock.loadValue(null, null);
+                    scriptBlock.loadValue(new ExecutionContext());
                 }
             }
         }

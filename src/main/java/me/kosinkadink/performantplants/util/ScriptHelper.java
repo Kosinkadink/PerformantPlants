@@ -2,10 +2,7 @@ package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.PlantData;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -70,14 +67,10 @@ public class ScriptHelper {
                 || scriptType == ScriptType.LONG || scriptType == ScriptType.DOUBLE;
     }
 
-    public static String setVariables(PlantBlock plantBlock, String text) {
-        return setVariables(plantBlock, null, text);
-    }
-
-    public static String setVariables(PlantBlock plantBlock, Player player, String text) {
+    public static String setVariables(ExecutionContext context, String text) {
         PlantData plantData = null;
-        if (plantBlock != null) {
-            plantData = plantBlock.getEffectivePlantData();
+        if (context.isPlantBlockSet()) {
+            plantData = context.getPlantBlock().getEffectivePlantData();
         }
         // figure out which variables are present in the string
         Matcher matcher = variablesPattern.matcher(text);
@@ -85,7 +78,7 @@ public class ScriptHelper {
         while (matcher.find()) {
             String variableName = matcher.group(1);
             // see if variable is recognized;
-            String value = getVariableValue(plantBlock, player, plantData, variableName);
+            String value = getVariableValue(context, plantData, variableName);
             if (value == null) {
                 matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement("$"+variableName+"$"));
             } else {
@@ -149,20 +142,21 @@ public class ScriptHelper {
         return null;
     }
 
-    private static String getVariableValue(PlantBlock plantBlock, Player player, PlantData plantData, String variableName) {
+    private static String getVariableValue(ExecutionContext context, PlantData plantData, String variableName) {
         // check if it is a property name
         if (variableName.startsWith("_")) {
             if ("_random_uuid".equals(variableName)) {
                 return UUID.randomUUID().toString();
             }
             // check for player-related properties
-            if (player != null && variableName.startsWith("_player")) {
+            if (context.isPlayerSet() && variableName.startsWith("_player")) {
                 String relevantVariableName;
                 try {
                     relevantVariableName = variableName.substring("_player".length());
                 } catch (IndexOutOfBoundsException e) {
                     relevantVariableName = "";
                 }
+                Player player = context.getPlayer();
                 switch(relevantVariableName) {
                     case "_x":
                         return Double.toString(player.getLocation().getX());
@@ -189,7 +183,8 @@ public class ScriptHelper {
                 }
             }
             // check for block-related properties
-            if (plantBlock != null) {
+            if (context.isPlantBlockSet()) {
+                PlantBlock plantBlock = context.getPlantBlock();
                 String relevantVariableName = variableName;
                 PlantBlock relevantPlantBlock = plantBlock;
                 // try to use parent block, if specified

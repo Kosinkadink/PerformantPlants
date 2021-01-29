@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.BlockHelper;
@@ -25,64 +25,66 @@ public class PlantSoundEffect extends PlantEffect {
     public PlantSoundEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
+    void performEffectActionPlayer(ExecutionContext context) {
         Location spawnLocation;
+        Player player = context.getPlayer();
         // use eye location, if set
-        if (isEyeLocation(player, plantBlock)) {
+        if (isEyeLocation(context)) {
             spawnLocation = player.getEyeLocation();
         } else {
             spawnLocation = player.getLocation();
         }
         spawnLocation.add(
-                getOffsetXValue(player, plantBlock),
-                getOffsetYValue(player, plantBlock),
-                getOffsetZValue(player, plantBlock)
+                getOffsetXValue(context),
+                getOffsetYValue(context),
+                getOffsetZValue(context)
         );
         // ignore direction y with multiplier, if set
-        if (isIgnoreDirectionY(player, plantBlock)) {
+        if (isIgnoreDirectionY(context)) {
             spawnLocation.add(player.getLocation().getDirection().setY(0).normalize().multiply(
-                    getMultiplierValue(player, plantBlock)
+                    getMultiplierValue(context)
             ));
         } else {
             spawnLocation.add(player.getLocation().getDirection().normalize().multiply(
-                    getMultiplierValue(player, plantBlock)
+                    getMultiplierValue(context)
             ));
         }
         // get particle value
-        Sound sound = getSound(player, plantBlock);
+        Sound sound = getSound(context);
         if (sound == null) {
             return;
         }
         // do client-side, if set
-        if (isClientSide(player, plantBlock)) {
+        if (isClientSide(context)) {
             player.playSound(spawnLocation, sound,
-                    getVolumeValue(player, plantBlock),
-                    getPitchValue(player, plantBlock)
+                    getVolumeValue(context),
+                    getPitchValue(context)
             );
         } else {
             player.getWorld().playSound(spawnLocation, sound,
-                    getVolumeValue(player, plantBlock),
-                    getPitchValue(player, plantBlock)
+                    getVolumeValue(context),
+                    getPitchValue(context)
             );
         }
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
+    void performEffectActionBlock(ExecutionContext context) {
+        Block block = context.getPlantBlock().getBlock();
         Location spawnLocation = BlockHelper.getCenter(block);
         // add offset
         spawnLocation.add(
-                getOffsetXValue(null, plantBlock),
-                getOffsetYValue(null, plantBlock),
-                getOffsetZValue(null, plantBlock)
+                getOffsetXValue(context),
+                getOffsetYValue(context),
+                getOffsetZValue(context)
         );
-        Sound sound = getSound(null, plantBlock);
+        Sound sound = getSound(context);
         if (sound == null) {
             return;
         }
         block.getWorld().playSound(spawnLocation, sound,
-                getVolumeValue(null, plantBlock),
-                getPitchValue(null, plantBlock)
+                getVolumeValue(context),
+                getPitchValue(context)
         );
     }
 
@@ -90,12 +92,12 @@ public class PlantSoundEffect extends PlantEffect {
         return soundName;
     }
 
-    public Sound getSound(Player player, PlantBlock plantBlock) {
+    public Sound getSound(ExecutionContext context) {
         if (soundName == null) {
             return null;
         }
         try {
-            return Sound.valueOf(soundName.loadValue(plantBlock, player).getStringValue().toUpperCase());
+            return Sound.valueOf(soundName.loadValue(context).getStringValue().toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -109,8 +111,8 @@ public class PlantSoundEffect extends PlantEffect {
         return volume;
     }
 
-    public float getVolumeValue(Player player, PlantBlock plantBlock) {
-        return Math.max(0, volume.loadValue(plantBlock, player).getFloatValue());
+    public float getVolumeValue(ExecutionContext context) {
+        return Math.max(0, volume.loadValue(context).getFloatValue());
     }
 
     public void setVolume(ScriptBlock volume) {
@@ -121,8 +123,8 @@ public class PlantSoundEffect extends PlantEffect {
         return pitch;
     }
 
-    public float getPitchValue(Player player, PlantBlock plantBlock) {
-        return Math.max(0.5F,Math.min(2.0F, pitch.loadValue(plantBlock, player).getFloatValue()));
+    public float getPitchValue(ExecutionContext context) {
+        return Math.max(0.5F,Math.min(2.0F, pitch.loadValue(context).getFloatValue()));
     }
 
     public void setPitch(ScriptBlock pitch) {
@@ -133,8 +135,8 @@ public class PlantSoundEffect extends PlantEffect {
         return offsetX;
     }
 
-    public double getOffsetXValue(Player player, PlantBlock plantBlock) {
-        return offsetX.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetXValue(ExecutionContext context) {
+        return offsetX.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetX(ScriptBlock offsetX) {
@@ -145,8 +147,8 @@ public class PlantSoundEffect extends PlantEffect {
         return offsetY;
     }
 
-    public double getOffsetYValue(Player player, PlantBlock plantBlock) {
-        return offsetY.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetYValue(ExecutionContext context) {
+        return offsetY.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetY(ScriptBlock offsetY) {
@@ -157,8 +159,8 @@ public class PlantSoundEffect extends PlantEffect {
         return offsetZ;
     }
 
-    public double getOffsetZValue(Player player, PlantBlock plantBlock) {
-        return offsetZ.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetZValue(ExecutionContext context) {
+        return offsetZ.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetZ(ScriptBlock offsetZ) {
@@ -169,8 +171,8 @@ public class PlantSoundEffect extends PlantEffect {
         return multiplier;
     }
 
-    public double getMultiplierValue(Player player, PlantBlock plantBlock) {
-        return multiplier.loadValue(plantBlock, player).getDoubleValue();
+    public double getMultiplierValue(ExecutionContext context) {
+        return multiplier.loadValue(context).getDoubleValue();
     }
 
     public void setMultiplier(ScriptBlock multiplier) {
@@ -181,8 +183,8 @@ public class PlantSoundEffect extends PlantEffect {
         return eyeLocation;
     }
 
-    public boolean isEyeLocation(Player player, PlantBlock plantBlock) {
-        return eyeLocation.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isEyeLocation(ExecutionContext context) {
+        return eyeLocation.loadValue(context).getBooleanValue();
     }
 
     public void setEyeLocation(ScriptBlock eyeLocation) {
@@ -193,8 +195,8 @@ public class PlantSoundEffect extends PlantEffect {
         return ignoreDirectionY;
     }
 
-    public boolean isIgnoreDirectionY(Player player, PlantBlock plantBlock) {
-        return ignoreDirectionY.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isIgnoreDirectionY(ExecutionContext context) {
+        return ignoreDirectionY.loadValue(context).getBooleanValue();
     }
 
     public void setIgnoreDirectionY(ScriptBlock ignoreDirectionY) {
@@ -205,8 +207,8 @@ public class PlantSoundEffect extends PlantEffect {
         return clientSide;
     }
 
-    public boolean isClientSide(Player player, PlantBlock plantBlock) {
-        return clientSide.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isClientSide(ExecutionContext context) {
+        return clientSide.loadValue(context).getBooleanValue();
     }
 
     public void setClientSide(ScriptBlock clientSide) {

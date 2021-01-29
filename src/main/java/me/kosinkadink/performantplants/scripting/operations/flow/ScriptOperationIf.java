@@ -1,11 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.flow;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
+import me.kosinkadink.performantplants.scripting.*;
 
 public class ScriptOperationIf extends ScriptOperation {
 
@@ -30,12 +25,12 @@ public class ScriptOperationIf extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        ScriptResult conditionInstance = getCondition().loadValue(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        ScriptResult conditionInstance = getCondition().loadValue(context);
         if (conditionInstance.getBooleanValue()) {
-            return getIfTrue().loadValue(plantBlock, player);
+            return getIfTrue().loadValue(context);
         } else {
-            return getIfFalse().loadValue(plantBlock, player);
+            return getIfFalse().loadValue(context);
         }
     }
 

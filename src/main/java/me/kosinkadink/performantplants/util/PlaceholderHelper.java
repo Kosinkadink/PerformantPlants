@@ -1,26 +1,25 @@
 package me.kosinkadink.performantplants.util;
 
 import me.clip.placeholderapi.PlaceholderAPI;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 public class PlaceholderHelper {
 
-    public static String setVariablesAndPlaceholders(PlantBlock plantBlock, Player player, String stringInput) {
+    public static String setVariablesAndPlaceholders(ExecutionContext context, String stringInput) {
         String formatted = stringInput;
         // replace bracket placeholders
-        if (player != null) {
+        if (context.isPlayerSet()) {
             if (Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-                formatted = PlaceholderAPI.setBracketPlaceholders(player, formatted);
+                formatted = PlaceholderAPI.setBracketPlaceholders(context.getPlayer(), formatted);
             }
         }
         // replace plant variables
-        formatted = ScriptHelper.setVariables(plantBlock, player, formatted);
+        formatted = ScriptHelper.setVariables(context, formatted);
         // replace placeholders
-        if (player != null) {
+        if (context.isPlayerSet()) {
             if (Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-                formatted = PlaceholderAPI.setPlaceholders(player, formatted);
+                formatted = PlaceholderAPI.setPlaceholders(context.getPlayer(), formatted);
             }
         }
         return formatted;

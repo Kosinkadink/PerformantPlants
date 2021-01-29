@@ -5,14 +5,10 @@ import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +22,11 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        if (plantBlock == null) {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        if (!context.isPlantBlockSet()) {
             return ScriptResult.FALSE;
         }
-        PlantBlock effectivePlantBlock = plantBlock.getEffectivePlantBlock();
+        PlantBlock effectivePlantBlock = context.getEffectivePlantBlock();
         HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
         for (String blockId : growthStageBlockIds) {
             // get growthStageBlock with id, if exists

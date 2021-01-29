@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.plants;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class RequiredItem {
@@ -30,8 +29,8 @@ public class RequiredItem {
     }
 
     // condition
-    public boolean isConditionMet(Player player, PlantBlock plantBlock) {
-        return condition.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isConditionMet(ExecutionContext context) {
+        return condition.loadValue(context).getBooleanValue();
     }
 
     public void setCondition(ScriptBlock condition) {
@@ -39,8 +38,8 @@ public class RequiredItem {
     }
 
     // take item
-    public boolean isTakeItem(Player player, PlantBlock plantBlock) {
-        return takeItem.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isTakeItem(ExecutionContext context) {
+        return takeItem.loadValue(context).getBooleanValue();
     }
 
     public void setTakeItem(ScriptBlock takeItem) {
@@ -48,8 +47,8 @@ public class RequiredItem {
     }
 
     // in hand
-    public boolean isInHand(Player player, PlantBlock plantBlock) {
-        return inHand.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isInHand(ExecutionContext context) {
+        return inHand.loadValue(context).getBooleanValue();
     }
 
     public void setInHand(ScriptBlock inHand) {
@@ -57,8 +56,8 @@ public class RequiredItem {
     }
 
     // add damage
-    public int getAddDamage(Player player, PlantBlock plantBlock) {
-        return addDamage.loadValue(plantBlock, player).getIntegerValue();
+    public int getAddDamage(ExecutionContext context) {
+        return addDamage.loadValue(context).getIntegerValue();
     }
 
     public void setAddDamage(ScriptBlock addDamage) {

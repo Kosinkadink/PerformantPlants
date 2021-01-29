@@ -1,9 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationCancelTask extends ScriptOperation {
 
@@ -16,8 +14,8 @@ public class ScriptOperationCancelTask extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        String taskId = getTaskId().loadValue(plantBlock, player).getStringValue();
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        String taskId = getTaskId().loadValue(context).getStringValue();
         if (taskId.isEmpty()) {
             return ScriptResult.FALSE;
         }

@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.entity.Player;
@@ -13,9 +13,10 @@ public class PlantFeedEffect extends PlantEffect {
     public PlantFeedEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + getFoodAmountValue(player, plantBlock)));
-        float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + getSaturationAmountValue(player, plantBlock)));
+    void performEffectActionPlayer(ExecutionContext context) {
+        Player player = context.getPlayer();
+        int newFoodLevel = Math.max(0, Math.min(20, player.getFoodLevel() + getFoodAmountValue(context)));
+        float newSaturationLevel = Math.max(0, Math.min(newFoodLevel, player.getSaturation() + getSaturationAmountValue(context)));
         player.setFoodLevel(newFoodLevel);
         player.setSaturation(newSaturationLevel);
     }
@@ -24,8 +25,8 @@ public class PlantFeedEffect extends PlantEffect {
         return foodAmount;
     }
 
-    public int getFoodAmountValue(Player player, PlantBlock plantBlock) {
-        return foodAmount.loadValue(plantBlock, player).getIntegerValue();
+    public int getFoodAmountValue(ExecutionContext context) {
+        return foodAmount.loadValue(context).getIntegerValue();
     }
 
     public void setFoodAmount(ScriptBlock foodAmount) {
@@ -36,8 +37,8 @@ public class PlantFeedEffect extends PlantEffect {
         return saturationAmount;
     }
 
-    public float getSaturationAmountValue(Player player, PlantBlock plantBlock) {
-        return saturationAmount.loadValue(plantBlock, player).getFloatValue();
+    public float getSaturationAmountValue(ExecutionContext context) {
+        return saturationAmount.loadValue(context).getFloatValue();
     }
 
     public void setSaturationAmount(ScriptBlock saturationAmount) {

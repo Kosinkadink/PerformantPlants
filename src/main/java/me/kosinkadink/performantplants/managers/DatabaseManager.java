@@ -8,6 +8,7 @@ import me.kosinkadink.performantplants.hooks.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 import me.kosinkadink.performantplants.plants.Plant;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScopeParameterIdentifier;
 import me.kosinkadink.performantplants.scripting.ScopedPlantData;
@@ -1687,9 +1688,12 @@ public class DatabaseManager {
                         String playerUUIDString;
                         // attempt to get value
                         if (task.getOfflinePlayer() != null) {
-                            playerUUIDString = thisScriptHook.getPlayerIdValue(task.getOfflinePlayer().getPlayer(), task.getPlantBlock());
+                            playerUUIDString = thisScriptHook.getPlayerIdValue(new ExecutionContext()
+                                    .set(task.getOfflinePlayer().getPlayer())
+                                    .set(task.getPlantBlock()));
                         } else {
-                            playerUUIDString = thisScriptHook.getPlayerIdValue(null, task.getPlantBlock());
+                            playerUUIDString = thisScriptHook.getPlayerIdValue(new ExecutionContext()
+                                    .set(task.getPlantBlock()));
                         }
                         UUID playerUUID;
                         // attempt to convert to UUID

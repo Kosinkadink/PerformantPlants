@@ -1,12 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.function;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationContains extends ScriptOperationBinary {
 
@@ -15,9 +10,9 @@ public class ScriptOperationContains extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
-        ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
-        ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
+    public ScriptResult perform(ExecutionContext context) {
+        ScriptResult leftInstance = getLeft().loadValue(context);
+        ScriptResult rightInstance = getRight().loadValue(context);
         return new ScriptResult(leftInstance.getStringValue().contains(rightInstance.getStringValue()));
     }
 

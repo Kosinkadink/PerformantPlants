@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.ItemHelper;
-import org.bukkit.entity.Player;
 
 public class PlantDurabilityEffect extends PlantEffect {
 
@@ -13,16 +12,16 @@ public class PlantDurabilityEffect extends PlantEffect {
     public PlantDurabilityEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
-        ItemHelper.updateDamage(player.getInventory().getItemInMainHand(), getAmountValue(player, plantBlock));
+    void performEffectActionPlayer(ExecutionContext context) {
+        ItemHelper.updateDamage(context.getPlayer().getInventory().getItemInMainHand(), getAmountValue(context));
     }
 
     public ScriptBlock getAmount() {
         return amount;
     }
 
-    public int getAmountValue(Player player, PlantBlock plantBlock) {
-        return amount.loadValue(plantBlock, player).getIntegerValue();
+    public int getAmountValue(ExecutionContext context) {
+        return amount.loadValue(context).getIntegerValue();
     }
 
     public void setAmount(ScriptBlock amount) {

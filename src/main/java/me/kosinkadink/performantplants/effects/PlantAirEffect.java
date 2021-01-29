@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import org.bukkit.entity.Player;
@@ -12,10 +12,11 @@ public class PlantAirEffect extends PlantEffect {
     public PlantAirEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
+    void performEffectActionPlayer(ExecutionContext context) {
+        Player player = context.getPlayer();
         player.setRemainingAir(
                 Math.min(player.getMaximumAir(),
-                        Math.max(0, player.getRemainingAir() + getAmountValue(player, plantBlock)))
+                        Math.max(0, player.getRemainingAir() + getAmountValue(context)))
         );
     }
 
@@ -23,8 +24,8 @@ public class PlantAirEffect extends PlantEffect {
         return amount;
     }
 
-    public int getAmountValue(Player player, PlantBlock plantBlock) {
-        return amount.loadValue(plantBlock, player).getIntegerValue();
+    public int getAmountValue(ExecutionContext context) {
+        return amount.loadValue(context).getIntegerValue();
     }
 
     public void setAmount(ScriptBlock amount) {

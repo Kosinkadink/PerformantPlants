@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.scripting.operations.compare;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationGreaterThan extends ScriptOperationCompare {
 
@@ -21,10 +20,10 @@ public class ScriptOperationGreaterThan extends ScriptOperationCompare {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
+    public ScriptResult perform(ExecutionContext context) {
         // if left or right is variable, use proper temp value;
-        ScriptResult leftInstance = getLeft().loadValue(plantBlock, player);
-        ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
+        ScriptResult leftInstance = getLeft().loadValue(context);
+        ScriptResult rightInstance = getRight().loadValue(context);
         // check if types compatible
         if (leftInstance.getType() != leftInstance.getType()) {
             if (leftInstance.getType() != ScriptType.LONG || leftInstance.getType() != ScriptType.DOUBLE ||

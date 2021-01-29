@@ -1,13 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.ScriptCategory;
-import me.kosinkadink.performantplants.scripting.ScriptOperation;
-import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationEffects extends ScriptOperation {
 
@@ -18,17 +12,9 @@ public class ScriptOperationEffects extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         if (storage != null) {
-            if (player == null) {
-                if (plantBlock != null) {
-                    storage.performEffects(plantBlock.getBlock(), plantBlock);
-                } else {
-                    storage.performEffects((Block) null, null);
-                }
-            } else {
-                storage.performEffects(player, plantBlock);
-            }
+            storage.performEffectsDynamic(context);
         }
         return ScriptResult.TRUE;
     }

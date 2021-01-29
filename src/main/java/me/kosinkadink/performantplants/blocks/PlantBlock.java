@@ -5,6 +5,7 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
@@ -45,6 +46,8 @@ public class PlantBlock {
     private PlantData plantData = null;
     // temporary state variables
     private boolean isNewlyPlaced = false;
+    // cached values
+    private Block block = null;
 
     public PlantBlock(BlockLocation blockLocation, Plant plant, boolean grows) {
         location = blockLocation;
@@ -142,7 +145,11 @@ public class PlantBlock {
     }
 
     public Block getBlock() {
-        return location.getBlock();
+        if (block != null) {
+            return block;
+        }
+        block = location.getBlock();
+        return block;
     }
 
     public Block getEffectiveBlock() {
@@ -315,13 +322,13 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract(itemStack, player, this, blockFace);
+                return stageBlock.getOnInteract(itemStack, new ExecutionContext().set(player).set(this), blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract(itemStack, player, this, blockFace);
+                return growthStageBlock.getOnInteract(itemStack, new ExecutionContext().set(player).set(this), blockFace);
             }
         }
         return null;
@@ -331,13 +338,13 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick(itemStack, player, this, blockFace);
+                return stageBlock.getOnClick(itemStack, new ExecutionContext().set(player).set(this), blockFace);
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick(itemStack, player, this, blockFace);
+                return growthStageBlock.getOnClick(itemStack, new ExecutionContext().set(player).set(this), blockFace);
             }
         }
         return null;
@@ -347,13 +354,13 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnBreak(itemStack, player, this);
+                return stageBlock.getOnBreak(itemStack, new ExecutionContext().set(player).set(this));
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnBreak(itemStack, player, this);
+                return growthStageBlock.getOnBreak(itemStack, new ExecutionContext().set(player).set(this));
             }
         }
         return null;
@@ -444,7 +451,7 @@ public class PlantBlock {
         pauseTask();
         stageIndex = growthStageIndex;
         // set duration to valid length for stage
-        duration = plant.generateGrowthTime(stageIndex, this);
+        duration = plant.generateGrowthTime(stageIndex, new ExecutionContext().set(this));
         // set grows to true
         // set execute to false
         grows = true;
@@ -568,12 +575,13 @@ public class PlantBlock {
                 executedStage = true;
                 PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
                 if (onExecute != null) {
-                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock(), null, this);
+                    ExecutionContext context = new ExecutionContext().set(this);
+                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock().getLocation(), context);
                     // perform any effects set
-                    onExecute.getEffectStorage().performEffects(getBlock(), this);
+                    onExecute.getEffectStorage().performEffectsBlock(context);
                     if (onExecute.getScriptBlock() != null) {
                         int currentStageIndex = stageIndex;
-                        onExecute.getScriptBlock().loadValue(this);
+                        onExecute.getScriptBlock().loadValue(context);
                         // make sure no advancement happens if script block causes growth stage change
                         if (currentStageIndex != stageIndex) {
                             advance = false;
@@ -585,11 +593,12 @@ public class PlantBlock {
         if (!canGrow) {
             PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
             if (onFail != null) {
-                DropHelper.performDrops(onFail.getDropStorage(), getBlock(), null, this);
-                onFail.getEffectStorage().performEffects(getBlock(), this);
+                ExecutionContext context = new ExecutionContext().set(this);
+                DropHelper.performDrops(onFail.getDropStorage(), getBlock().getLocation(), context);
+                onFail.getEffectStorage().performEffectsBlock(context);
                 if (onFail.getScriptBlock() != null) {
                     int currentStageIndex = stageIndex;
-                    onFail.getScriptBlock().loadValue(this);
+                    onFail.getScriptBlock().loadValue(new ExecutionContext().set(this));
                     // make sure no advancement happens if script block causes growth stage change
                     if (currentStageIndex != stageIndex) {
                         advance = false;
@@ -628,7 +637,7 @@ public class PlantBlock {
             if (forcedToGrow) {
                 duration = 0;
             } else {
-                duration = plant.generateGrowthTime(stageIndex, this);
+                duration = plant.generateGrowthTime(stageIndex, new ExecutionContext().set(this));
             }
             // queue up new task
             growthTask = performantPlants.getServer().getScheduler().runTaskLater(performantPlants, () -> performGrowth(performantPlants, true), duration);

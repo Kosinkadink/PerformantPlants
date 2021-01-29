@@ -1,18 +1,15 @@
 package me.kosinkadink.performantplants.plants;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class PlantInteract {
 
@@ -76,8 +73,8 @@ public class PlantInteract {
     }
 
     // block drops
-    public boolean isGiveBlockDrops(Player player, PlantBlock plantBlock) {
-        return !isGiveBlockDropsNull() && giveBlockDrops.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isGiveBlockDrops(ExecutionContext context) {
+        return !isGiveBlockDropsNull() && giveBlockDrops.loadValue(context).getBooleanValue();
     }
 
     public void setGiveBlockDrops(ScriptBlock giveBlockDrops) {
@@ -88,8 +85,8 @@ public class PlantInteract {
         return giveBlockDrops == ScriptResult.NULL;
     }
 
-    public boolean isOnlyDropOnDo(Player player, PlantBlock plantBlock) {
-        return onlyDropOnDo.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isOnlyDropOnDo(ExecutionContext context) {
+        return onlyDropOnDo.loadValue(context).getBooleanValue();
     }
 
     public void setOnlyDropOnDo(ScriptBlock onlyDropOnDo) {
@@ -106,8 +103,8 @@ public class PlantInteract {
     }
 
     // condition
-    public boolean isConditionMet(Player player, PlantBlock plantBlock) {
-        return condition.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isConditionMet(ExecutionContext context) {
+        return condition.loadValue(context).getBooleanValue();
     }
 
     public void setCondition(ScriptBlock condition) {
@@ -115,16 +112,16 @@ public class PlantInteract {
     }
 
     // take item
-    public boolean isTakeItem(Player player, PlantBlock plantBlock) {
-        return takeItem.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isTakeItem(ExecutionContext context) {
+        return takeItem.loadValue(context).getBooleanValue();
     }
 
     public void setTakeItem(ScriptBlock takeItem) {
         this.takeItem = takeItem;
     }
 
-    public boolean isOnlyTakeItemOnDo(Player player, PlantBlock plantBlock) {
-        return onlyTakeItemOnDo.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isOnlyTakeItemOnDo(ExecutionContext context) {
+        return onlyTakeItemOnDo.loadValue(context).getBooleanValue();
     }
 
     public void setOnlyTakeItemOnDo(ScriptBlock onlyTakeItemOnDo) {
@@ -132,8 +129,8 @@ public class PlantInteract {
     }
 
     // break block
-    public boolean isBreakBlock(Player player, PlantBlock plantBlock) {
-        return !isBreakBlockNull() && breakBlock.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isBreakBlock(ExecutionContext context) {
+        return !isBreakBlockNull() && breakBlock.loadValue(context).getBooleanValue();
     }
 
     public void setBreakBlock(ScriptBlock breakBlock) {
@@ -144,8 +141,8 @@ public class PlantInteract {
         return breakBlock == ScriptResult.NULL;
     }
 
-    public boolean isOnlyBreakBlockOnDo(Player player, PlantBlock plantBlock) {
-        return !isOnlyBreakBlockOnDoNull() && onlyBreakBlockOnDo.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isOnlyBreakBlockOnDo(ExecutionContext context) {
+        return !isOnlyBreakBlockOnDoNull() && onlyBreakBlockOnDo.loadValue(context).getBooleanValue();
     }
 
     public void setOnlyBreakBlockOnDo(ScriptBlock breakBlock) {
@@ -157,16 +154,16 @@ public class PlantInteract {
     }
 
     // only effects on do
-    public boolean isOnlyEffectsOnDo(Player player, PlantBlock plantBlock) {
-        return onlyEffectsOnDo.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isOnlyEffectsOnDo(ExecutionContext context) {
+        return onlyEffectsOnDo.loadValue(context).getBooleanValue();
     }
 
     public void setOnlyEffectsOnDo(ScriptBlock onlyEffectsOnDo) {
         this.onlyEffectsOnDo = onlyEffectsOnDo;
     }
 
-    public boolean isOnlyConsumableEffectsOnDo(Player player, PlantBlock plantBlock) {
-        return onlyConsumableEffectsOnDo.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isOnlyConsumableEffectsOnDo(ExecutionContext context) {
+        return onlyConsumableEffectsOnDo.loadValue(context).getBooleanValue();
     }
 
     public void setOnlyConsumableEffectsOnDo(ScriptBlock onlyEffectsOnDo) {
@@ -179,9 +176,9 @@ public class PlantInteract {
         this.doIf = doIf;
     }
 
-    public boolean generateDoIf(Player player, PlantBlock plantBlock) {
+    public boolean generateDoIf(ExecutionContext context) {
         if (doIf != null) {
-            return doIf.loadValue(plantBlock, player).getBooleanValue();
+            return doIf.loadValue(context).getBooleanValue();
         }
         return true;
     }

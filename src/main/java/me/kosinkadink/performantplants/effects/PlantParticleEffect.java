@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.BlockHelper;
@@ -28,70 +28,72 @@ public class PlantParticleEffect extends PlantEffect {
     public PlantParticleEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
+    void performEffectActionPlayer(ExecutionContext context) {
         Location spawnLocation;
+        Player player = context.getPlayer();
         // use eye location, if set
-        if (isEyeLocation(player, plantBlock)) {
+        if (isEyeLocation(context)) {
             spawnLocation = player.getEyeLocation();
         } else {
             spawnLocation = player.getLocation();
         }
         spawnLocation.add(
-                getOffsetXValue(player, plantBlock),
-                getOffsetYValue(player, plantBlock),
-                getOffsetZValue(player, plantBlock)
+                getOffsetXValue(context),
+                getOffsetYValue(context),
+                getOffsetZValue(context)
         );
         // ignore direction y with multiplier, if set
-        if (isIgnoreDirectionY(player, plantBlock)) {
+        if (isIgnoreDirectionY(context)) {
             spawnLocation.add(player.getLocation().getDirection().setY(0).normalize().multiply(
-                    getMultiplierValue(player, plantBlock)
+                    getMultiplierValue(context)
             ));
         } else {
             spawnLocation.add(player.getLocation().getDirection().normalize().multiply(
-                    getMultiplierValue(player, plantBlock)
+                    getMultiplierValue(context)
             ));
         }
         // get particle value
-        Particle particle = getParticleValue(null, plantBlock);
+        Particle particle = getParticleValue(context);
         if (particle == null) {
             return;
         }
         // do client-side, if set
-        if (isClientSide(player, plantBlock)) {
+        if (isClientSide(context)) {
             player.spawnParticle(particle,
                     spawnLocation.getX(),
                     spawnLocation.getY(),
                     spawnLocation.getZ(),
-                    getCountValue(player, plantBlock),
-                    getDataOffsetXValue(player, plantBlock),
-                    getDataOffsetYValue(player, plantBlock),
-                    getDataOffsetZValue(player, plantBlock),
-                    getExtraValue(player, plantBlock)
+                    getCountValue(context),
+                    getDataOffsetXValue(context),
+                    getDataOffsetYValue(context),
+                    getDataOffsetZValue(context),
+                    getExtraValue(context)
             );
         } else {
             player.getWorld().spawnParticle(particle,
                     spawnLocation.getX(),
                     spawnLocation.getY(),
                     spawnLocation.getZ(),
-                    getCountValue(player, plantBlock),
-                    getDataOffsetXValue(player, plantBlock),
-                    getDataOffsetYValue(player, plantBlock),
-                    getDataOffsetZValue(player, plantBlock),
-                    getExtraValue(player, plantBlock)
+                    getCountValue(context),
+                    getDataOffsetXValue(context),
+                    getDataOffsetYValue(context),
+                    getDataOffsetZValue(context),
+                    getExtraValue(context)
             );
         }
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
+    void performEffectActionBlock(ExecutionContext context) {
+        Block block = context.getPlantBlock().getBlock();
         Location spawnLocation = BlockHelper.getCenter(block);
         // add offset
         spawnLocation.add(
-                getOffsetXValue(null, plantBlock),
-                getOffsetYValue(null, plantBlock),
-                getOffsetZValue(null, plantBlock)
+                getOffsetXValue(context),
+                getOffsetYValue(context),
+                getOffsetZValue(context)
         );
-        Particle particle = getParticleValue(null, plantBlock);
+        Particle particle = getParticleValue(context);
         if (particle == null) {
             return;
         }
@@ -99,11 +101,11 @@ public class PlantParticleEffect extends PlantEffect {
                 spawnLocation.getX(),
                 spawnLocation.getY(),
                 spawnLocation.getZ(),
-                getCountValue(null, plantBlock),
-                getDataOffsetXValue(null, plantBlock),
-                getDataOffsetYValue(null, plantBlock),
-                getDataOffsetZValue(null, plantBlock),
-                getExtraValue(null, plantBlock)
+                getCountValue(context),
+                getDataOffsetXValue(context),
+                getDataOffsetYValue(context),
+                getDataOffsetZValue(context),
+                getExtraValue(context)
         );
     }
 
@@ -111,12 +113,12 @@ public class PlantParticleEffect extends PlantEffect {
         return particleName;
     }
 
-    public Particle getParticleValue(Player player, PlantBlock plantBlock) {
+    public Particle getParticleValue(ExecutionContext context) {
         if (particleName == null) {
             return null;
         }
         try {
-            return Particle.valueOf(particleName.loadValue(plantBlock, player).getStringValue().toUpperCase());
+            return Particle.valueOf(particleName.loadValue(context).getStringValue().toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -130,8 +132,8 @@ public class PlantParticleEffect extends PlantEffect {
         return count;
     }
 
-    public int getCountValue(Player player, PlantBlock plantBlock) {
-        return Math.max(1, count.loadValue(plantBlock, player).getIntegerValue());
+    public int getCountValue(ExecutionContext context) {
+        return Math.max(1, count.loadValue(context).getIntegerValue());
     }
 
     public void setCount(ScriptBlock count) {
@@ -142,8 +144,8 @@ public class PlantParticleEffect extends PlantEffect {
         return offsetX;
     }
 
-    public double getOffsetXValue(Player player, PlantBlock plantBlock) {
-        return offsetX.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetXValue(ExecutionContext context) {
+        return offsetX.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetX(ScriptBlock offsetX) {
@@ -154,8 +156,8 @@ public class PlantParticleEffect extends PlantEffect {
         return offsetY;
     }
 
-    public double getOffsetYValue(Player player, PlantBlock plantBlock) {
-        return offsetY.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetYValue(ExecutionContext context) {
+        return offsetY.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetY(ScriptBlock offsetY) {
@@ -166,8 +168,8 @@ public class PlantParticleEffect extends PlantEffect {
         return offsetZ;
     }
 
-    public double getOffsetZValue(Player player, PlantBlock plantBlock) {
-        return offsetZ.loadValue(plantBlock, player).getDoubleValue();
+    public double getOffsetZValue(ExecutionContext context) {
+        return offsetZ.loadValue(context).getDoubleValue();
     }
 
     public void setOffsetZ(ScriptBlock offsetZ) {
@@ -178,8 +180,8 @@ public class PlantParticleEffect extends PlantEffect {
         return dataOffsetX;
     }
 
-    public double getDataOffsetXValue(Player player, PlantBlock plantBlock) {
-        return dataOffsetX.loadValue(plantBlock, player).getDoubleValue();
+    public double getDataOffsetXValue(ExecutionContext context) {
+        return dataOffsetX.loadValue(context).getDoubleValue();
     }
 
     public void setDataOffsetX(ScriptBlock dataOffsetX) {
@@ -190,8 +192,8 @@ public class PlantParticleEffect extends PlantEffect {
         return dataOffsetY;
     }
 
-    public double getDataOffsetYValue(Player player, PlantBlock plantBlock) {
-        return dataOffsetY.loadValue(plantBlock, player).getDoubleValue();
+    public double getDataOffsetYValue(ExecutionContext context) {
+        return dataOffsetY.loadValue(context).getDoubleValue();
     }
 
     public void setDataOffsetY(ScriptBlock dataOffsetY) {
@@ -202,8 +204,8 @@ public class PlantParticleEffect extends PlantEffect {
         return dataOffsetZ;
     }
 
-    public double getDataOffsetZValue(Player player, PlantBlock plantBlock) {
-        return dataOffsetZ.loadValue(plantBlock, player).getDoubleValue();
+    public double getDataOffsetZValue(ExecutionContext context) {
+        return dataOffsetZ.loadValue(context).getDoubleValue();
     }
 
     public void setDataOffsetZ(ScriptBlock dataOffsetZ) {
@@ -214,8 +216,8 @@ public class PlantParticleEffect extends PlantEffect {
         return extra;
     }
 
-    public double getExtraValue(Player player, PlantBlock plantBlock) {
-        return extra.loadValue(plantBlock, player).getDoubleValue();
+    public double getExtraValue(ExecutionContext context) {
+        return extra.loadValue(context).getDoubleValue();
     }
 
     public void setExtra(ScriptBlock extra) {
@@ -226,8 +228,8 @@ public class PlantParticleEffect extends PlantEffect {
         return multiplier;
     }
 
-    public double getMultiplierValue(Player player, PlantBlock plantBlock) {
-        return multiplier.loadValue(plantBlock, player).getDoubleValue();
+    public double getMultiplierValue(ExecutionContext context) {
+        return multiplier.loadValue(context).getDoubleValue();
     }
 
     public void setMultiplier(ScriptBlock multiplier) {
@@ -238,8 +240,8 @@ public class PlantParticleEffect extends PlantEffect {
         return eyeLocation;
     }
 
-    public boolean isEyeLocation(Player player, PlantBlock plantBlock) {
-        return eyeLocation.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isEyeLocation(ExecutionContext context) {
+        return eyeLocation.loadValue(context).getBooleanValue();
     }
 
     public void setEyeLocation(ScriptBlock eyeLocation) {
@@ -250,8 +252,8 @@ public class PlantParticleEffect extends PlantEffect {
         return ignoreDirectionY;
     }
 
-    public boolean isIgnoreDirectionY(Player player, PlantBlock plantBlock) {
-        return ignoreDirectionY.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isIgnoreDirectionY(ExecutionContext context) {
+        return ignoreDirectionY.loadValue(context).getBooleanValue();
     }
 
     public void setIgnoreDirectionY(ScriptBlock ignoreDirectionY) {
@@ -262,8 +264,8 @@ public class PlantParticleEffect extends PlantEffect {
         return clientSide;
     }
 
-    public boolean isClientSide(Player player, PlantBlock plantBlock) {
-        return clientSide.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isClientSide(ExecutionContext context) {
+        return clientSide.loadValue(context).getBooleanValue();
     }
 
     public void setClientSide(ScriptBlock clientSide) {

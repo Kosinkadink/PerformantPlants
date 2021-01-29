@@ -1,8 +1,6 @@
 package me.kosinkadink.performantplants.scripting.operations.player;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
 
@@ -15,8 +13,8 @@ public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
-        return getScriptBlock().loadValue(null, player);
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+        return getScriptBlock().loadValue(context);
     }
 
     @Override

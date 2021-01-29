@@ -2,13 +2,13 @@ package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.PlantInteract;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -135,9 +135,9 @@ public class GrowthStageBlock {
         return onInteract;
     }
 
-    public PlantInteract getOnInteract(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
+    public PlantInteract getOnInteract(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
         if (onInteract != null) {
-            return onInteract.getPlantInteract(itemStack, player, plantBlock, blockFace);
+            return onInteract.getPlantInteract(itemStack, context, blockFace);
         }
         return null;
     }
@@ -150,9 +150,9 @@ public class GrowthStageBlock {
         return onClick;
     }
 
-    public PlantInteract getOnClick(ItemStack itemStack, Player player, PlantBlock plantBlock, BlockFace blockFace) {
+    public PlantInteract getOnClick(ItemStack itemStack, ExecutionContext context, BlockFace blockFace) {
         if (onClick != null) {
-            return onClick.getPlantInteract(itemStack, player, plantBlock, blockFace);
+            return onClick.getPlantInteract(itemStack, context, blockFace);
         }
         return null;
     }
@@ -165,9 +165,9 @@ public class GrowthStageBlock {
         return onBreak;
     }
 
-    public PlantInteract getOnBreak(ItemStack itemStack, Player player, PlantBlock plantBlock) {
+    public PlantInteract getOnBreak(ItemStack itemStack, ExecutionContext context) {
         if (onBreak != null) {
-            return onBreak.getPlantInteract(itemStack, player, plantBlock);
+            return onBreak.getPlantInteract(itemStack, context);
         }
         return null;
     }

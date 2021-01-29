@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.scripting.storage;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 
 public class ScriptRelativeLocation {
 
@@ -38,11 +37,11 @@ public class ScriptRelativeLocation {
         this.z = z;
     }
 
-    public RelativeLocation getRelativeLocation(Player player, PlantBlock plantBlock) {
+    public RelativeLocation getRelativeLocation(ExecutionContext context) {
         return new RelativeLocation(
-                x.loadValue(plantBlock, player).getIntegerValue(),
-                y.loadValue(plantBlock, player).getIntegerValue(),
-                z.loadValue(plantBlock, player).getIntegerValue()
+                x.loadValue(context).getIntegerValue(),
+                y.loadValue(context).getIntegerValue(),
+                z.loadValue(context).getIntegerValue()
         );
     }
 

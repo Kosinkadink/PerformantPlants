@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBrokenEvent;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -211,7 +212,7 @@ public class BlockHelper {
         }
         // handle drops
         if (drops) {
-            DropHelper.performDrops(plantBlock.getDropStorage(), block, null, plantBlock);
+            DropHelper.performDrops(plantBlock.getDropStorage(), block.getLocation(), new ExecutionContext().set(plantBlock));
         }
         // call PlantBrokenEvent to signal a plant block has been broken
         performantPlants.getServer().getPluginManager().callEvent(new PlantBrokenEvent(null, plantBlock, block));

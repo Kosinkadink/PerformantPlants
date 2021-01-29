@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
@@ -249,16 +249,16 @@ public class Plant {
         this.growthTime = growthTime;
     }
 
-    public long generateGrowthTime(int stageIndex, PlantBlock plantBlock) {
+    public long generateGrowthTime(int stageIndex, ExecutionContext context) {
         if (isValidStage(stageIndex)) {
             // first check if stage has it's own growth time
             GrowthStage growthStage = getGrowthStage(stageIndex);
-            long growthTimeValue = growthStage.generateGrowthTime(plantBlock);
+            long growthTimeValue = growthStage.generateGrowthTime(context);
             if (growthTimeValue >= 0) {
                 return growthTimeValue;
             }
             // otherwise use plant's growth time
-            growthTimeValue = growthTime.loadValue(plantBlock).getLongValue();
+            growthTimeValue = growthTime.loadValue(context).getLongValue();
             if (growthTimeValue >= 0) {
                 return growthTimeValue;
             }

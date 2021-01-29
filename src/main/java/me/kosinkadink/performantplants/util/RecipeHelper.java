@@ -7,7 +7,6 @@ import me.kosinkadink.performantplants.recipes.PlantRecipe;
 import me.kosinkadink.performantplants.recipes.PlantSmithingRecipe;
 import me.kosinkadink.performantplants.recipes.RecipeCheckResult;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
-import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,11 +15,6 @@ import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
-import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionType;
-
-import java.util.List;
 
 public class RecipeHelper {
 

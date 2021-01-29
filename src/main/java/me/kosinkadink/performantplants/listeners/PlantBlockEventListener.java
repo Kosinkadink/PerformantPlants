@@ -7,6 +7,7 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.RequiredItem;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import me.kosinkadink.performantplants.util.*;
 import org.bukkit.Material;
@@ -100,43 +101,46 @@ public class PlantBlockEventListener implements Listener {
             PlantInteract plantInteract = event.getPlantBlock().getOnBreak(itemStack, event.getPlayer());
             if (plantInteract != null) {
                 // see if should do
-                boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
-                boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(event.getPlayer(), event.getPlantBlock());
-                boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
-                boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
+                ExecutionContext context = new ExecutionContext()
+                        .set(event.getPlayer())
+                        .set(event.getPlantBlock());
+                boolean shouldDo = plantInteract.generateDoIf(context);
+                boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(context);
+                boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(context);
+                boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(context);
                 // see if drops should occur
-                giveBlockDrops = plantInteract.isGiveBlockDropsNull() || plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock());
+                giveBlockDrops = plantInteract.isGiveBlockDropsNull() || plantInteract.isGiveBlockDrops(context);
                 // determine if block should be broken
                 if (!onlyBreakOnDo || shouldDo) {
-                    if (!plantInteract.isBreakBlockNull() && !plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
+                    if (!plantInteract.isBreakBlockNull() && !plantInteract.isBreakBlock(context)) {
                         actuallyBreakBlock = false;
                     }
                 }
                 if (!onlyEffectsOnDo || shouldDo) {
-                    plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
+                    plantInteract.getEffectStorage().performEffectsBlock(context);
                 }
                 if (!onlyConsumableEffectsOnDo || shouldDo) {
                     PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
                     // do consumable actions
                     if (consumableStorage != null) {
-                        PlantConsumable consumable = consumableStorage.getConsumable(event.getPlayer(), EquipmentSlot.HAND);
+                        PlantConsumable consumable = consumableStorage.getConsumable(context, EquipmentSlot.HAND);
                         if (consumable != null) {
-                            consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+                            consumable.getEffectStorage().performEffectsDynamic(context);
                         }
                     }
                 }
                 // perform all applicable script blocks
                 if (shouldDo) {
                     if (plantInteract.getScriptBlockOnDo() != null) {
-                        plantInteract.getScriptBlockOnDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                        plantInteract.getScriptBlockOnDo().loadValue(context);
                     }
                 } else {
                     if (plantInteract.getScriptBlockOnNotDo() != null) {
-                        plantInteract.getScriptBlockOnNotDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                        plantInteract.getScriptBlockOnNotDo().loadValue(context);
                     }
                 }
                 if (plantInteract.getScriptBlock() != null) {
-                    plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
+                    plantInteract.getScriptBlock().loadValue(context);
                 }
             }
             if (actuallyBreakBlock) {
@@ -206,58 +210,61 @@ public class PlantBlockEventListener implements Listener {
             }
             PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
             PlantConsumable consumable = null;
+            ExecutionContext context = new ExecutionContext()
+                    .set(event.getPlayer())
+                    .set(event.getPlantBlock());
             if (consumableStorage != null) {
-                consumable = consumableStorage.getConsumable(event.getPlayer(), event.getHand());
+                consumable = consumableStorage.getConsumable(context, event.getHand());
                 if (consumable == null) {
                     event.setCancelled(true);
                     return;
                 }
             }
             // see if should do
-            boolean shouldDo = plantInteract.generateDoIf(event.getPlayer(), event.getPlantBlock());
-            boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(event.getPlayer(), event.getPlantBlock());
+            boolean shouldDo = plantInteract.generateDoIf(context);
+            boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(context);
             // try to load onlyConsumableEffectsOnDo if consumable exists
-            boolean onlyConsumableEffectsOnDo = consumable != null && plantInteract.isOnlyConsumableEffectsOnDo(event.getPlayer(), event.getPlantBlock());
-            boolean onlyTakeItemOnDo = plantInteract.isOnlyTakeItemOnDo(event.getPlayer(), event.getPlantBlock());
-            boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(event.getPlayer(), event.getPlantBlock());
-            boolean onlyDropOnDo = plantInteract.isOnlyDropOnDo(event.getPlayer(), event.getPlantBlock());
+            boolean onlyConsumableEffectsOnDo = consumable != null && plantInteract.isOnlyConsumableEffectsOnDo(context);
+            boolean onlyTakeItemOnDo = plantInteract.isOnlyTakeItemOnDo(context);
+            boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(context);
+            boolean onlyDropOnDo = plantInteract.isOnlyDropOnDo(context);
             // break block, if applicable
             if (!onlyBreakOnDo || shouldDo) {
-                if (plantInteract.isBreakBlock(event.getPlayer(), event.getPlantBlock())) {
-                    BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(event.getPlayer(), event.getPlantBlock()));
+                if (plantInteract.isBreakBlock(context)) {
+                    BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(context));
                 }
             }
             // drop items, if applicable
             if (!onlyDropOnDo || shouldDo) {
-                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock(), event.getPlayer(), event.getPlantBlock());
+                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock().getLocation(), context);
             }
             // take item, if applicable
             if (!onlyTakeItemOnDo || shouldDo) {
-                if (plantInteract.isTakeItem(event.getPlayer(), event.getPlantBlock())) {
+                if (plantInteract.isTakeItem(context)) {
                     decrementItemStack(itemStack);
                 }
             }
             // do break actions for block
             if (!onlyEffectsOnDo || shouldDo) {
-                plantInteract.getEffectStorage().performEffects(event.getBlock(), event.getPlantBlock());
+                plantInteract.getEffectStorage().performEffectsBlock(context);
             }
             if (!onlyConsumableEffectsOnDo || shouldDo) {
                 if (consumable != null) {
-                    consumable.getEffectStorage().performEffects(event.getPlayer(), event.getPlantBlock());
+                    consumable.getEffectStorage().performEffectsDynamic(context);
                 }
             }
             // perform all applicable script blocks
             if (shouldDo) {
                 if (plantInteract.getScriptBlockOnDo() != null) {
-                    plantInteract.getScriptBlockOnDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                    plantInteract.getScriptBlockOnDo().loadValue(context);
                 }
             } else {
                 if (plantInteract.getScriptBlockOnNotDo() != null) {
-                    plantInteract.getScriptBlockOnNotDo().loadValue(event.getPlantBlock(), event.getPlayer());
+                    plantInteract.getScriptBlockOnNotDo().loadValue(context);
                 }
             }
             if (plantInteract.getScriptBlock() != null) {
-                plantInteract.getScriptBlock().loadValue(event.getPlantBlock(), event.getPlayer());
+                plantInteract.getScriptBlock().loadValue(context);
             }
         }
     }
@@ -287,12 +294,14 @@ public class PlantBlockEventListener implements Listener {
         }
 
         // see if should do
-        boolean shouldDo = plantConsumable.generateDoIf(event.getPlayer(), null);
-        boolean onlyEffectsOnDo = plantConsumable.isOnlyEffectsOnDo(event.getPlayer(), null);
-        boolean onlyTakeItemOnDo = plantConsumable.isOnlyTakeItemOnDo(event.getPlayer(), null);
-        boolean onlyTakeRequiredItemsOnDo = plantConsumable.isOnlyTakeRequiredItemsOnDo(event.getPlayer(), null);
-        boolean onlyGiveItemsOnDo = plantConsumable.isOnlyGiveItemsOnDo(event.getPlayer(), null);
-        boolean onlyAddDamageOnDo = plantConsumable.isOnlyAddDamageOnDo(event.getPlayer(), null);
+        ExecutionContext context = new ExecutionContext()
+                .set(event.getPlayer());
+        boolean shouldDo = plantConsumable.generateDoIf(context);
+        boolean onlyEffectsOnDo = plantConsumable.isOnlyEffectsOnDo(context);
+        boolean onlyTakeItemOnDo = plantConsumable.isOnlyTakeItemOnDo(context);
+        boolean onlyTakeRequiredItemsOnDo = plantConsumable.isOnlyTakeRequiredItemsOnDo(context);
+        boolean onlyGiveItemsOnDo = plantConsumable.isOnlyGiveItemsOnDo(context);
+        boolean onlyAddDamageOnDo = plantConsumable.isOnlyAddDamageOnDo(context);
 
 
         // do actions stored in item's PlantConsumable
@@ -304,13 +313,13 @@ public class PlantBlockEventListener implements Listener {
         }
         // decrement item, if set
         if (!onlyTakeItemOnDo || shouldDo) {
-            if (plantConsumable.isTakeItem(event.getPlayer(), null)) {
+            if (plantConsumable.isTakeItem(context)) {
                 decrementItemStack(callStack);
             }
         }
         // add damage to item, if set
         if (!onlyAddDamageOnDo || shouldDo) {
-            int addDamageAmount = plantConsumable.getAddDamage(event.getPlayer(), null);
+            int addDamageAmount = plantConsumable.getAddDamage(context);
             if (addDamageAmount != 0) {
                 ItemHelper.updateDamage(callStack, addDamageAmount);
             }
@@ -318,9 +327,9 @@ public class PlantBlockEventListener implements Listener {
         // decrement required items, if set
         if (!onlyTakeRequiredItemsOnDo || shouldDo) {
             for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
-                if (requirement.isTakeItem(event.getPlayer(), null)) {
+                if (requirement.isTakeItem(context)) {
                     // if should be in hand, decrement other hand's stack
-                    if (requirement.isInHand(event.getPlayer(), null)) {
+                    if (requirement.isInHand(context)) {
                         decrementItemStack(otherStack);
                     }
                     // otherwise take required item out of inventory
@@ -330,9 +339,9 @@ public class PlantBlockEventListener implements Listener {
                         event.getPlayer().getInventory().removeItem(removeStack);
                     }
                 }
-                int requirementAddDamageAmount = requirement.getAddDamage(event.getPlayer(), null);
+                int requirementAddDamageAmount = requirement.getAddDamage(context);
                 if (requirementAddDamageAmount != 0) {
-                    if (requirement.isInHand(event.getPlayer(), null)) {
+                    if (requirement.isInHand(context)) {
                         ItemHelper.updateDamage(otherStack, requirementAddDamageAmount);
                     } else {
                         int slot;
@@ -353,20 +362,20 @@ public class PlantBlockEventListener implements Listener {
         }
         // perform effects, if applicable
         if (!onlyEffectsOnDo || shouldDo) {
-            plantConsumable.getEffectStorage().performEffects(event.getPlayer(), null);
+            plantConsumable.getEffectStorage().performEffectsDynamic(context);
         }
         // perform all applicable script blocks
         if (shouldDo) {
             if (plantConsumable.getScriptBlockOnDo() != null) {
-                plantConsumable.getScriptBlockOnDo().loadValue(null, event.getPlayer());
+                plantConsumable.getScriptBlockOnDo().loadValue(context);
             }
         } else {
             if (plantConsumable.getScriptBlockOnNotDo() != null) {
-                plantConsumable.getScriptBlockOnNotDo().loadValue(null, event.getPlayer());
+                plantConsumable.getScriptBlockOnNotDo().loadValue(context);
             }
         }
         if (plantConsumable.getScriptBlock() != null) {
-            plantConsumable.getScriptBlock().loadValue(null, event.getPlayer());
+            plantConsumable.getScriptBlock().loadValue(context);
         }
     }
 

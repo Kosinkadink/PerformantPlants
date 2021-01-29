@@ -42,7 +42,10 @@ import me.kosinkadink.performantplants.settings.*;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.*;
 import me.kosinkadink.performantplants.util.*;
-import org.bukkit.*;
+import org.bukkit.Color;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
@@ -781,7 +784,7 @@ public class ConfigurationManager {
             if (section.isConfigurationSection("potion-color")) {
                 ConfigurationSection colorSection = section.getConfigurationSection("potion-color");
                 if (colorSection != null) {
-                    Color potionColor = createColor(colorSection, null).getColor(null, null);
+                    Color potionColor = createColor(colorSection, null).getColor(new ExecutionContext());
                     if (potionColor != null) {
                         finalItemSettings.setPotionColor(potionColor);
                     }
@@ -1139,7 +1142,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen break-block value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isBreakBlock(null, null), section.getCurrentPath()));
+                        plantInteract.isBreakBlock(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setBreakBlock(value);
             }
@@ -1149,7 +1152,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen only-break-block-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isOnlyBreakBlockOnDo(null, null), section.getCurrentPath()));
+                        plantInteract.isOnlyBreakBlockOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setOnlyBreakBlockOnDo(value);
             }
@@ -1161,7 +1164,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen give-block-drops value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isGiveBlockDrops(null, null), section.getCurrentPath()));
+                        plantInteract.isGiveBlockDrops(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setGiveBlockDrops(value);
             }
@@ -1173,7 +1176,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen take-item value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isTakeItem(null, null), section.getCurrentPath()));
+                        plantInteract.isTakeItem(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setTakeItem(value);
             }
@@ -1183,7 +1186,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen only-take-item-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isOnlyTakeItemOnDo(null, null), section.getCurrentPath()));
+                        plantInteract.isOnlyTakeItemOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setOnlyTakeItemOnDo(value);
             }
@@ -1228,7 +1231,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen condition value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isConditionMet(null, null), section.getCurrentPath()));
+                        plantInteract.isConditionMet(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setCondition(value);
             }
@@ -1240,7 +1243,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen do-if value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.generateDoIf(null, null), section.getCurrentPath()));
+                        plantInteract.generateDoIf(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setDoIf(value);
             }
@@ -1252,7 +1255,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen only-effects-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isOnlyEffectsOnDo(null, null), section.getCurrentPath()));
+                        plantInteract.isOnlyEffectsOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setOnlyEffectsOnDo(value);
             }
@@ -1262,7 +1265,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen only-consumable-effects-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isOnlyConsumableEffectsOnDo(null, null), section.getCurrentPath()));
+                        plantInteract.isOnlyConsumableEffectsOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setOnlyConsumableEffectsOnDo(value);
             }
@@ -1280,7 +1283,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Interact will not have chosen only-drop-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        plantInteract.isOnlyDropOnDo(null, null), section.getCurrentPath()));
+                        plantInteract.isOnlyDropOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 plantInteract.setOnlyDropOnDo(value);
             }
@@ -1342,7 +1345,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen take-item value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isTakeItem(null, null), section.getCurrentPath()));
+                        consumable.isTakeItem(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setTakeItem(value);
             }
@@ -1352,7 +1355,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-take-item-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isOnlyTakeItemOnDo(null, null), section.getCurrentPath()));
+                        consumable.isOnlyTakeItemOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setOnlyTakeItemOnDo(value);
             }
@@ -1363,7 +1366,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen missing-food value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isMissingFood(null, null), section.getCurrentPath()));
+                        consumable.isMissingFood(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setMissingFood(value);
             }
@@ -1374,7 +1377,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen normal-eat value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isNormalEat(null, null), section.getCurrentPath()));
+                        consumable.isNormalEat(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setNormalEat(value);
             }
@@ -1385,7 +1388,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isLong(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen add-damage value and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        consumable.getAddDamage(null, null), section.getCurrentPath()));
+                        consumable.getAddDamage(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setAddDamage(value);
             }
@@ -1395,7 +1398,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-add-damage-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isOnlyAddDamageOnDo(null, null), section.getCurrentPath()));
+                        consumable.isOnlyAddDamageOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setOnlyAddDamageOnDo(value);
             }
@@ -1420,7 +1423,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-give-items-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isOnlyGiveItemsOnDo(null, null), section.getCurrentPath()));
+                        consumable.isOnlyGiveItemsOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setOnlyGiveItemsOnDo(value);
             }
@@ -1431,7 +1434,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen condition value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isConditionMet(null, null), section.getCurrentPath()));
+                        consumable.isConditionMet(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setCondition(value);
             }
@@ -1461,7 +1464,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-take-required-items-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isOnlyTakeRequiredItemsOnDo(null, null), section.getCurrentPath()));
+                        consumable.isOnlyTakeRequiredItemsOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setOnlyTakeRequiredItemsOnDo(value);
             }
@@ -1476,7 +1479,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen only-effects-on-do value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.isOnlyEffectsOnDo(null, null), section.getCurrentPath()));
+                        consumable.isOnlyEffectsOnDo(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setOnlyEffectsOnDo(value);
             }
@@ -1488,7 +1491,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("Consumable will not have chosen do-if value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        consumable.generateDoIf(null, null), section.getCurrentPath()));
+                        consumable.generateDoIf(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 consumable.setDoIf(value);
             }
@@ -1535,7 +1538,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen take-item value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isTakeItem(null, null), section.getCurrentPath()));
+                        requiredItem.isTakeItem(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 requiredItem.setTakeItem(value);
             }
@@ -1546,7 +1549,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen in-hand value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isInHand(null, null), section.getCurrentPath()));
+                        requiredItem.isInHand(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 requiredItem.setInHand(value);
             }
@@ -1557,7 +1560,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isLong(value)) {
                 performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        requiredItem.getAddDamage(null, null), section.getCurrentPath()));
+                        requiredItem.getAddDamage(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 requiredItem.setAddDamage(value);
             }
@@ -1568,7 +1571,7 @@ public class ConfigurationManager {
             if (value == null || !ScriptHelper.isBoolean(value)) {
                 performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen condition value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isConditionMet(null, null), section.getCurrentPath()));
+                        requiredItem.isConditionMet(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 requiredItem.setCondition(value);
             }
@@ -1583,7 +1586,7 @@ public class ConfigurationManager {
             if (red == null || !ScriptHelper.isLong(red)) {
                 performantPlants.getLogger().warning(String.format("Color will not have chosen red value and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        color.getRed().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+                        color.getRed().loadValue(new ExecutionContext()).getIntegerValue(), section.getCurrentPath()));
             }
             color.setRed(red);
         }
@@ -1592,7 +1595,7 @@ public class ConfigurationManager {
             if (green == null || !ScriptHelper.isLong(green)) {
                 performantPlants.getLogger().warning(String.format("Color will not have chosen green value and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        color.getGreen().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+                        color.getGreen().loadValue(new ExecutionContext()).getIntegerValue(), section.getCurrentPath()));
             }
             color.setGreen(green);
         }
@@ -1601,7 +1604,7 @@ public class ConfigurationManager {
             if (blue == null || !ScriptHelper.isLong(blue)) {
                 performantPlants.getLogger().warning(String.format("Color will not have chosen blue value and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        color.getBlue().loadValue(null, null).getIntegerValue(), section.getCurrentPath()));
+                        color.getBlue().loadValue(new ExecutionContext()).getIntegerValue(), section.getCurrentPath()));
             }
             color.setBlue(blue);
         }
@@ -2009,7 +2012,7 @@ public class ConfigurationManager {
             if (foodAmount == null || !ScriptHelper.isLong(foodAmount)) {
                 performantPlants.getLogger().warning(String.format("Feed effect will not have chosen food-amount and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getFoodAmountValue(null, null), section.getCurrentPath()));
+                        effect.getFoodAmountValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setFoodAmount(foodAmount);
             }
@@ -2020,7 +2023,7 @@ public class ConfigurationManager {
             if (saturateAmount == null || !ScriptHelper.isNumeric(saturateAmount)) {
                 performantPlants.getLogger().warning(String.format("Feed effect will not have chosen saturate-amount and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getSaturationAmountValue(null, null), section.getCurrentPath()));
+                        effect.getSaturationAmountValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setSaturationAmount(saturateAmount);
             }
@@ -2036,7 +2039,7 @@ public class ConfigurationManager {
             if (healAmount == null || !ScriptHelper.isNumeric(healAmount)) {
                 performantPlants.getLogger().warning(String.format("Heal effect will not have chosen heal-amount and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getHealAmountValue(null, null), section.getCurrentPath()));
+                        effect.getHealAmountValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setHealAmount(healAmount);
             }
@@ -2065,7 +2068,7 @@ public class ConfigurationManager {
             if (volume == null || !ScriptHelper.isNumeric(volume)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen volume and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getVolumeValue(null, null), section.getCurrentPath()));
+                        effect.getVolumeValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setVolume(volume);
             }
@@ -2076,7 +2079,7 @@ public class ConfigurationManager {
             if (pitch == null || !ScriptHelper.isNumeric(pitch)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen pitch and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getPitchValue(null, null), section.getCurrentPath()));
+                        effect.getPitchValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setPitch(pitch);
             }
@@ -2088,7 +2091,7 @@ public class ConfigurationManager {
             if (offsetX == null || !ScriptHelper.isNumeric(offsetX)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen offset-x and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetXValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetXValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetX(offsetX);
             }
@@ -2098,7 +2101,7 @@ public class ConfigurationManager {
             if (offsetY == null || !ScriptHelper.isNumeric(offsetY)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen offset-y and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetYValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetYValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetY(offsetY);
             }
@@ -2108,7 +2111,7 @@ public class ConfigurationManager {
             if (offsetZ == null || !ScriptHelper.isNumeric(offsetZ)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen offset-z and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetZValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetZValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetZ(offsetZ);
             }
@@ -2119,7 +2122,7 @@ public class ConfigurationManager {
             if (multiplier == null || !ScriptHelper.isNumeric(multiplier)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen multiplier and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getMultiplierValue(null, null), section.getCurrentPath()));
+                        effect.getMultiplierValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setMultiplier(multiplier);
             }
@@ -2130,7 +2133,7 @@ public class ConfigurationManager {
             if (eyeLocation == null || !ScriptHelper.isBoolean(eyeLocation)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen eye-location value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isEyeLocation(null, null), section.getCurrentPath()));
+                        effect.isEyeLocation(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setEyeLocation(eyeLocation);
             }
@@ -2141,7 +2144,7 @@ public class ConfigurationManager {
             if (ignoreDirectionY == null || !ScriptHelper.isBoolean(ignoreDirectionY)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen ignore-direction-y value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isIgnoreDirectionY(null, null), section.getCurrentPath()));
+                        effect.isIgnoreDirectionY(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setIgnoreDirectionY(ignoreDirectionY);
             }
@@ -2152,7 +2155,7 @@ public class ConfigurationManager {
             if (clientSide == null || !ScriptHelper.isBoolean(clientSide)) {
                 performantPlants.getLogger().warning(String.format("Sound effect will not have chosen client-side value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isClientSide(null, null), section.getCurrentPath()));
+                        effect.isClientSide(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setClientSide(clientSide);
             }
@@ -2180,7 +2183,7 @@ public class ConfigurationManager {
             if (count == null || !ScriptHelper.isLong(count)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen count and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getCountValue(null, null), section.getCurrentPath()));
+                        effect.getCountValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setCount(count);
             }
@@ -2191,7 +2194,7 @@ public class ConfigurationManager {
             if (offsetX == null || !ScriptHelper.isNumeric(offsetX)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen offset-x and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetXValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetXValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetX(offsetX);
             }
@@ -2201,7 +2204,7 @@ public class ConfigurationManager {
             if (offsetY == null || !ScriptHelper.isNumeric(offsetY)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen offset-y and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetYValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetYValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetY(offsetY);
             }
@@ -2211,7 +2214,7 @@ public class ConfigurationManager {
             if (offsetZ == null || !ScriptHelper.isNumeric(offsetZ)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen offset-z and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getOffsetZValue(null, null), section.getCurrentPath()));
+                        effect.getOffsetZValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setOffsetZ(offsetZ);
             }
@@ -2222,7 +2225,7 @@ public class ConfigurationManager {
             if (dataOffsetX == null || !ScriptHelper.isNumeric(dataOffsetX)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen data-offset-x and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getDataOffsetXValue(null, null), section.getCurrentPath()));
+                        effect.getDataOffsetXValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDataOffsetX(dataOffsetX);
             }
@@ -2232,7 +2235,7 @@ public class ConfigurationManager {
             if (dataOffsetY == null || !ScriptHelper.isNumeric(dataOffsetY)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen data-offset-y and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getDataOffsetYValue(null, null), section.getCurrentPath()));
+                        effect.getDataOffsetYValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDataOffsetY(dataOffsetY);
             }
@@ -2242,7 +2245,7 @@ public class ConfigurationManager {
             if (dataOffsetZ == null || !ScriptHelper.isNumeric(dataOffsetZ)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen data-offset-z and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getDataOffsetZValue(null, null), section.getCurrentPath()));
+                        effect.getDataOffsetZValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDataOffsetZ(dataOffsetZ);
             }
@@ -2253,7 +2256,7 @@ public class ConfigurationManager {
             if (multiplier == null || !ScriptHelper.isNumeric(multiplier)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen multiplier and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getMultiplierValue(null, null), section.getCurrentPath()));
+                        effect.getMultiplierValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setMultiplier(multiplier);
             }
@@ -2264,7 +2267,7 @@ public class ConfigurationManager {
             if (extra == null || !ScriptHelper.isNumeric(extra)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen extra value and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getExtraValue(null, null), section.getCurrentPath()));
+                        effect.getExtraValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setExtra(extra);
             }
@@ -2275,7 +2278,7 @@ public class ConfigurationManager {
             if (eyeLocation == null || !ScriptHelper.isBoolean(eyeLocation)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen eye-location value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isEyeLocation(null, null), section.getCurrentPath()));
+                        effect.isEyeLocation(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setEyeLocation(eyeLocation);
             }
@@ -2286,7 +2289,7 @@ public class ConfigurationManager {
             if (ignoreDirectionY == null || !ScriptHelper.isBoolean(ignoreDirectionY)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen ignore-direction-y value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isIgnoreDirectionY(null, null), section.getCurrentPath()));
+                        effect.isIgnoreDirectionY(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setIgnoreDirectionY(ignoreDirectionY);
             }
@@ -2297,7 +2300,7 @@ public class ConfigurationManager {
             if (clientSide == null || !ScriptHelper.isBoolean(clientSide)) {
                 performantPlants.getLogger().warning(String.format("Particle effect will not have chosen client-side value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isClientSide(null, null), section.getCurrentPath()));
+                        effect.isClientSide(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setClientSide(clientSide);
             }
@@ -2321,9 +2324,9 @@ public class ConfigurationManager {
         effect.setPotionEffectTypeName(potionName);
         // if no variables, then check if potion is recognized
         if (!potionName.containsVariable()) {
-            PotionEffectType potionEffectType = effect.getPotionEffectType(null, null);
+            PotionEffectType potionEffectType = effect.getPotionEffectType(new ExecutionContext());
             if (potionEffectType == null) {
-                String potionNameString = potionName.loadValue(null, null).getStringValue();
+                String potionNameString = potionName.loadValue(new ExecutionContext()).getStringValue();
                 performantPlants.getLogger().warning(String.format("Potion effect not added; potion '%s' not recognized", potionNameString));
                 return null;
             }
@@ -2334,7 +2337,7 @@ public class ConfigurationManager {
             if (duration == null || !ScriptHelper.isLong(duration)) {
                 performantPlants.getLogger().warning(String.format("Potion effect will not have chosen duration and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getDurationValue(null, null), section.getCurrentPath()));
+                        effect.getDurationValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDuration(duration);
             }
@@ -2345,7 +2348,7 @@ public class ConfigurationManager {
             if (amplifier == null || !ScriptHelper.isLong(amplifier)) {
                 performantPlants.getLogger().warning(String.format("Potion effect will not have chosen amplifier and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getAmplifierValue(null, null), section.getCurrentPath()));
+                        effect.getAmplifierValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setAmplifier(amplifier);
             }
@@ -2356,7 +2359,7 @@ public class ConfigurationManager {
             if (ambient == null || !ScriptHelper.isBoolean(ambient)) {
                 performantPlants.getLogger().warning(String.format("Potion effect will not have chosen ambient value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isAmbient(null, null), section.getCurrentPath()));
+                        effect.isAmbient(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setAmbient(ambient);
             }
@@ -2367,7 +2370,7 @@ public class ConfigurationManager {
             if (particles == null || !ScriptHelper.isBoolean(particles)) {
                 performantPlants.getLogger().warning(String.format("Potion effect will not have chosen particles value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isParticles(null, null), section.getCurrentPath()));
+                        effect.isParticles(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setParticles(particles);
             }
@@ -2378,7 +2381,7 @@ public class ConfigurationManager {
             if (icon == null || !ScriptHelper.isBoolean(icon)) {
                 performantPlants.getLogger().warning(String.format("Potion effect will not have chosen icon value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isIcon(null, null), section.getCurrentPath()));
+                        effect.isIcon(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setIcon(icon);
             }
@@ -2433,7 +2436,7 @@ public class ConfigurationManager {
             if (duration == null || !ScriptHelper.isLong(duration)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen duration and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getDurationValue(null, null), section.getCurrentPath()));
+                        effect.getDurationValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDuration(duration);
             }
@@ -2443,7 +2446,7 @@ public class ConfigurationManager {
             if (durationOnUse == null || !ScriptHelper.isLong(durationOnUse)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen duration-on-use and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getDurationValue(null, null), section.getCurrentPath()));
+                        effect.getDurationValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setDurationOnUse(durationOnUse);
             }
@@ -2462,7 +2465,7 @@ public class ConfigurationManager {
             if (radius == null || !ScriptHelper.isNumeric(radius)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen radius and instead will be" +
                         " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getRadiusValue(null, null), section.getCurrentPath()));
+                        effect.getRadiusValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setRadius(radius);
             }
@@ -2472,7 +2475,7 @@ public class ConfigurationManager {
             if (radiusOnUse == null || !ScriptHelper.isNumeric(radiusOnUse)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen radius-on-use and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getRadiusOnUseValue(null, null), section.getCurrentPath()));
+                        effect.getRadiusOnUseValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setRadiusOnUse(radiusOnUse);
             }
@@ -2482,7 +2485,7 @@ public class ConfigurationManager {
             if (radiusPerTick == null || !ScriptHelper.isNumeric(radiusPerTick)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen radius-per-tick and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getRadiusPerTickValue(null, null), section.getCurrentPath()));
+                        effect.getRadiusPerTickValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setRadiusPerTick(radiusPerTick);
             }
@@ -2492,7 +2495,7 @@ public class ConfigurationManager {
             if (reapplicationDelay == null || !ScriptHelper.isLong(reapplicationDelay)) {
                 performantPlants.getLogger().warning(String.format("Area effect will not have chosen reapplication-delay and instead will be" +
                                 " %d; must be ScriptType LONG in section: %s",
-                        effect.getReapplicationDelayValue(null, null), section.getCurrentPath()));
+                        effect.getReapplicationDelayValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setReapplicationDelay(reapplicationDelay);
             }
@@ -2523,7 +2526,7 @@ public class ConfigurationManager {
             if (fromPlayer == null || ScriptHelper.isNull(fromPlayer)) {
                 performantPlants.getLogger().warning(String.format("Chat effect will not have chosen from-player message and instead will be" +
                         " %s; must be neither null nor ScriptType NULL in section: %s",
-                    effect.getFromPlayerValue(null, null), section.getCurrentPath()));
+                    effect.getFromPlayerValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setFromPlayer(fromPlayer);
             }
@@ -2533,7 +2536,7 @@ public class ConfigurationManager {
             if (toPlayer == null || ScriptHelper.isNull(toPlayer)) {
                 performantPlants.getLogger().warning(String.format("Chat effect will not have chosen to-player message and instead will be" +
                                 " %s; must be neither null nor ScriptType NULL in section: %s",
-                        effect.getToPlayerValue(null, null), section.getCurrentPath()));
+                        effect.getToPlayerValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setToPlayer(toPlayer);
             }
@@ -2552,7 +2555,7 @@ public class ConfigurationManager {
             if (power == null || !ScriptHelper.isNumeric(power)) {
                 performantPlants.getLogger().warning(String.format("Explosion effect will not have chosen power and instead will be" +
                                 " %f; must be ScriptType LONG or DOUBLE in section: %s",
-                        effect.getPowerValue(null, null), section.getCurrentPath()));
+                        effect.getPowerValue(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setPower(power);
             }
@@ -2562,7 +2565,7 @@ public class ConfigurationManager {
             if (fire == null || !ScriptHelper.isBoolean(fire)) {
                 performantPlants.getLogger().warning(String.format("Explosion effect will not have chosen fire value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isFire(null, null), section.getCurrentPath()));
+                        effect.isFire(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setFire(fire);
             }
@@ -2572,7 +2575,7 @@ public class ConfigurationManager {
             if (breakBlocks == null || !ScriptHelper.isBoolean(breakBlocks)) {
                 performantPlants.getLogger().warning(String.format("Command effect will not have chosen break-blocks value and instead will be" +
                                 " %b; must be ScriptType BOOLEAN in section: %s",
-                        effect.isBreakBlocks(null, null), section.getCurrentPath()));
+                        effect.isBreakBlocks(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setBreakBlocks(breakBlocks);
             }
@@ -2597,7 +2600,7 @@ public class ConfigurationManager {
             if (console == null || !ScriptHelper.isBoolean(console)) {
                 performantPlants.getLogger().warning(String.format("Command effect will not have chosen console value and instead will be" +
                         " %b; must be ScriptType BOOLEAN in section: %s",
-                    effect.isConsole(null, null), section.getCurrentPath()));
+                    effect.isConsole(new ExecutionContext()), section.getCurrentPath()));
             } else {
                 effect.setConsole(console);
             }
@@ -3920,7 +3923,7 @@ public class ConfigurationManager {
                     "be ScriptResult in section: " + section.getCurrentPath());
             return null;
         }
-        String storedBlockName = scriptBlockName.loadValue(null).getStringValue();
+        String storedBlockName = scriptBlockName.loadValue(new ExecutionContext()).getStringValue();
         ScriptBlock storedBlock = data.getPlant().getScriptBlock(storedBlockName);
         if (storedBlock == null) {
             performantPlants.getLogger().warning(String.format("Stored script block '%s' not found in section: %s",

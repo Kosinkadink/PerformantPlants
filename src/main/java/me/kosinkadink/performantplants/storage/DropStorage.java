@@ -1,10 +1,9 @@
 package me.kosinkadink.performantplants.storage;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.plants.Drop;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.util.ScriptHelper;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 
@@ -19,8 +18,8 @@ public class DropStorage {
         return dropLimit;
     }
 
-    public int getDropLimitValue(Player player, PlantBlock plantBlock) {
-        return isDropLimitSet() ? dropLimit.loadValue(plantBlock, player).getIntegerValue() : -1;
+    public int getDropLimitValue(ExecutionContext context) {
+        return isDropLimitSet() ? dropLimit.loadValue(context).getIntegerValue() : -1;
     }
 
     public void setDropLimit(ScriptBlock dropLimit) {

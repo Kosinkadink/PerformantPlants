@@ -1,9 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.random;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.RandomHelper;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationChoice extends ScriptOperation {
 
@@ -17,14 +15,14 @@ public class ScriptOperationChoice extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) throws IllegalArgumentException {
+    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
         // if only one input, use it
         if (inputs.length == 1) {
-            return inputs[0].loadValue(plantBlock, player);
+            return inputs[0].loadValue(context);
         } else {
             // otherwise generate random index and use that input
             int index = RandomHelper.generateRandomIntInRange(0, inputs.length);
-            ScriptResult result = inputs[index].loadValue(plantBlock, player);
+            ScriptResult result = inputs[index].loadValue(context);
             // if result type does not match input, convert it
             if (result.getType() != type) {
                 switch (type) {

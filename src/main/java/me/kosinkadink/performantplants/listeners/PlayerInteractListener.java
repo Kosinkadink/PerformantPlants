@@ -9,6 +9,7 @@ import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -58,8 +59,10 @@ public class PlayerInteractListener implements Listener {
                 } else {
                     hand = EquipmentSlot.HAND;
                 }
-                PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(event.getPlayer(), hand);
-                if (consumable != null && consumable.isNormalEat(event.getPlayer(), null)) {
+                ExecutionContext context = new ExecutionContext()
+                        .set(event.getPlayer());
+                PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(context, hand);
+                if (consumable != null && consumable.isNormalEat(context)) {
                     performantPlants.getServer().getPluginManager().callEvent(
                             new PlantConsumeEvent(event.getPlayer(), consumable, hand)
                     );
@@ -219,8 +222,9 @@ public class PlayerInteractListener implements Listener {
                             }
                         }
                         if (performConsumeForThisHand) {
-                            PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(player, event.getHand());
-                            if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat(player, null))) {
+                            ExecutionContext context = new ExecutionContext().set(player);
+                            PlantConsumable consumable = plantItem.getConsumableStorage().getConsumable(context, event.getHand());
+                            if (!plantItem.getItemStack().getType().isEdible() || (consumable != null && !consumable.isNormalEat(context))) {
                                 event.setCancelled(true);
                                 performantPlants.getServer().getPluginManager().callEvent(
                                         new PlantConsumeEvent(player, consumable, event.getHand())
@@ -238,7 +242,8 @@ public class PlayerInteractListener implements Listener {
                     if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
                         PlantItem otherItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(otherStack);
                         if (otherItem != null && otherItem.isConsumable()) {
-                            PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(player,
+                            PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(
+                                    new ExecutionContext().set(player),
                                     PlayerHelper.oppositeHand(event.getHand()));
                             if (otherConsumable != null) {
                                 event.setCancelled(true);
@@ -284,7 +289,8 @@ public class PlayerInteractListener implements Listener {
                     PlantItem plantItem;
                     plantItem = plant.getItemByItemStack(itemStack);
                     if (plantItem.isClickable()) {
-                        PlantConsumable consumable = plantItem.getClickableStorage().getConsumable(player, event.getHand());
+                        PlantConsumable consumable = plantItem.getClickableStorage().getConsumable(
+                                new ExecutionContext().set(player), event.getHand());
                         if (consumable != null) {
                             performantPlants.getServer().getPluginManager().callEvent(
                                     new PlantConsumeEvent(player, consumable, event.getHand())

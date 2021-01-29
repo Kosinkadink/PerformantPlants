@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.logic;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationAnd extends ScriptOperationBinaryLogic {
 
@@ -12,11 +11,11 @@ public class ScriptOperationAnd extends ScriptOperationBinaryLogic {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
+    public ScriptResult perform(ExecutionContext context) {
         // load values with short circuiting
         return new ScriptResult(
-                getLeft().loadValue(plantBlock, player).getBooleanValue() &&
-                        getRight().loadValue(plantBlock, player).getBooleanValue()
+                getLeft().loadValue(context).getBooleanValue() &&
+                        getRight().loadValue(context).getBooleanValue()
         );
     }
 

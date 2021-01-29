@@ -4,7 +4,6 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationSetValue extends ScriptOperation {
 
@@ -28,17 +27,17 @@ public class ScriptOperationSetValue extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
+    public ScriptResult perform(ExecutionContext context) {
         ScriptResult leftInstance = (ScriptResult) getLeft();
-        ScriptResult rightInstance = getRight().loadValue(plantBlock, player);
+        ScriptResult rightInstance = getRight().loadValue(context);
         if (leftInstance.isVariable()) {
             PlantBlock effectivePlantBlock = null;
             PlantData plantData = null;
-            if (plantBlock != null) {
-                effectivePlantBlock = plantBlock.getEffectivePlantBlock();
+            if (context.isPlantBlockSet()) {
+                effectivePlantBlock = context.getEffectivePlantBlock();
                 plantData = effectivePlantBlock.getEffectivePlantData();
             }
-            String variableName = PlaceholderHelper.setVariablesAndPlaceholders(effectivePlantBlock, player, leftInstance.getVariableName());
+            String variableName = PlaceholderHelper.setVariablesAndPlaceholders(context.copy().set(effectivePlantBlock), leftInstance.getVariableName());
             switch (leftInstance.getType()) {
                 case STRING:
                     ScriptHelper.updateGlobalPlantDataVariableValue(plantData, variableName, rightInstance.getStringValue());

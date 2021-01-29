@@ -1,9 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.logic;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import org.bukkit.entity.Player;
 
 public class ScriptOperationNor extends ScriptOperationOr {
 
@@ -12,9 +11,9 @@ public class ScriptOperationNor extends ScriptOperationOr {
     }
 
     @Override
-    public ScriptResult perform(PlantBlock plantBlock, Player player) {
+    public ScriptResult perform(ExecutionContext context) {
         // opposite of 'or' result
-        return new ScriptResult(!super.perform(plantBlock, player).getBooleanValue());
+        return new ScriptResult(!super.perform(context).getBooleanValue());
     }
 
 }

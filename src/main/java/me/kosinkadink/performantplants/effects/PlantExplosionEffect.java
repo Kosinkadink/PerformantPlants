@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.effects;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.util.BlockHelper;
@@ -16,22 +16,24 @@ public class PlantExplosionEffect extends PlantEffect {
     public PlantExplosionEffect() { }
 
     @Override
-    void performEffectAction(Player player, PlantBlock plantBlock) {
+    void performEffectActionPlayer(ExecutionContext context) {
+        Player player = context.getPlayer();
         player.getWorld().createExplosion(
                 player.getLocation(),
-                getPowerValue(player, plantBlock),
-                isFire(player, plantBlock),
-                isBreakBlocks(player, plantBlock)
+                getPowerValue(context),
+                isFire(context),
+                isBreakBlocks(context)
         );
     }
 
     @Override
-    void performEffectAction(Block block, PlantBlock plantBlock) {
+    void performEffectActionBlock(ExecutionContext context) {
+        Block block = context.getPlantBlock().getBlock();
         block.getWorld().createExplosion(
                 BlockHelper.getCenter(block),
-                getPowerValue(null, plantBlock),
-                isFire(null, plantBlock),
-                isBreakBlocks(null, plantBlock)
+                getPowerValue(context),
+                isFire(context),
+                isBreakBlocks(context)
         );
     }
 
@@ -39,8 +41,8 @@ public class PlantExplosionEffect extends PlantEffect {
         return power;
     }
 
-    public float getPowerValue(Player player, PlantBlock plantBlock) {
-        return power.loadValue(plantBlock, player).getFloatValue();
+    public float getPowerValue(ExecutionContext context) {
+        return power.loadValue(context).getFloatValue();
     }
 
     public void setPower(ScriptBlock power) {
@@ -51,8 +53,8 @@ public class PlantExplosionEffect extends PlantEffect {
         return fire;
     }
 
-    public boolean isFire(Player player, PlantBlock plantBlock) {
-        return fire.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isFire(ExecutionContext context) {
+        return fire.loadValue(context).getBooleanValue();
     }
 
     public void setFire(ScriptBlock fire) {
@@ -63,8 +65,8 @@ public class PlantExplosionEffect extends PlantEffect {
         return breakBlocks;
     }
 
-    public boolean isBreakBlocks(Player player, PlantBlock plantBlock) {
-        return breakBlocks.loadValue(plantBlock, player).getBooleanValue();
+    public boolean isBreakBlocks(ExecutionContext context) {
+        return breakBlocks.loadValue(context).getBooleanValue();
     }
 
     public void setBreakBlocks(ScriptBlock breakBlocks) {
