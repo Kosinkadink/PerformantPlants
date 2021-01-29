@@ -242,10 +242,11 @@ public class PlayerInteractListener implements Listener {
                     if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
                         PlantItem otherItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(otherStack);
                         if (otherItem != null && otherItem.isConsumable()) {
+                            ExecutionContext context = new ExecutionContext().set(player);
                             PlantConsumable otherConsumable = otherItem.getConsumableStorage().getConsumable(
-                                    new ExecutionContext().set(player),
+                                    context,
                                     PlayerHelper.oppositeHand(event.getHand()));
-                            if (otherConsumable != null) {
+                            if (otherConsumable != null && !otherConsumable.isNormalEat(context)) {
                                 event.setCancelled(true);
                                 if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                                     performantPlants.getLogger().info("Prevented required block for consumable to perform its own action");
