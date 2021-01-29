@@ -6,13 +6,13 @@ public abstract class ScriptBlock {
 
     protected ScriptType type = ScriptType.NULL;
 
-    public abstract ScriptResult loadValue(@Nonnull ExecutionContext context);
+    public abstract @Nonnull ScriptResult loadValue(@Nonnull ExecutionContext context);
 
     public abstract boolean containsVariable();
 
     public abstract boolean containsCategories(ScriptCategory... categories);
 
-    public abstract ScriptCategory getCategory();
+    public abstract @Nonnull ScriptCategory getCategory();
 
     public abstract ScriptBlock optimizeSelf();
 

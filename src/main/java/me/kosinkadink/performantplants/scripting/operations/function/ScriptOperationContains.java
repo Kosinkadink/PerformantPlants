@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.function;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationContains extends ScriptOperationBinary {
 
     public ScriptOperationContains(ScriptBlock left, ScriptBlock right) {
@@ -10,7 +12,7 @@ public class ScriptOperationContains extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         ScriptResult leftInstance = getLeft().loadValue(context);
         ScriptResult rightInstance = getRight().loadValue(context);
         return new ScriptResult(leftInstance.getStringValue().contains(rightInstance.getStringValue()));
@@ -29,7 +31,7 @@ public class ScriptOperationContains extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FUNCTION;
     }
 

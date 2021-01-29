@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationGetValueScopeParameter extends ScriptOperation {
 
     private final ScriptType expectedType;
@@ -34,7 +36,7 @@ public class ScriptOperationGetValueScopeParameter extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         String plantId = getPlantId().loadValue(context).getStringValue();
         String scope = getScope().loadValue(context).getStringValue();
         String parameter = getParameter().loadValue(context).getStringValue();
@@ -67,7 +69,7 @@ public class ScriptOperationGetValueScopeParameter extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FUNCTION;
     }
 }

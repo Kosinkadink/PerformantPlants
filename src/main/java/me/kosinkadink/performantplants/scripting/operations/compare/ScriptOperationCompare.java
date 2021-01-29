@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
+import javax.annotation.Nonnull;
+
 public abstract class ScriptOperationCompare extends ScriptOperationBinary {
 
     public ScriptOperationCompare(ScriptBlock left, ScriptBlock right) {
@@ -24,7 +26,7 @@ public abstract class ScriptOperationCompare extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.COMPARE;
     }
 

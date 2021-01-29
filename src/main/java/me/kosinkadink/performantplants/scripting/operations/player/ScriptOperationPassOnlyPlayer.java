@@ -2,6 +2,8 @@ package me.kosinkadink.performantplants.scripting.operations.player;
 
 import me.kosinkadink.performantplants.scripting.*;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
 
     public ScriptOperationPassOnlyPlayer(ScriptBlock scriptBlock) {
@@ -13,7 +15,7 @@ public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         return getScriptBlock().loadValue(context);
     }
 
@@ -30,7 +32,7 @@ public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.PLAYER;
     }
 }

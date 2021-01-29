@@ -15,7 +15,7 @@ public abstract class ScriptOperation extends ScriptBlock {
         return perform(new ExecutionContext());
     }
 
-    public abstract ScriptResult perform(ExecutionContext context) throws IllegalArgumentException;
+    public abstract @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException;
 
     @Override
     public boolean containsVariable() {
@@ -65,7 +65,7 @@ public abstract class ScriptOperation extends ScriptBlock {
     }
 
     @Override
-    public ScriptResult loadValue(@Nonnull ExecutionContext context) {
+    public @Nonnull ScriptResult loadValue(@Nonnull ExecutionContext context) {
         return perform(context);
     }
 

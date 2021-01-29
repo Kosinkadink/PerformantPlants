@@ -8,6 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationInteract extends ScriptOperation {
 
     private final PlantInteractStorage storage;
@@ -29,7 +31,7 @@ public class ScriptOperationInteract extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         if (storage != null) {
             EquipmentSlot hand = getHand(getUseMainHand().loadValue(context).getBooleanValue());
             ItemStack itemStack;
@@ -56,7 +58,7 @@ public class ScriptOperationInteract extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 

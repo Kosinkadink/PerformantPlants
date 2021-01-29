@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.logic;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationNot extends ScriptOperationUnary {
 
     public ScriptOperationNot(ScriptBlock input) {
@@ -10,7 +12,7 @@ public class ScriptOperationNot extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         return new ScriptResult(!getInput().loadValue(context).getBooleanValue());
     }
 
@@ -25,7 +27,7 @@ public class ScriptOperationNot extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.LOGIC;
     }
 

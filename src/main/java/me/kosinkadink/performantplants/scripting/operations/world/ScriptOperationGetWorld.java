@@ -3,10 +3,12 @@ package me.kosinkadink.performantplants.scripting.operations.world;
 import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.World;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationGetWorld extends ScriptOperation {
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         World world;
         if (context.isPlayerSet()) {
             world = context.getPlayer().getLocation().getWorld();
@@ -39,7 +41,7 @@ public class ScriptOperationGetWorld extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.WORLD;
     }
 }

@@ -1,6 +1,5 @@
 package me.kosinkadink.performantplants.scripting;
 
-import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.json.simple.JSONArray;
@@ -31,11 +30,13 @@ public class ScriptResult extends ScriptBlock {
         if (this.type == null) {
             throw new IllegalArgumentException("Value type not recognized");
         }
+        setupHasPlaceholder();
     }
 
     public ScriptResult(String variableName, ScriptType type) {
         this.variableName = variableName;
         this.type = type;
+        setupHasPlaceholder();
     }
 
     public void setType(ScriptType type) {
@@ -52,6 +53,12 @@ public class ScriptResult extends ScriptBlock {
 
     public String getVariableName() {
         return variableName;
+    }
+
+    private void setupHasPlaceholder() {
+        if (this.type != ScriptType.STRING) {
+            hasPlaceholder = false;
+        }
     }
 
     public boolean isHasPlaceholder() {
@@ -180,19 +187,13 @@ public class ScriptResult extends ScriptBlock {
             }
             return this;
         }
-        PlantBlock effectivePlantBlock;
-        PlantData plantData = null;
-        if (context.isPlantBlockSet()) {
-            effectivePlantBlock = context.getEffectivePlantBlock();
-            plantData = effectivePlantBlock.getPlantData();
-        }
-        Object variableValue = ScriptHelper.getGlobalPlantDataVariableValue(plantData,
+        Object variableValue = ScriptHelper.getAnyDataVariableValue(context,
                 PlaceholderHelper.setVariablesAndPlaceholders(context, variableName));
         return new ScriptResult(variableValue);
     }
 
     @Override
-    public ScriptResult loadValue(@Nonnull ExecutionContext context) {
+    public @Nonnull ScriptResult loadValue(@Nonnull ExecutionContext context) {
         return loadVariable(context);
     }
 
@@ -212,7 +213,7 @@ public class ScriptResult extends ScriptBlock {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.RESULT;
     }
 

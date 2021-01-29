@@ -6,6 +6,8 @@ import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationScheduleTask extends ScriptOperation {
 
     private final String plantId;
@@ -40,7 +42,7 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         Plant plant = PerformantPlants.getInstance().getPlantTypeManager().getPlantById(plantId);
         if (plant == null) {
             return ScriptResult.EMPTY;
@@ -85,7 +87,7 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 }

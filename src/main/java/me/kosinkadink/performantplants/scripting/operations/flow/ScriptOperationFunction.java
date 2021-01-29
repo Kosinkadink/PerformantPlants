@@ -2,6 +2,8 @@ package me.kosinkadink.performantplants.scripting.operations.flow;
 
 import me.kosinkadink.performantplants.scripting.*;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationFunction extends ScriptOperation {
 
     public ScriptOperationFunction(ScriptBlock ... inputs) {
@@ -9,7 +11,7 @@ public class ScriptOperationFunction extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         ScriptResult result = null;
         for (ScriptBlock input : inputs) {
             result = input.loadValue(context);
@@ -31,7 +33,7 @@ public class ScriptOperationFunction extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FLOW;
     }
 

@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationEffects extends ScriptOperation {
 
     private final PlantEffectStorage storage;
@@ -12,7 +14,7 @@ public class ScriptOperationEffects extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         if (storage != null) {
             storage.performEffectsDynamic(context);
         }
@@ -35,7 +37,7 @@ public class ScriptOperationEffects extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 }

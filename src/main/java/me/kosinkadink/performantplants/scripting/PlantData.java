@@ -18,6 +18,10 @@ public class PlantData {
         this((JSONObject) JSONValue.parse(jsonString));
     }
 
+    public static PlantData createEmpty() {
+        return new PlantData(new JSONObject());
+    }
+
     public String createJsonString() {
         return data.toString();
     }
@@ -82,5 +86,9 @@ public class PlantData {
 
     public Object getVariable(String variableName) {
         return data.get(variableName);
+    }
+
+    public boolean containsVariable(String variableName) {
+        return data.containsKey(variableName);
     }
 }

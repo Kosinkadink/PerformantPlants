@@ -67,18 +67,35 @@ public class ScriptHelper {
                 || scriptType == ScriptType.LONG || scriptType == ScriptType.DOUBLE;
     }
 
-    public static String setVariables(ExecutionContext context, String text) {
-        PlantData plantData = null;
-        if (context.isPlantBlockSet()) {
-            plantData = context.getPlantBlock().getEffectivePlantData();
+    /**
+     * Checks if variable name is valid, and returns reason if so
+     * @param variableName String variable name
+     * @return String with reason if invalid, null if valid
+     */
+    public static String checkIfValidVariableName(String variableName) {
+        if (variableName.isEmpty()) {
+            return "Variables names cannot be empty";
         }
+        if (variableName.startsWith("_")) {
+            return String.format("Variable name '%s' cannot begin with '_'", variableName);
+        }
+        if (Character.isDigit(variableName.charAt(0))) {
+            return String.format("Variable name '%s' cannot begin with a digit", variableName);
+        }
+        if (variableName.contains(".")) {
+            return String.format("Variable name '%s' cannot contain a period", variableName);
+        }
+        return null;
+    }
+
+    public static String setVariables(ExecutionContext context, String text) {
         // figure out which variables are present in the string
         Matcher matcher = variablesPattern.matcher(text);
         StringBuffer stringBuffer = new StringBuffer(text.length());
         while (matcher.find()) {
             String variableName = matcher.group(1);
             // see if variable is recognized;
-            String value = getVariableValue(context, plantData, variableName);
+            String value = getVariableValue(context, variableName);
             if (value == null) {
                 matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement("$"+variableName+"$"));
             } else {
@@ -89,7 +106,7 @@ public class ScriptHelper {
         return stringBuffer.toString();
     }
 
-    public static boolean updateGlobalPlantDataVariableValue(PlantData plantData, String variableName, Object value) {
+    public static boolean updateAnyDataVariableValue(ExecutionContext context, String variableName, Object value) {
         // if variable name contains period, then it refers to a plant variable
         if (variableName.contains(".")) {
             String[] variableParts = getVariableNameParts(variableName);
@@ -102,16 +119,24 @@ public class ScriptHelper {
                         value);
             }
         }
-        // otherwise it could be referring to a specific plant block's PlantData
+        // otherwise it could be referring to a specific plant block's PlantData or local variable
         else {
-            if (plantData != null) {
-                return plantData.updateVariable(variableName, value);
+            // check if local variable
+            if (context.getWrapper().isVariable(variableName)) {
+                return context.getWrapper().updateVariable(variableName, value);
+            }
+            // check if plant block data
+            if (context.isPlantDataPossible()) {
+                PlantData plantData = context.getPlantData();
+                if (plantData != null) {
+                    return plantData.updateVariable(variableName, value);
+                }
             }
         }
         return false;
     }
 
-    public static Object getGlobalPlantDataVariableValue(PlantData plantData, String variableName) {
+    public static Object getAnyDataVariableValue(ExecutionContext context, String variableName) {
         // if variable name contains period, then it refers to a plant variable
         if (variableName.contains(".")) {
             String[] variableParts = getVariableNameParts(variableName);
@@ -123,10 +148,19 @@ public class ScriptHelper {
                         variableParts[3]);
             }
         }
-        // otherwise it could be referring to a specific plant block's PlantData
+        // otherwise it could be referring to a specific plant block's PlantData or local variable
         else {
-            if (plantData != null) {
-                return plantData.getVariable(variableName);
+            // check if local variable
+            Object variableValue = context.getWrapper().getVariable(variableName);
+            if (variableValue != null) {
+                return variableValue;
+            }
+            // check if plant block data
+            if (context.isPlantDataPossible()) {
+                PlantData plantData = context.getPlantData();
+                if (plantData != null) {
+                    return plantData.getVariable(variableName);
+                }
             }
         }
         return null;
@@ -142,7 +176,8 @@ public class ScriptHelper {
         return null;
     }
 
-    private static String getVariableValue(ExecutionContext context, PlantData plantData, String variableName) {
+    private static String getVariableValue(ExecutionContext context, String variableName) {
+        Object variableValue = null;
         // check if it is a property name
         if (variableName.startsWith("_")) {
             if ("_random_uuid".equals(variableName)) {
@@ -225,8 +260,9 @@ public class ScriptHelper {
                 }
             }
         }
-        // check if variable exists in plant block data
-        Object variableValue = getGlobalPlantDataVariableValue(plantData, variableName);
+        // get plant variable value
+        variableValue = getAnyDataVariableValue(context, variableName);
+        // convert variable value to string, if not null
         if (variableValue != null) {
             // create a ScriptResult for easy conversion to string
             try {

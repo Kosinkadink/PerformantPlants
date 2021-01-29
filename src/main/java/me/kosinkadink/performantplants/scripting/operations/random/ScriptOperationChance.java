@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
 import me.kosinkadink.performantplants.util.RandomHelper;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationChance extends ScriptOperationUnary {
 
 
@@ -12,7 +14,7 @@ public class ScriptOperationChance extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         return new ScriptResult(RandomHelper.generateChancePercentage(
                 getInput().loadValue(context).getDoubleValue())
         );
@@ -36,7 +38,7 @@ public class ScriptOperationChance extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.RANDOM;
     }
 

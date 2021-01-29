@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.storage.StageStorage;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationChangeStage extends ScriptOperation {
 
     PerformantPlants performantPlants;
@@ -23,7 +25,7 @@ public class ScriptOperationChangeStage extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         // if no block or is a child (has parent), do nothing
         if (!context.isPlantBlockSet()) {
             return ScriptResult.TRUE;
@@ -79,7 +81,7 @@ public class ScriptOperationChangeStage extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 }

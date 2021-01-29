@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting.operations.flow;
 
 import me.kosinkadink.performantplants.scripting.*;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 
 public class ScriptOperationSwitch extends ScriptOperation {
@@ -29,7 +30,7 @@ public class ScriptOperationSwitch extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         ScriptResult condition = getCondition().loadValue(context);
         ScriptBlock action = caseMap.get(condition);
         if (action != null) {
@@ -43,7 +44,7 @@ public class ScriptOperationSwitch extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FLOW;
     }
 

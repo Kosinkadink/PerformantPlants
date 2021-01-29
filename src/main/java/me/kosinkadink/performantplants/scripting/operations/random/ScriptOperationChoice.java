@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.random;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.util.RandomHelper;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationChoice extends ScriptOperation {
 
     private boolean containsString = false;
@@ -15,7 +17,7 @@ public class ScriptOperationChoice extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         // if only one input, use it
         if (inputs.length == 1) {
             return inputs[0].loadValue(context);
@@ -84,7 +86,7 @@ public class ScriptOperationChoice extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.RANDOM;
     }
 

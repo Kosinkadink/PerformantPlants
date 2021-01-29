@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationAnd extends ScriptOperationBinaryLogic {
 
     public ScriptOperationAnd(ScriptBlock left, ScriptBlock right) {
@@ -11,7 +13,7 @@ public class ScriptOperationAnd extends ScriptOperationBinaryLogic {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         // load values with short circuiting
         return new ScriptResult(
                 getLeft().loadValue(context).getBooleanValue() &&

@@ -2,6 +2,8 @@ package me.kosinkadink.performantplants.scripting.operations.flow;
 
 import me.kosinkadink.performantplants.scripting.*;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationIf extends ScriptOperation {
 
     public ScriptOperationIf(ScriptBlock condition, ScriptBlock ifTrue) {
@@ -25,7 +27,7 @@ public class ScriptOperationIf extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         ScriptResult conditionInstance = getCondition().loadValue(context);
         if (conditionInstance.getBooleanValue()) {
             return getIfTrue().loadValue(context);
@@ -48,7 +50,7 @@ public class ScriptOperationIf extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FLOW;
     }
 

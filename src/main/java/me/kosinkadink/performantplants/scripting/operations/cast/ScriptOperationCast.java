@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
 
+import javax.annotation.Nonnull;
+
 public abstract class ScriptOperationCast extends ScriptOperationUnary {
 
     public ScriptOperationCast(ScriptBlock input) {
@@ -24,7 +26,7 @@ public abstract class ScriptOperationCast extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.CAST;
     }
 

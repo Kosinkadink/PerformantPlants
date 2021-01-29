@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.scripting.*;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationCancelTask extends ScriptOperation {
 
     public ScriptOperationCancelTask(ScriptBlock taskId) {
@@ -14,7 +16,7 @@ public class ScriptOperationCancelTask extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         String taskId = getTaskId().loadValue(context).getStringValue();
         if (taskId.isEmpty()) {
             return ScriptResult.FALSE;
@@ -39,7 +41,7 @@ public class ScriptOperationCancelTask extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 }

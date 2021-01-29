@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationToDouble extends ScriptOperationCast {
 
     public ScriptOperationToDouble(ScriptBlock input) {
@@ -17,7 +19,7 @@ public class ScriptOperationToDouble extends ScriptOperationCast {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         return new ScriptResult(getInput().loadValue(context).getDoubleValue());
     }
 

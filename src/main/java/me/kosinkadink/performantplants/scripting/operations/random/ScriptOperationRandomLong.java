@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 import me.kosinkadink.performantplants.util.RandomHelper;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationRandomLong extends ScriptOperationBinary {
 
     public ScriptOperationRandomLong(ScriptBlock left, ScriptBlock right) {
@@ -11,7 +13,7 @@ public class ScriptOperationRandomLong extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         ScriptResult leftInstance = getLeft().loadValue(context);
         ScriptResult rightInstance = getRight().loadValue(context);
         // perform the random generation
@@ -39,7 +41,7 @@ public class ScriptOperationRandomLong extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.RANDOM;
     }
 

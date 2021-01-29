@@ -7,10 +7,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class ExecutionContext {
 
-    private ExecutionWrapper wrapper;
+    private ExecutionWrapper wrapper = new ExecutionWrapper();
 
     private Player player = null;
     private PlantBlock plantBlock = null;
+    private PlantData plantData = null;
     private ItemStack itemStack = null;
     private EquipmentSlot equipmentSlot = null;
 
@@ -33,7 +34,9 @@ public class ExecutionContext {
     }
 
     public ExecutionContext setWrapper(ExecutionWrapper wrapper) {
-        this.wrapper = wrapper;
+        if (wrapper != null) {
+            this.wrapper = wrapper;
+        }
         return this;
     }
 
@@ -84,6 +87,37 @@ public class ExecutionContext {
 
     public ExecutionContext set(PlantBlock plantBlock) {
         return setPlantBlock(plantBlock);
+    }
+    //endregion
+
+    //region PlantData
+    public PlantData getPlantData() {
+        // if plant data set directly, return that
+        if (plantData != null) {
+            return plantData;
+        }
+        // otherwise return effective plant data from block
+        else if (plantBlock != null) {
+            return plantBlock.getEffectivePlantData();
+        }
+        return null;
+    }
+
+    public boolean isPlantDataSet() {
+        return plantData != null;
+    }
+
+    public boolean isPlantDataPossible() {
+        return plantData != null || plantBlock != null;
+    }
+
+    public ExecutionContext setPlantData(PlantData data) {
+        plantData = data;
+        return this;
+    }
+
+    public ExecutionContext set(PlantData data) {
+        return setPlantData(data);
     }
     //endregion
 

@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
+import javax.annotation.Nonnull;
+
 public abstract class ScriptOperationBinaryMath extends ScriptOperationBinary {
 
     public ScriptOperationBinaryMath(ScriptBlock left, ScriptBlock right) {
@@ -32,7 +34,7 @@ public abstract class ScriptOperationBinaryMath extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.MATH;
     }
 

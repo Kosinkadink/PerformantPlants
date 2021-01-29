@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationToLong extends ScriptOperationCast {
 
     public ScriptOperationToLong(ScriptBlock input) {
@@ -17,7 +19,7 @@ public class ScriptOperationToLong extends ScriptOperationCast {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         return new ScriptResult(getInput().loadValue(context).getLongValue());
     }
 

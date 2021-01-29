@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationHasMainHandEnchantment extends ScriptOperation {
 
     public ScriptOperationHasMainHandEnchantment(ScriptBlock enchantment) {
@@ -15,7 +17,7 @@ public class ScriptOperationHasMainHandEnchantment extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         String enchantmentName = getEnchantment().loadValue(context).getStringValue().toLowerCase();
         Enchantment enchantment = null;
         try {
@@ -43,7 +45,7 @@ public class ScriptOperationHasMainHandEnchantment extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.INVENTORY;
     }
 }

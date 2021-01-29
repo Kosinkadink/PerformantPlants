@@ -6,6 +6,8 @@ import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.function.ScriptOperationSetValue;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationModulusOf extends ScriptOperationModulus {
 
     public ScriptOperationModulusOf(ScriptBlock left, ScriptBlock right) {
@@ -13,7 +15,7 @@ public class ScriptOperationModulusOf extends ScriptOperationModulus {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) {
         ScriptResult result = super.perform(context);
         // if left was a variable, set the result to its new value
         if (getLeft() instanceof ScriptResult && getLeft().containsVariable()) {

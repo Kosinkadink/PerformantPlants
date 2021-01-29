@@ -10,6 +10,7 @@ import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         if (!context.isPlantBlockSet()) {
             return ScriptResult.FALSE;
         }
@@ -101,7 +102,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }
 

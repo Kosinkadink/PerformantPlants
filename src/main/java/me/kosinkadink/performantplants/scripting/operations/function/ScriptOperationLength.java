@@ -3,6 +3,8 @@ package me.kosinkadink.performantplants.scripting.operations.function;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationUnary;
 
+import javax.annotation.Nonnull;
+
 public class ScriptOperationLength extends ScriptOperationUnary {
 
 
@@ -11,7 +13,7 @@ public class ScriptOperationLength extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptResult perform(ExecutionContext context) throws IllegalArgumentException {
+    public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         return new ScriptResult(getInput().loadValue(context).getStringValue().length());
     }
 
@@ -28,7 +30,7 @@ public class ScriptOperationLength extends ScriptOperationUnary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.FUNCTION;
     }
 

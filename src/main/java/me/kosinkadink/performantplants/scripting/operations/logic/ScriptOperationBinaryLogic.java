@@ -5,6 +5,8 @@ import me.kosinkadink.performantplants.scripting.ScriptCategory;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperationBinary;
 
+import javax.annotation.Nonnull;
+
 public abstract class ScriptOperationBinaryLogic extends ScriptOperationBinary {
 
     public ScriptOperationBinaryLogic(ScriptBlock left, ScriptBlock right) {
@@ -22,7 +24,7 @@ public abstract class ScriptOperationBinaryLogic extends ScriptOperationBinary {
     }
 
     @Override
-    public ScriptCategory getCategory() {
+    public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.LOGIC;
     }
 
