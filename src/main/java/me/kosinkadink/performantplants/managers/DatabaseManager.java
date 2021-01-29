@@ -1382,16 +1382,19 @@ public class DatabaseManager {
             PlantData plantData = new PlantData(rs.getString("json_data"));
             // get plant block at location
             PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockLocation);
-            // forcefully initialize plant data if block has no parent (and therefore is a parent)
-            if (!plantBlock.hasParent()) {
-                plantBlock.forcefullyInitializePlantData();
+            // if plant block exists, try to set plant data
+            if (plantBlock != null) {
+                // forcefully initialize plant data if block has no parent (and therefore is a parent)
+                if (!plantBlock.hasParent()) {
+                    plantBlock.forcefullyInitializePlantData();
+                }
+                // update data, if plantBlock has initial data
+                if (plantBlock.hasPlantData()) {
+                    plantBlock.getPlantData().updateData(plantData);
+                    return null;
+                }
             }
-            // update data, if plantBlock has initial data
-            if (plantBlock.hasPlantData()) {
-                plantBlock.getPlantData().updateData(plantData);
-                return null;
-            }
-            // otherwise, plant no longer uses data and it should be deleted from db
+            // otherwise, plant block either no longer exists or no longer uses data and it should be deleted from db
             return blockLocation;
         } catch (SQLException e) {
             performantPlants.getLogger().warning("SQLException occurred trying to load data; " + e.toString());

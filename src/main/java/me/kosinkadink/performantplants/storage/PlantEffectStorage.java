@@ -40,7 +40,7 @@ public class PlantEffectStorage {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(context);
+            boolean triggered = effect.performEffectPlayer(context);
             // add to count if triggered
             if (triggered) {
                 effectCount++;
@@ -56,7 +56,7 @@ public class PlantEffectStorage {
         boolean limited = getEffectLimit() > 0;
         int effectCount = 0;
         for (PlantEffect effect : getEffects()) {
-            boolean triggered = effect.performEffect(context);
+            boolean triggered = effect.performEffectBlock(context);
             // add to count if triggered
             if (triggered) {
                 effectCount++;
