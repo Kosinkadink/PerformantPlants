@@ -32,11 +32,6 @@ public class ScriptOperationEffects extends ScriptOperation {
     }
 
     @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
-    }
-
-    @Override
     public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.ACTION;
     }

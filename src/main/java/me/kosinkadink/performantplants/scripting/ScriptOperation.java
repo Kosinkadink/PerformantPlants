@@ -1,5 +1,7 @@
 package me.kosinkadink.performantplants.scripting;
 
+import me.kosinkadink.performantplants.util.ScriptHelper;
+
 import javax.annotation.Nonnull;
 
 public abstract class ScriptOperation extends ScriptBlock {
@@ -46,7 +48,15 @@ public abstract class ScriptOperation extends ScriptBlock {
 
     protected abstract void setType();
 
-    protected abstract void validateInputs() throws IllegalArgumentException;
+    protected void validateInputs() throws IllegalArgumentException {
+        for (ScriptBlock input : inputs) {
+            if (!ScriptHelper.isSimpleType(input.getType())) {
+                throw new IllegalArgumentException(
+                        String.format("Inputs expected to be ScriptType BOOLEAN, STRING, LONG, or DOUBLE, but was %s",
+                                input.getType().toString()));
+            }
+        }
+    }
 
     protected void validateInputsAndSetType() throws IllegalArgumentException {
         validateInputs();

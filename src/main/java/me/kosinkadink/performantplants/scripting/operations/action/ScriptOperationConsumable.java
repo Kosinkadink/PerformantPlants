@@ -54,9 +54,4 @@ public class ScriptOperationConsumable extends ScriptOperation {
         type = ScriptType.BOOLEAN;
     }
 
-    @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
-    }
-
 }

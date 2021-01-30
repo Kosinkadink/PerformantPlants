@@ -74,8 +74,10 @@ public class ScriptOperationChoice extends ScriptOperation {
                 case BOOLEAN:
                     containsBoolean = true;
                     break;
-                case NULL:
-                    throw new IllegalArgumentException("Choice operation does not allow ScriptType NULL as an input");
+                default:
+                    throw new IllegalArgumentException(
+                            String.format("Choice operation does not allow ScriptType %s as an input",
+                                    input.getType().toString()));
             }
         }
     }

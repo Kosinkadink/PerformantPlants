@@ -16,7 +16,7 @@ public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
 
     @Override
     public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
-        return getScriptBlock().loadValue(context);
+        return getScriptBlock().loadValue(new ExecutionContext().set(context.getPlayer()));
     }
 
     @Override

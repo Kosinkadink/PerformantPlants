@@ -4,11 +4,11 @@ import me.kosinkadink.performantplants.scripting.*;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationWrapper extends ScriptOperation {
+public class ScriptOperationWrapData extends ScriptOperation {
 
     protected final ScriptPlantData scriptPlantData;
 
-    public ScriptOperationWrapper(@Nonnull ScriptPlantData scriptPlantData, @Nonnull ScriptBlock scriptBlock) {
+    public ScriptOperationWrapData(@Nonnull ScriptPlantData scriptPlantData, @Nonnull ScriptBlock scriptBlock) {
         super(scriptBlock);
         this.scriptPlantData = scriptPlantData;
     }
@@ -35,12 +35,12 @@ public class ScriptOperationWrapper extends ScriptOperation {
     }
 
     @Override
-    protected void setType() {
-        type = getScriptBlock().getType();
+    public boolean shouldOptimize() {
+        return false;
     }
 
     @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
+    protected void setType() {
+        type = getScriptBlock().getType();
     }
 }

@@ -111,9 +111,4 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
         type = ScriptType.BOOLEAN;
     }
 
-    @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
-    }
-
 }

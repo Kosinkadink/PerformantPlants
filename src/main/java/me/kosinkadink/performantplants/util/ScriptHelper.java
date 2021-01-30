@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.scripting.*;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -24,6 +25,8 @@ public class ScriptHelper {
             return ScriptType.BOOLEAN;
         } else if (o instanceof String) {
             return ScriptType.STRING;
+        } else if (o instanceof ItemStack) {
+            return ScriptType.ITEMSTACK;
         }
         return null;
     }
@@ -62,7 +65,7 @@ public class ScriptHelper {
         return !isNull(scriptBlock);
     }
 
-    public static boolean isSupportedType(ScriptType scriptType) {
+    public static boolean isSimpleType(ScriptType scriptType) {
         return scriptType == ScriptType.BOOLEAN || scriptType == ScriptType.STRING
                 || scriptType == ScriptType.LONG || scriptType == ScriptType.DOUBLE;
     }

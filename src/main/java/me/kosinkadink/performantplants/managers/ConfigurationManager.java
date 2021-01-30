@@ -27,6 +27,7 @@ import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperation
 import me.kosinkadink.performantplants.scripting.operations.function.*;
 import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationGetMainHandEnchantmentLevel;
 import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationHasMainHandEnchantment;
+import me.kosinkadink.performantplants.scripting.operations.item.*;
 import me.kosinkadink.performantplants.scripting.operations.logic.*;
 import me.kosinkadink.performantplants.scripting.operations.math.*;
 import me.kosinkadink.performantplants.scripting.operations.player.*;
@@ -3877,9 +3878,10 @@ public class ConfigurationManager {
                 case "containsscope":
                 case "containsscopeparameter":
                     returned = createScriptOperationContainsScopeParameter(blockSection, directValue, context); break;
-                case "wrap":
-                case "wrapper":
-                    returned = createScriptOperationWrapper(blockSection, directValue, context); break;
+                case "wrapdata":
+                    returned = createScriptOperationWrapData(blockSection, directValue, context); break;
+                case "wrapitem":
+                    returned = createScriptOperationWrapItem(blockSection, directValue, context); break;
                 // flow
                 case "if":
                     returned = createScriptOperationIf(blockSection, directValue, context); break;
@@ -3927,6 +3929,17 @@ public class ConfigurationManager {
                     returned =  createScriptOperationHasMainHandEnchantment(blockSection, directValue, blockName, context); break;
                 case "getmainhandenchantmentlevel":
                     returned =  createScriptOperationGetMainHandEnchantmentLevel(blockSection, directValue, blockName, context); break;
+                // item
+                case "isitemplant":
+                    returned = new ScriptOperationIsItemPlant(); break;
+                case "isitemsimilar":
+                    returned = createScriptOperationItemIsSimilar(blockSection, directValue); break;
+                case "isitemmaterial":
+                    returned = createScriptOperationItemIsMaterial(blockSection, directValue, blockName, context); break;
+                case "itemgetenchantmentlevel":
+                    returned = createScriptBlockOperationItemGetEnchantmentLevel(blockSection, directValue, blockName, context); break;
+                case "itemhasenchantment":
+                    returned = createScriptBlockOperationItemHasEnchantment(blockSection, directValue, blockName, context); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, directValue, blockName, context); break;
@@ -4491,15 +4504,15 @@ public class ConfigurationManager {
         }
         return new ScriptOperationGetValueScopeParameter(plantId, scope, parameter, variableName, expectedType);
     }
-    ScriptOperation createScriptOperationWrapper(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    ScriptOperation createScriptOperationWrapData(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
-                    "ScriptOperationWrapper in section: %s", section.getCurrentPath()));
+                    "ScriptOperationWrapData in section: %s", section.getCurrentPath()));
             return null;
         }
         // get data
         if (!section.isSet("data")) {
-            performantPlants.getLogger().warning("Data definition missing for wrapper in section: " + section.getCurrentPath());
+            performantPlants.getLogger().warning("Data definition missing for WrapData in section: " + section.getCurrentPath());
         }
         ScriptPlantData scriptData = createScriptPlantData(section, "data", context);
         if (scriptData == null) {
@@ -4507,7 +4520,7 @@ public class ConfigurationManager {
         }
         // get script block
         if (!section.isSet("script")) {
-            performantPlants.getLogger().warning("Script operand missing for wrapper in section: " + section.getCurrentPath());
+            performantPlants.getLogger().warning("Script operand missing for WrapData in section: " + section.getCurrentPath());
             return null;
         }
         // wrap and unwrap context with data to facilitate checking valid usage of local variables
@@ -4518,7 +4531,38 @@ public class ConfigurationManager {
         if (scriptBlock == null) {
             return null;
         }
-        return new ScriptOperationWrapper(scriptData, scriptBlock);
+        return new ScriptOperationWrapData(scriptData, scriptBlock);
+    }
+    ScriptOperation createScriptOperationWrapItem(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationWrapItem in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        // get item block
+        if (!section.isSet("item")) {
+            performantPlants.getLogger().warning("Item operand missing for WrapItem in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock itemBlock = createPlantScript(section, "item", context);
+        if (itemBlock == null) {
+            return null;
+        } else if (itemBlock.getType() != ScriptType.ITEMSTACK) {
+            performantPlants.getLogger().warning(
+                    String.format("Item operand must be ScriptType ITEMSTACK, not %s in section: %s",
+                            itemBlock.getType().toString(), section.getCurrentPath()));
+            return null;
+        }
+        // get script block
+        if (!section.isSet("script")) {
+            performantPlants.getLogger().warning("Script operand missing for WrapItem in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock scriptBlock = createPlantScript(section, "script", context);
+        if (scriptBlock == null) {
+            return null;
+        }
+        return new ScriptOperationWrapItem(itemBlock, scriptBlock);
     }
 
     //flow
@@ -4940,7 +4984,6 @@ public class ConfigurationManager {
         }
         return new ScriptOperationHasMainHandEnchantment(operand);
     }
-
     private ScriptBlock createScriptOperationGetMainHandEnchantmentLevel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
@@ -4949,6 +4992,43 @@ public class ConfigurationManager {
         return new ScriptOperationGetMainHandEnchantmentLevel(operand);
     }
 
+    //item
+    private ScriptBlock createScriptOperationItemIsSimilar(ConfigurationSection section, boolean directValue) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationIsItemSimilar in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        // load item stack
+        ItemSettings itemSettings = loadItemConfig(section, true);
+        if (itemSettings == null) {
+            performantPlants.getLogger().warning(
+                    "Item could not be generated for ScriptOperationIsItemSimilar in section: " + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationItemIsSimilar(itemSettings.generateItemStack());
+    }
+    private ScriptBlock createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationItemIsMaterial(operand);
+    }
+    private ScriptBlock createScriptBlockOperationItemGetEnchantmentLevel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationItemGetEnchantmentLevel(operand);
+    }
+    private ScriptBlock createScriptBlockOperationItemHasEnchantment(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationItemHasEnchantment(operand);
+    }
     //endregion
 
     String getFileNameWithoutExtension(File file) {

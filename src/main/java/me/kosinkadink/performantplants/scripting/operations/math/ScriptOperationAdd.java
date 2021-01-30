@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.util.ScriptHelper;
 
 import javax.annotation.Nonnull;
 
@@ -32,8 +33,8 @@ public class ScriptOperationAdd extends ScriptOperationBinaryMath {
         ScriptBlock left = getLeft();
         ScriptBlock right = getRight();
         if (left == null || right == null ||
-                !(left.getType() == ScriptType.LONG || left.getType() == ScriptType.DOUBLE || left.getType() == ScriptType.BOOLEAN || left.getType() == ScriptType.STRING) ||
-                !(right.getType() == ScriptType.LONG || right.getType() == ScriptType.DOUBLE || right.getType() == ScriptType.BOOLEAN || left.getType() == ScriptType.STRING)) {
+                !ScriptHelper.isSimpleType(left.getType()) ||
+                !ScriptHelper.isSimpleType(right.getType())) {
             throw new IllegalArgumentException("Add operation only supports ScriptType LONG, DOUBLE, BOOLEAN, and STRING");
         }
         if (left.getType() != ScriptType.STRING && right.getType() == ScriptType.STRING) {

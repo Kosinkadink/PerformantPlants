@@ -56,7 +56,7 @@ public class ScriptOperationSwitch extends ScriptOperation {
     @Override
     protected void validateInputs() throws IllegalArgumentException {
         if (inputs.length < 1) {
-            throw new IllegalArgumentException("Not enough inputs for create ScriptOperationSwitch");
+            throw new IllegalArgumentException("Not enough inputs to create ScriptOperationSwitch");
         }
     }
 }

@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.scripting;
 
 public enum ScriptType {
-    LONG, DOUBLE, BOOLEAN, STRING, OBJECT, ARRAY, NULL;
+    LONG, DOUBLE, BOOLEAN, STRING, ITEMSTACK, OBJECT, ARRAY, NULL;
 
     public static ScriptType fromString(String type) {
         try {

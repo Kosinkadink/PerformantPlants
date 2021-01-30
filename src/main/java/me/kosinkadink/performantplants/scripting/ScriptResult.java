@@ -2,6 +2,8 @@ package me.kosinkadink.performantplants.scripting;
 
 import me.kosinkadink.performantplants.util.PlaceholderHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -143,6 +145,13 @@ public class ScriptResult extends ScriptBlock {
 
     public Float getFloatValue() {
         return getDoubleValue().floatValue();
+    }
+
+    public ItemStack getItemStackValue() {
+        if (type == ScriptType.ITEMSTACK) {
+            return (ItemStack) value;
+        }
+        return new ItemStack(Material.AIR);
     }
 
     public JSONObject getObjectValue() {

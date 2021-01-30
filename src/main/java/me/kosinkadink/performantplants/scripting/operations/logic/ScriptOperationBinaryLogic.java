@@ -19,11 +19,6 @@ public abstract class ScriptOperationBinaryLogic extends ScriptOperationBinary {
     }
 
     @Override
-    protected void validateInputs() {
-
-    }
-
-    @Override
     public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.LOGIC;
     }

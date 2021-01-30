@@ -17,11 +17,6 @@ public class ScriptOperationIsPlayerNull extends ScriptOperation {
     }
 
     @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
-    }
-
-    @Override
     public boolean shouldOptimize() {
         return false;
     }

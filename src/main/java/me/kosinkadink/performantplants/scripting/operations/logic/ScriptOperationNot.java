@@ -22,11 +22,6 @@ public class ScriptOperationNot extends ScriptOperationUnary {
     }
 
     @Override
-    protected void validateInputs() {
-
-    }
-
-    @Override
     public @Nonnull ScriptCategory getCategory() {
         return ScriptCategory.LOGIC;
     }

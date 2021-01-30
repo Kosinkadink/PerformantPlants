@@ -66,9 +66,4 @@ public class ScriptOperationInteract extends ScriptOperation {
     protected void setType() {
         type = ScriptType.BOOLEAN;
     }
-
-    @Override
-    protected void validateInputs() throws IllegalArgumentException {
-
-    }
 }

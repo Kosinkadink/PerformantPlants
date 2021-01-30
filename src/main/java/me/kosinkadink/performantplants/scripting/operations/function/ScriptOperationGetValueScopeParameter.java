@@ -12,7 +12,7 @@ public class ScriptOperationGetValueScopeParameter extends ScriptOperation {
 
     public ScriptOperationGetValueScopeParameter(ScriptBlock plantId, ScriptBlock scope, ScriptBlock parameter, ScriptBlock variableName, ScriptType expectedType) {
         super(plantId, scope, parameter, variableName);
-        if (!ScriptHelper.isSupportedType(expectedType)) {
+        if (!ScriptHelper.isSimpleType(expectedType)) {
             throw new IllegalArgumentException("ExpectedType must be ScriptType BOOLEAN, STRING, LONG, or DOUBLE");
         }
         this.expectedType = expectedType;
