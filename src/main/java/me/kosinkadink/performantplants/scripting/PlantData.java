@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.scripting;
 
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.util.ScriptHelper;
+import org.bukkit.inventory.ItemStack;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -50,6 +51,23 @@ public class PlantData {
 
     public PlantData clone() {
         JSONObject clone = (JSONObject) JSONValue.parse(createJsonString());
+        PlantData newPlantData = new PlantData(clone);
+        newPlantData.setPlant(plant);
+        return newPlantData;
+    }
+
+    public PlantData cloneWithoutParse() {
+        JSONObject clone = new JSONObject();
+        for (Object key : data.keySet()) {
+            Object value = data.get(key);
+            if (value != null) {
+                if (value instanceof ItemStack) {
+                    clone.put(key, ((ItemStack)value).clone());
+                    continue;
+                }
+                clone.put(key, value);
+            }
+        }
         PlantData newPlantData = new PlantData(clone);
         newPlantData.setPlant(plant);
         return newPlantData;

@@ -57,12 +57,20 @@ public class ScriptHelper {
         return scriptBlock.getType() == ScriptType.BOOLEAN;
     }
 
+    public static boolean isItemStack(ScriptBlock scriptBlock) {
+        return scriptBlock.getType() == ScriptType.ITEMSTACK;
+    }
+
     public static boolean isNull(ScriptBlock scriptBlock) {
         return scriptBlock == null || scriptBlock.getType() == ScriptType.NULL;
     }
 
     public static boolean isNotNull(ScriptBlock scriptBlock) {
         return !isNull(scriptBlock);
+    }
+
+    public static boolean isSimpleType(ScriptBlock scriptBlock) {
+        return scriptBlock != null && isSimpleType(scriptBlock.getType());
     }
 
     public static boolean isSimpleType(ScriptType scriptType) {

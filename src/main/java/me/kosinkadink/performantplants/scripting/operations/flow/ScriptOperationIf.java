@@ -6,23 +6,23 @@ import javax.annotation.Nonnull;
 
 public class ScriptOperationIf extends ScriptOperation {
 
-    public ScriptOperationIf(ScriptBlock condition, ScriptBlock ifTrue) {
-        this(condition, ifTrue, ScriptResult.getDefaultOfType(ifTrue.getType()));
+    public ScriptOperationIf(ScriptBlock condition, ScriptBlock then) {
+        this(condition, then, ScriptResult.getDefaultOfType(then.getType()));
     }
 
-    public ScriptOperationIf(ScriptBlock condition, ScriptBlock ifTrue, ScriptBlock ifFalse) {
-        super(condition, ifTrue, ifFalse);
+    public ScriptOperationIf(ScriptBlock condition, ScriptBlock then, ScriptBlock elseBlock) {
+        super(condition, then, elseBlock);
     }
 
     public ScriptBlock getCondition() {
         return inputs[0];
     }
 
-    public ScriptBlock getIfTrue() {
+    public ScriptBlock getThen() {
         return inputs[1];
     }
 
-    public ScriptBlock getIfFalse() {
+    public ScriptBlock getElse() {
         return inputs[2];
     }
 
@@ -30,22 +30,22 @@ public class ScriptOperationIf extends ScriptOperation {
     public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         ScriptResult conditionInstance = getCondition().loadValue(context);
         if (conditionInstance.getBooleanValue()) {
-            return getIfTrue().loadValue(context);
+            return getThen().loadValue(context);
         } else {
-            return getIfFalse().loadValue(context);
+            return getElse().loadValue(context);
         }
     }
 
     @Override
     protected void setType() {
-        type = getIfTrue().getType();
+        type = getThen().getType();
     }
 
     @Override
     protected void validateInputs() throws IllegalArgumentException {
         // then and else must match types, or illegal argument exception
-        if (getIfTrue().getType() != getIfFalse().getType()) {
-            throw new IllegalArgumentException("IfTrue and IfFalse did not have matching ScriptType");
+        if (getThen().getType() != getElse().getType()) {
+            throw new IllegalArgumentException("then and else blocks did not have matching ScriptType");
         }
     }
 

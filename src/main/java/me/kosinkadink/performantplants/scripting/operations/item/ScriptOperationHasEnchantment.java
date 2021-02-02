@@ -5,38 +5,41 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.util.ScriptHelper;
-import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationItemIsMaterial extends ScriptOperationItem {
+public class ScriptOperationHasEnchantment extends ScriptOperationItem {
 
-    public ScriptOperationItemIsMaterial(ScriptBlock itemStack, ScriptBlock material) {
-        super(itemStack, material);
+    public ScriptOperationHasEnchantment(ScriptBlock itemStack, ScriptBlock enchantment) {
+        super(itemStack, enchantment);
     }
 
     public ScriptBlock getItemStack() {
         return inputs[0];
     }
 
-    public ScriptBlock getMaterial() {
+    public ScriptBlock getEnchantment() {
         return inputs[1];
     }
 
     @Nonnull
     @Override
     public ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
-        if (!context.isItemStackSet()) {
+        // get item stack
+        ItemStack itemStack = getItemStack().loadValue(context).getItemStackValue();
+        // get enchantment
+        String enchantmentName = getEnchantment().loadValue(context).getStringValue().toLowerCase();
+        Enchantment enchantment = null;
+        try {
+            enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantmentName));
+        } catch (IllegalArgumentException ignored) { }
+        if (enchantment == null) {
             return ScriptResult.FALSE;
         }
-        // get material
-        String materialName = getMaterial().loadValue(context).getStringValue();
-        Material material = Material.getMaterial(materialName.toUpperCase());
-        if (material == null) {
-            return ScriptResult.FALSE;
-        }
-        // check if material matches
-        return new ScriptResult(context.getItemStack().getType() == material);
+        return new ScriptResult(itemStack.containsEnchantment(enchantment));
     }
 
     @Override
@@ -49,8 +52,8 @@ public class ScriptOperationItemIsMaterial extends ScriptOperationItem {
         if (!ScriptHelper.isItemStack(getItemStack())) {
             throw new IllegalArgumentException("Requires ScriptType ITEMSTACK for itemstack");
         }
-        if (!ScriptHelper.isString(getMaterial())) {
-            throw new IllegalArgumentException("Requires ScriptType STRING for material");
+        if (!ScriptHelper.isString(getEnchantment())) {
+            throw new IllegalArgumentException("Requires ScriptType STRING for enchantment");
         }
     }
 }

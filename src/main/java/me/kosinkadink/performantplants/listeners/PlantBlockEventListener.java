@@ -77,7 +77,7 @@ public class PlantBlockEventListener implements Listener {
                 // set block orientation (only used if orientable block to be placed)
                 plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
                 performantPlants.getPlantManager().addPlantBlock(plantBlock);
-                decrementItemStack(itemStack);
+                ItemHelper.decrementItemStack(itemStack);
             }
         }
     }
@@ -245,7 +245,7 @@ public class PlantBlockEventListener implements Listener {
             // take item, if applicable
             if (!onlyTakeItemOnDo || shouldDo) {
                 if (plantInteract.isTakeItem(context)) {
-                    decrementItemStack(itemStack);
+                    ItemHelper.decrementItemStack(itemStack);
                 }
             }
             // do break actions for block
@@ -318,7 +318,7 @@ public class PlantBlockEventListener implements Listener {
         // decrement item, if set
         if (!onlyTakeItemOnDo || shouldDo) {
             if (plantConsumable.isTakeItem(context)) {
-                decrementItemStack(callStack);
+                ItemHelper.decrementItemStack(callStack);
             }
         }
         // add damage to item, if set
@@ -334,7 +334,7 @@ public class PlantBlockEventListener implements Listener {
                 if (requirement.isTakeItem(context)) {
                     // if should be in hand, decrement other hand's stack
                     if (requirement.isInHand(context)) {
-                        decrementItemStack(otherStack);
+                        ItemHelper.decrementItemStack(otherStack);
                     }
                     // otherwise take required item out of inventory
                     else {
@@ -600,14 +600,6 @@ public class PlantBlockEventListener implements Listener {
                 }
             }
         }
-    }
-
-    void decrementItemStack(ItemStack itemStack) {
-        // if material is air, do nothing
-        if (itemStack.getType() == Material.AIR) {
-            return;
-        }
-        itemStack.setAmount(itemStack.getAmount() - 1);
     }
 
 }

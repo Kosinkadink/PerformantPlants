@@ -25,8 +25,7 @@ import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperation
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationSwitch;
 import me.kosinkadink.performantplants.scripting.operations.function.*;
-import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationGetMainHandEnchantmentLevel;
-import me.kosinkadink.performantplants.scripting.operations.inventory.ScriptOperationHasMainHandEnchantment;
+import me.kosinkadink.performantplants.scripting.operations.inventory.*;
 import me.kosinkadink.performantplants.scripting.operations.item.*;
 import me.kosinkadink.performantplants.scripting.operations.logic.*;
 import me.kosinkadink.performantplants.scripting.operations.math.*;
@@ -3242,48 +3241,60 @@ public class ConfigurationManager {
                                 ScriptResult resultValue = (ScriptResult) value;
                                 if (!resultValue.containsVariable() && !resultValue.isHasPlaceholder()) {
                                     jsonObject.put(variableName, resultValue.getBooleanValue());
+                                    break;
                                 }
-                            } else {
-                                // put in default value, store script
-                                jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getBooleanValue());
-                                scriptBlockMap.put(variableName, value);
                             }
+                            // put in default value, store script
+                            jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getBooleanValue());
+                            scriptBlockMap.put(variableName, value);
                             break;
                         case LONG:
                             if (value instanceof ScriptResult) {
                                 ScriptResult resultValue = (ScriptResult) value;
                                 if (!resultValue.containsVariable() && !resultValue.isHasPlaceholder()) {
                                     jsonObject.put(variableName, resultValue.getLongValue());
+                                    break;
                                 }
-                            } else {
-                                // put in default value, store script
-                                jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getLongValue());
-                                scriptBlockMap.put(variableName, value);
                             }
+                            // put in default value, store script
+                            jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getLongValue());
+                            scriptBlockMap.put(variableName, value);
                             break;
                         case DOUBLE:
                             if (value instanceof ScriptResult) {
                                 ScriptResult resultValue = (ScriptResult) value;
                                 if (!resultValue.containsVariable() && !resultValue.isHasPlaceholder()) {
                                     jsonObject.put(variableName, resultValue.getDoubleValue());
+                                    break;
                                 }
-                            } else {
-                                // put in default value, store script
-                                jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getDoubleValue());
-                                scriptBlockMap.put(variableName, value);
                             }
+                            // put in default value, store script
+                            jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getDoubleValue());
+                            scriptBlockMap.put(variableName, value);
                             break;
                         case STRING:
                             if (value instanceof ScriptResult) {
                                 ScriptResult resultValue = (ScriptResult) value;
                                 if (!resultValue.containsVariable() && !resultValue.isHasPlaceholder()) {
                                     jsonObject.put(variableName, resultValue.getStringValue());
+                                    break;
                                 }
-                            } else {
-                                // put in default value, store script
-                                jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getStringValue());
-                                scriptBlockMap.put(variableName, value);
                             }
+                            // put in default value, store script
+                            jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getStringValue());
+                            scriptBlockMap.put(variableName, value);
+                            break;
+                        case ITEMSTACK:
+                            if (value instanceof ScriptResult) {
+                                ScriptResult resultValue = (ScriptResult) value;
+                                if (!resultValue.containsVariable() && !resultValue.isHasPlaceholder()) {
+                                    jsonObject.put(variableName, resultValue.getItemStackValue());
+                                    break;
+                                }
+                            }
+                            // put in default value, store script
+                            jsonObject.put(variableName, ScriptResult.getDefaultOfType(type).getItemStackValue());
+                            scriptBlockMap.put(variableName, value);
                             break;
                         default:
                             performantPlants.getLogger().warning(String.format("Variable type %s is not supported right now;" +
@@ -3925,21 +3936,67 @@ public class ConfigurationManager {
                 case "getworld":
                     returned = new ScriptOperationGetWorld(); break;
                 // inventory
-                case "hasmainhandenchantment":
-                    returned =  createScriptOperationHasMainHandEnchantment(blockSection, directValue, blockName, context); break;
-                case "getmainhandenchantmentlevel":
-                    returned =  createScriptOperationGetMainHandEnchantmentLevel(blockSection, directValue, blockName, context); break;
+                case "getmainhand":
+                    returned = new ScriptOperationGetMainHand(); break;
+                case "getoffhand":
+                    returned = new ScriptOperationGetOffhand(); break;
+                case "gethelmet":
+                    returned = new ScriptOperationGetHelmet(); break;
+                case "getchestplate":
+                    returned = new ScriptOperationGetChestplate(); break;
+                case "getleggings":
+                    returned = new ScriptOperationGetLeggings(); break;
+                case "getboots":
+                    returned = new ScriptOperationGetBoots(); break;
+                case "hasmainhand":
+                    returned = new ScriptOperationHasMainHand(); break;
+                case "hasoffhand":
+                    returned = new ScriptOperationHasOffhand(); break;
+                case "hashelmet":
+                    returned = new ScriptOperationHasHelmet(); break;
+                case "haschestplate":
+                    returned = new ScriptOperationHasChestplate(); break;
+                case "hasleggings":
+                    returned = new ScriptOperationHasLeggings(); break;
+                case "hasboots":
+                    returned = new ScriptOperationHasBoots(); break;
                 // item
-                case "isitemplant":
-                    returned = new ScriptOperationIsItemPlant(); break;
-                case "isitemsimilar":
-                    returned = createScriptOperationItemIsSimilar(blockSection, directValue); break;
-                case "isitemmaterial":
-                    returned = createScriptOperationItemIsMaterial(blockSection, directValue, blockName, context); break;
-                case "itemgetenchantmentlevel":
-                    returned = createScriptBlockOperationItemGetEnchantmentLevel(blockSection, directValue, blockName, context); break;
-                case "itemhasenchantment":
-                    returned = createScriptBlockOperationItemHasEnchantment(blockSection, directValue, blockName, context); break;
+                case "getcurrentitem":
+                case "getcurrentitemstack":
+                    returned = new ScriptOperationCurrentItem(); break;
+                case "takeone":
+                    returned = createScriptOperationTakeOne(blockSection, directValue, blockName, context); break;
+                case "getamount":
+                    returned = createScriptOperationGetAmount(blockSection, directValue, blockName, context); break;
+                case "isitemanyplant":
+                    returned = createScriptOperationIsItemAnyPlant(blockSection, directValue, blockName, context); break;
+                case "ispickaxe":
+                    returned = createScriptOperationIsPickaxe(blockSection, directValue, blockName, context); break;
+                case "isaxe":
+                    returned = createScriptOperationIsAxe(blockSection, directValue, blockName, context); break;
+                case "isshovel":
+                    returned = createScriptOperationIsShovel(blockSection, directValue, blockName, context); break;
+                case "ishoe":
+                    returned = createScriptOperationIsHoe(blockSection, directValue, blockName, context); break;
+                case "issword":
+                    returned = createScriptOperationIsSword(blockSection, directValue, blockName, context); break;
+                case "iswearable":
+                    returned = createScriptOperationIsWearable(blockSection, directValue, blockName, context); break;
+                case "isair":
+                    returned = createScriptOperationIsAir(blockSection, directValue, blockName, context); break;
+                case "createitem":
+                case "createitemstack":
+                    returned = createScriptOperationCreateItemStack(blockSection, directValue); break;
+                case "aresimilar":
+                    returned = createScriptOperationAreSimilar(blockSection, directValue, context); break;
+                case "itemismaterial":
+                    returned = createScriptOperationItemIsMaterial(blockSection, directValue, context); break;
+                case "itemgetmaterial":
+                    returned = createScriptOperationGetMaterial(blockSection, directValue, blockName, context); break;
+                case "getenchantmentlevel":
+                    returned = createScriptBlockOperationGetEnchantmentLevel(blockSection, directValue, context); break;
+                case "hasenchantment":
+                    returned = createScriptBlockOperationHasEnchantment(blockSection, directValue, context); break;
                 // random
                 case "chance":
                     returned = createScriptOperationChance(blockSection, directValue, blockName, context); break;
@@ -4024,20 +4081,27 @@ public class ConfigurationManager {
     }
 
     ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        return createScriptOperationBinary(section, directValue, context, "left", "right");
+    }
+
+    ArrayList<ScriptBlock> createScriptOperationBinary(ConfigurationSection section, boolean directValue, ExecutionContext context, String leftName, String rightName) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
                     "ScriptOperationBinary in section: %s", section.getCurrentPath()));
             return null;
         }
-        if (!section.isSet("left") || !section.isSet("right")) {
-            performantPlants.getLogger().warning("Left or right operand missing in section: " + section.getCurrentPath());
+        if (!section.isSet(leftName)) {
+            performantPlants.getLogger().warning(String.format("%s operand missing in section: %s", leftName, section.getCurrentPath()));
+            return null;
+        } else if (!section.isSet(rightName)) {
+            performantPlants.getLogger().warning(String.format("%s operand missing in section: %s", rightName, section.getCurrentPath()));
             return null;
         }
-        ScriptBlock left = createPlantScript(section, "left", context);
+        ScriptBlock left = createPlantScript(section, leftName, context);
         if (left == null) {
             return null;
         }
-        ScriptBlock right = createPlantScript(section, "right", context);
+        ScriptBlock right = createPlantScript(section, rightName, context);
         if (right == null) {
             return null;
         }
@@ -4540,11 +4604,11 @@ public class ConfigurationManager {
             return null;
         }
         // get item block
-        if (!section.isSet("item")) {
-            performantPlants.getLogger().warning("Item operand missing for WrapItem in section: " + section.getCurrentPath());
+        if (!section.isSet("itemstack")) {
+            performantPlants.getLogger().warning("Itemstack operand missing for WrapItem in section: " + section.getCurrentPath());
             return null;
         }
-        ScriptBlock itemBlock = createPlantScript(section, "item", context);
+        ScriptBlock itemBlock = createPlantScript(section, "itemstack", context);
         if (itemBlock == null) {
             return null;
         } else if (itemBlock.getType() != ScriptType.ITEMSTACK) {
@@ -4573,10 +4637,11 @@ public class ConfigurationManager {
             return null;
         }
         String conditionString = "condition";
-        String ifTrueString = "if-true";
-        String ifFalseString = "if-false";
+        String ifTrueString = "then";
+        String ifFalseString = "else";
         if (!section.isSet(conditionString) || !section.isSet(ifTrueString)) {
-            performantPlants.getLogger().warning("Condition or if-true operand missing in section: " + section.getCurrentPath());
+            performantPlants.getLogger().warning(String.format("%s or %s operand missing in section: %s",
+                    conditionString, ifTrueString, section.getCurrentPath()));
             return null;
         }
         ScriptBlock condition = createPlantScript(section, conditionString, context);
@@ -4587,7 +4652,7 @@ public class ConfigurationManager {
         if (ifTrue == null) {
             return null;
         }
-        if (!section.isSet("if-false")) {
+        if (!section.isSet(ifFalseString)) {
             return new ScriptOperationIf(condition, ifTrue);
         }
         ScriptBlock ifFalse = createPlantScript(section, ifFalseString, context);
@@ -4977,57 +5042,202 @@ public class ConfigurationManager {
     }
 
     //inventory
-    private ScriptBlock createScriptOperationHasMainHandEnchantment(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
-        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
-        if (operand == null) {
-            return null;
-        }
-        return new ScriptOperationHasMainHandEnchantment(operand);
-    }
-    private ScriptBlock createScriptOperationGetMainHandEnchantmentLevel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
-        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
-        if (operand == null) {
-            return null;
-        }
-        return new ScriptOperationGetMainHandEnchantmentLevel(operand);
-    }
 
     //item
-    private ScriptBlock createScriptOperationItemIsSimilar(ConfigurationSection section, boolean directValue) {
+    private ScriptBlock createScriptOperationIsAir(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsAir(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsAir: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsPickaxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsPickaxe(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsPickaxe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsAxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsAxe(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsAxe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsShovel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsShovel(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsShovel: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsHoe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsHoe(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsHoe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsSword(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsSword(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsSword: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsWearable(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsWearable(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsWearable: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationIsItemAnyPlant(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationIsItemAnyPlant(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsItemAnyPlant: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationTakeOne(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationTakeOne(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationTakeOne: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationGetAmount(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationGetAmount(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationGetAmount: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationGetMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationItemGetMaterial(operand);
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationItemGetMaterial: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptOperationCreateItemStack(ConfigurationSection section, boolean directValue) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
-                    "ScriptOperationIsItemSimilar in section: %s", section.getCurrentPath()));
+                    "ScriptOperationItemStack in section: %s", section.getCurrentPath()));
             return null;
         }
         // load item stack
         ItemSettings itemSettings = loadItemConfig(section, true);
         if (itemSettings == null) {
             performantPlants.getLogger().warning(
-                    "Item could not be generated for ScriptOperationIsItemSimilar in section: " + section.getCurrentPath());
+                    "Item could not be generated for ScriptOperationItemStack in section: " + section.getCurrentPath());
             return null;
         }
-        return new ScriptOperationItemIsSimilar(itemSettings.generateItemStack());
+        return new ScriptOperationCreateItemStack(itemSettings.generateItemStack());
     }
-    private ScriptBlock createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
-        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
-        if (operand == null) {
+    private ScriptBlock createScriptOperationAreSimilar(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context);
+        if (operands == null) {
             return null;
         }
-        return new ScriptOperationItemIsMaterial(operand);
+        try {
+            return new ScriptOperationAreSimilar(operands.get(0), operands.get(1));
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationAreSimilar: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
     }
-    private ScriptBlock createScriptBlockOperationItemGetEnchantmentLevel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
-        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
-        if (operand == null) {
+    private ScriptBlock createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "material");
+        if (operands == null) {
             return null;
         }
-        return new ScriptOperationItemGetEnchantmentLevel(operand);
+        try {
+            return new ScriptOperationItemIsMaterial(operands.get(0), operands.get(1));
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationItemIsMaterial: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
     }
-    private ScriptBlock createScriptBlockOperationItemHasEnchantment(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
-        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
-        if (operand == null) {
+    private ScriptBlock createScriptBlockOperationGetEnchantmentLevel(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
+        if (operands == null) {
             return null;
         }
-        return new ScriptOperationItemHasEnchantment(operand);
+        try {
+            return new ScriptOperationGetEnchantmentLevel(operands.get(0), operands.get(1));
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationGetEnchantmentLevel: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
+    }
+    private ScriptBlock createScriptBlockOperationHasEnchantment(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
+        if (operands == null) {
+            return null;
+        }
+        try {
+            return new ScriptOperationHasEnchantment(operands.get(0), operands.get(1));
+        } catch (IllegalArgumentException e) {
+            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationHasEnchantment: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+            return null;
+        }
     }
     //endregion
 

@@ -22,7 +22,7 @@ public class ScriptPlantData {
     }
 
     public PlantData createPlantData(ExecutionContext context) {
-        PlantData currentData = baseData.clone();
+        PlantData currentData = baseData.cloneWithoutParse();
         for (Map.Entry<String, ScriptBlock> entry : scriptBlockMap.entrySet()) {
             baseData.updateVariable(entry.getKey(), entry.getValue());
         }

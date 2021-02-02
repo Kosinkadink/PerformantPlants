@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -218,6 +219,100 @@ public class ItemHelper {
             default:
                 return false;
         }
+    }
+
+    public static boolean isMaterialPickaxe(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            case DIAMOND_PICKAXE:
+            case GOLDEN_PICKAXE:
+            case IRON_PICKAXE:
+            case NETHERITE_PICKAXE:
+            case STONE_PICKAXE:
+            case WOODEN_PICKAXE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isMaterialAxe(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            case DIAMOND_AXE:
+            case GOLDEN_AXE:
+            case IRON_AXE:
+            case NETHERITE_AXE:
+            case STONE_AXE:
+            case WOODEN_AXE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isMaterialShovel(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            case STONE_SHOVEL:
+            case DIAMOND_SHOVEL:
+            case GOLDEN_SHOVEL:
+            case IRON_SHOVEL:
+            case NETHERITE_SHOVEL:
+            case WOODEN_SHOVEL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isMaterialHoe(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            case DIAMOND_HOE:
+            case GOLDEN_HOE:
+            case IRON_HOE:
+            case NETHERITE_HOE:
+            case STONE_HOE:
+            case WOODEN_HOE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isMaterialSword(ItemStack stack) {
+        if (stack == null) {
+            return false;
+        }
+        switch (stack.getType()) {
+            case STONE_SWORD:
+            case DIAMOND_SWORD:
+            case GOLDEN_SWORD:
+            case IRON_SWORD:
+            case NETHERITE_SWORD:
+            case WOODEN_SWORD:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean decrementItemStack(ItemStack itemStack) {
+        // if material is air, do nothing
+        if (itemStack.getType() == Material.AIR) {
+            return false;
+        }
+        itemStack.setAmount(itemStack.getAmount() - 1);
+        return true;
     }
 
 }

@@ -9,7 +9,6 @@ import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 

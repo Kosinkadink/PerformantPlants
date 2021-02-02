@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.function;
 
 import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
@@ -43,8 +44,13 @@ public class ScriptOperationWrapItem extends ScriptOperation {
     }
 
     @Override
+    public boolean shouldOptimize() {
+        return false;
+    }
+
+    @Override
     protected void validateInputs() throws IllegalArgumentException {
-        if (getItem().getType() != ScriptType.ITEMSTACK) {
+        if (!ScriptHelper.isItemStack(getItem())) {
             throw new IllegalArgumentException("ScriptOperationWrapItem requires ScriptType ITEMSTACK for item block");
         }
     }

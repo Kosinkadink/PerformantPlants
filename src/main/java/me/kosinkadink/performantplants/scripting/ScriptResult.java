@@ -17,6 +17,7 @@ public class ScriptResult extends ScriptBlock {
     public static final ScriptResult ZERO = new ScriptResult(0);
     public static final ScriptResult EMPTY = new ScriptResult("");
     public static final ScriptResult NULL = new ScriptResult(null);
+    public static final ScriptResult AIR = new ScriptResult(new ItemStack(Material.AIR));
 
     private Object value;
     private String variableName = null;
@@ -182,6 +183,8 @@ public class ScriptResult extends ScriptBlock {
                 return new ScriptResult(0L);
             case DOUBLE:
                 return new ScriptResult(0.0);
+            case ITEMSTACK:
+                return new ScriptResult(new ItemStack(Material.AIR));
             default:
                 return new ScriptResult(null);
         }

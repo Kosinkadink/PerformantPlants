@@ -46,6 +46,9 @@ public class ScriptOperationSetValue extends ScriptOperation {
                 case BOOLEAN:
                     ScriptHelper.updateAnyDataVariableValue(context, variableName, rightInstance.getBooleanValue());
                     break;
+                case ITEMSTACK:
+                    ScriptHelper.updateAnyDataVariableValue(context, variableName, rightInstance.getItemStackValue());
+                    break;
                 default:
                     break;
             }

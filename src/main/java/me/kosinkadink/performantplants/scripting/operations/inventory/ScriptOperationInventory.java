@@ -1,4 +1,4 @@
-package me.kosinkadink.performantplants.scripting.operations.item;
+package me.kosinkadink.performantplants.scripting.operations.inventory;
 
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptCategory;
@@ -6,16 +6,15 @@ import me.kosinkadink.performantplants.scripting.operations.type.ScriptOperation
 
 import javax.annotation.Nonnull;
 
-public abstract class ScriptOperationItem extends ScriptOperationNoOptimize {
+public abstract class ScriptOperationInventory extends ScriptOperationNoOptimize {
 
-    public ScriptOperationItem(ScriptBlock... inputs) {
+    public ScriptOperationInventory(ScriptBlock... inputs) {
         super(inputs);
     }
 
     @Nonnull
     @Override
     public ScriptCategory getCategory() {
-        return ScriptCategory.ITEM;
+        return ScriptCategory.INVENTORY;
     }
-
 }
