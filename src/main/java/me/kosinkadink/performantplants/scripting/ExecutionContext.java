@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.scripting;
 
 import me.kosinkadink.performantplants.blocks.PlantBlock;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +15,7 @@ public class ExecutionContext {
     private PlantData plantData = null;
     private ItemStack itemStack = null;
     private EquipmentSlot equipmentSlot = null;
+    private Location location = null;
 
     public ExecutionContext() {
 
@@ -25,7 +27,8 @@ public class ExecutionContext {
                 .set(player)
                 .set(plantBlock)
                 .set(itemStack)
-                .set(equipmentSlot);
+                .set(equipmentSlot)
+                .set(location);
     }
 
     //region Wrapper
@@ -156,6 +159,38 @@ public class ExecutionContext {
 
     public ExecutionContext set(EquipmentSlot equipmentSlot) {
         return setEquipmentSlot(equipmentSlot);
+    }
+    //endregion
+
+    //region Location
+    public Location getLocation() {
+        if (location != null) {
+            return location;
+        }
+        if (isPlayerSet()) {
+            return player.getLocation();
+        }
+        if (isPlantBlockSet()) {
+            return plantBlock.getBlock().getLocation();
+        }
+        return null;
+    }
+
+    public boolean isLocationSet() {
+        return location != null;
+    }
+
+    public boolean isLocationPossible() {
+        return getLocation() != null;
+    }
+
+    public ExecutionContext setLocation(Location location) {
+        this.location = location;
+        return this;
+    }
+
+    public ExecutionContext set(Location location) {
+        return setLocation(location);
     }
     //endregion
 }

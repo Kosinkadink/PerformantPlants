@@ -4,7 +4,7 @@ import me.kosinkadink.performantplants.scripting.*;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationIsPlayerDead extends ScriptOperation {
+public class ScriptOperationIsPlayerDead extends ScriptOperationPlayer {
 
     @Override
     public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
@@ -14,16 +14,6 @@ public class ScriptOperationIsPlayerDead extends ScriptOperation {
     @Override
     protected void setType() {
         type = ScriptType.BOOLEAN;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.PLAYER;
     }
 
 }

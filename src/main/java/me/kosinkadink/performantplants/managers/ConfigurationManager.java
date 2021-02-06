@@ -14,8 +14,10 @@ import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.*;
+import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationBreakBlock;
 import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationIsBlockNull;
 import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationPassOnlyBlock;
+import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationUseBlockLocation;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
@@ -24,6 +26,7 @@ import me.kosinkadink.performantplants.scripting.operations.compare.*;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationFunction;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
 import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationSwitch;
+import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationUntilTrue;
 import me.kosinkadink.performantplants.scripting.operations.function.*;
 import me.kosinkadink.performantplants.scripting.operations.inventory.*;
 import me.kosinkadink.performantplants.scripting.operations.item.*;
@@ -3770,248 +3773,265 @@ public class ConfigurationManager {
                 directValue = true;
             }
             ScriptBlock returned;
-            switch (blockName.toLowerCase()) {
-                // constant/variable
-                case "value":
-                case "variable":
-                case "result":
-                    returned = createPlantScriptResult(blockSection, context); break;
-                // reference to defined stored-script-block in plant
-                case "stored":
-                    returned = getStoredScriptBlock(blockSection, directValue, blockName, context); break;
-                // math
-                case "+":
-                case "add":
-                    returned = createScriptOperationAdd(blockSection, directValue, context); break;
-                case "+=":
-                case "addto":
-                    returned = createScriptOperationAddTo(blockSection, directValue, context); break;
-                case "-":
-                case "subtract":
-                    returned = createScriptOperationSubtract(blockSection, directValue, context); break;
-                case "-=":
-                case "subtractfrom":
-                    returned = createScriptOperationSubtractFrom(blockSection, directValue, context); break;
-                case "*":
-                case "multiply":
-                    returned = createScriptOperationMultiply(blockSection, directValue, context); break;
-                case "*=":
-                case "multiplyby":
-                    returned = createScriptOperationMultiplyBy(blockSection, directValue, context); break;
-                case "/":
-                case "divide":
-                    returned = createScriptOperationDivide(blockSection, directValue, context); break;
-                case "/=":
-                case "divideby":
-                    returned = createScriptOperationDivideBy(blockSection, directValue, context); break;
-                case "%":
-                case "modulus":
-                    returned = createScriptOperationModulus(blockSection, directValue, context); break;
-                case "%=":
-                case "modulusof":
-                    returned = createScriptOperationModulusOf(blockSection, directValue, context); break;
-                case "**":
-                case "power":
-                    returned = createScriptOperationPower(blockSection, directValue, context); break;
-                case "**=":
-                case "powerof":
-                    returned = createScriptOperationPowerOf(blockSection, directValue, context); break;
-                // logic
-                case "&&":
-                case "and":
-                    returned = createScriptOperationAnd(blockSection, directValue, context); break;
-                case "!&&":
-                case "nand":
-                    returned = createScriptOperationNand(blockSection, directValue, context); break;
-                case "||":
-                case "or":
-                    returned = createScriptOperationOr(blockSection, directValue, context); break;
-                case "^":
-                case "xor":
-                    returned = createScriptOperationXor(blockSection, directValue, context); break;
-                case "!||":
-                case "nor":
-                    returned = createScriptOperationNor(blockSection, directValue, context);  break;
-                case "!":
-                case "not":
-                    returned = createScriptOperationNot(blockSection, directValue, blockName, context); break;
-                // compare
-                case "==":
-                case "equal":
-                case "equals":
-                    returned = createScriptOperationEqual(blockSection, directValue, context); break;
-                case "!=":
-                case "notequal":
-                case "notequals":
-                    returned = createScriptOperationNotEqual(blockSection, directValue, context); break;
-                case ">":
-                case "greaterthan":
-                    returned = createScriptOperationGreaterThan(blockSection, directValue, context); break;
-                case ">=":
-                case "greaterthanorequalto":
-                    returned = createScriptOperationGreaterThanOrEqualTo(blockSection, directValue, context); break;
-                case "<":
-                case "lessthan":
-                    returned = createScriptOperationLessThan(blockSection, directValue, context); break;
-                case "<=":
-                case "lessthanorequalto":
-                    returned = createScriptOperationLessThanOrEqualTo(blockSection, directValue, context); break;
-                // cast
-                case "(boolean)":
-                case "toboolean":
-                    returned = createScriptOperationToBoolean(blockSection, directValue, blockName, context); break;
-                case "(double)":
-                case "todouble":
-                    returned = createScriptOperationToDouble(blockSection, directValue, blockName, context); break;
-                case "(long)":
-                case "tolong":
-                    returned = createScriptOperationToLong(blockSection, directValue, blockName, context); break;
-                case "(string)":
-                case "tostring":
-                    returned = createScriptOperationToString(blockSection, directValue, blockName, context); break;
-                // functions
-                case "contains":
-                    returned = createScriptOperationContains(blockSection, directValue, context); break;
-                case "length":
-                    returned = createScriptOperationLength(blockSection, directValue, blockName, context); break;
-                case "=":
-                case "setvalue":
-                    returned = createScriptOperationSetValue(blockSection, directValue, context); break;
-                case "setvaluescope":
-                case "setvaluescopeparameter":
-                    returned = createScriptOperationSetValueScopeParameter(blockSection, directValue, context); break;
-                case "getvaluescope":
-                case "getvaluescopeparameter":
-                    returned = createScriptOperationGetValueScopeParameter(blockSection, directValue, context); break;
-                case "removescope":
-                case "removescopeparameter":
-                    returned = createScriptOperationRemoveScopeParameter(blockSection, directValue, context); break;
-                case "containsscope":
-                case "containsscopeparameter":
-                    returned = createScriptOperationContainsScopeParameter(blockSection, directValue, context); break;
-                case "wrapdata":
-                    returned = createScriptOperationWrapData(blockSection, directValue, context); break;
-                case "wrapitem":
-                    returned = createScriptOperationWrapItem(blockSection, directValue, context); break;
-                // flow
-                case "if":
-                    returned = createScriptOperationIf(blockSection, directValue, context); break;
-                case "func":
-                case "function":
-                    returned = createScriptOperationFunction(blockSection, directValue, context); break;
-                case "switch":
-                    returned = createScriptOperationSwitch(blockSection, directValue, context); break;
-                // action
-                case "changestage":
-                    returned = createScriptOperationChangeStage(blockSection, directValue, context); break;
-                case "interact":
-                    returned = createScriptOperationInteract(blockSection, directValue, context); break;
-                case "consumable":
-                    returned = createScriptOperationConsumable(blockSection, directValue, context); break;
-                case "effects":
-                    returned = createScriptOperationEffects(blockSection, directValue, context); break;
-                case "createblocks":
-                    returned = createScriptOperationCreatePlantBlocks(blockSection, directValue, context); break;
-                case "scheduletask":
-                    returned = createScriptOperationScheduleTask(blockSection, directValue, context); break;
-                case "canceltask":
-                    returned = createScriptOperationCancelTask(blockSection, directValue, context); break;
-                // player
-                case "isplayernull":
-                    returned = new ScriptOperationIsPlayerNull(); break;
-                case "isplayerdead":
-                    returned = new ScriptOperationIsPlayerDead(); break;
-                case "isplayersneaking":
-                    returned = new ScriptOperationIsPlayerSneaking(); break;
-                case "isplayersprinting":
-                    returned = new ScriptOperationIsPlayerSprinting(); break;
-                case "passonlyplayer":
-                    returned = createScriptOperationPassOnlyPlayer(blockSection, directValue, blockName, context); break;
-                // block
-                case "isblocknull":
-                    returned = new ScriptOperationIsBlockNull(); break;
-                case "passonlyblock":
-                    returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, context); break;
-                // world
-                case "getworld":
-                    returned = new ScriptOperationGetWorld(); break;
-                // inventory
-                case "getmainhand":
-                    returned = new ScriptOperationGetMainHand(); break;
-                case "getoffhand":
-                    returned = new ScriptOperationGetOffhand(); break;
-                case "gethelmet":
-                    returned = new ScriptOperationGetHelmet(); break;
-                case "getchestplate":
-                    returned = new ScriptOperationGetChestplate(); break;
-                case "getleggings":
-                    returned = new ScriptOperationGetLeggings(); break;
-                case "getboots":
-                    returned = new ScriptOperationGetBoots(); break;
-                case "hasmainhand":
-                    returned = new ScriptOperationHasMainHand(); break;
-                case "hasoffhand":
-                    returned = new ScriptOperationHasOffhand(); break;
-                case "hashelmet":
-                    returned = new ScriptOperationHasHelmet(); break;
-                case "haschestplate":
-                    returned = new ScriptOperationHasChestplate(); break;
-                case "hasleggings":
-                    returned = new ScriptOperationHasLeggings(); break;
-                case "hasboots":
-                    returned = new ScriptOperationHasBoots(); break;
-                // item
-                case "getcurrentitem":
-                case "getcurrentitemstack":
-                    returned = new ScriptOperationCurrentItem(); break;
-                case "takeone":
-                    returned = createScriptOperationTakeOne(blockSection, directValue, blockName, context); break;
-                case "getamount":
-                    returned = createScriptOperationGetAmount(blockSection, directValue, blockName, context); break;
-                case "isitemanyplant":
-                    returned = createScriptOperationIsItemAnyPlant(blockSection, directValue, blockName, context); break;
-                case "ispickaxe":
-                    returned = createScriptOperationIsPickaxe(blockSection, directValue, blockName, context); break;
-                case "isaxe":
-                    returned = createScriptOperationIsAxe(blockSection, directValue, blockName, context); break;
-                case "isshovel":
-                    returned = createScriptOperationIsShovel(blockSection, directValue, blockName, context); break;
-                case "ishoe":
-                    returned = createScriptOperationIsHoe(blockSection, directValue, blockName, context); break;
-                case "issword":
-                    returned = createScriptOperationIsSword(blockSection, directValue, blockName, context); break;
-                case "iswearable":
-                    returned = createScriptOperationIsWearable(blockSection, directValue, blockName, context); break;
-                case "isair":
-                    returned = createScriptOperationIsAir(blockSection, directValue, blockName, context); break;
-                case "createitem":
-                case "createitemstack":
-                    returned = createScriptOperationCreateItemStack(blockSection, directValue); break;
-                case "aresimilar":
-                    returned = createScriptOperationAreSimilar(blockSection, directValue, context); break;
-                case "itemismaterial":
-                    returned = createScriptOperationItemIsMaterial(blockSection, directValue, context); break;
-                case "itemgetmaterial":
-                    returned = createScriptOperationGetMaterial(blockSection, directValue, blockName, context); break;
-                case "getenchantmentlevel":
-                    returned = createScriptBlockOperationGetEnchantmentLevel(blockSection, directValue, context); break;
-                case "hasenchantment":
-                    returned = createScriptBlockOperationHasEnchantment(blockSection, directValue, context); break;
-                // random
-                case "chance":
-                    returned = createScriptOperationChance(blockSection, directValue, blockName, context); break;
-                case "choice":
-                    returned = createScriptOperationChoice(blockSection, directValue, context); break;
-                case "randomdouble":
-                    returned = createScriptOperationRandomDouble(blockSection, directValue, context); break;
-                case "randomlong":
-                    returned = createScriptOperationRandomLong(blockSection, directValue, context); break;
-                // not recognized
-                default:
-                    performantPlants.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
-                            "PlantScript will not be loaded until this is fixed in blockSection: %s",
-                            blockName, blockSection.getCurrentPath()));
-                    return null;
+            try {
+                switch (blockName.toLowerCase()) {
+                    // constant/variable
+                    case "value":
+                    case "variable":
+                    case "result":
+                        returned = createPlantScriptResult(blockSection, context); break;
+                    // reference to defined stored-script-block in plant
+                    case "stored":
+                        returned = getStoredScriptBlock(blockSection, directValue, blockName, context); break;
+                    // math
+                    case "+":
+                    case "add":
+                        returned = createScriptOperationAdd(blockSection, directValue, context); break;
+                    case "+=":
+                    case "addto":
+                        returned = createScriptOperationAddTo(blockSection, directValue, context); break;
+                    case "-":
+                    case "subtract":
+                        returned = createScriptOperationSubtract(blockSection, directValue, context); break;
+                    case "-=":
+                    case "subtractfrom":
+                        returned = createScriptOperationSubtractFrom(blockSection, directValue, context); break;
+                    case "*":
+                    case "multiply":
+                        returned = createScriptOperationMultiply(blockSection, directValue, context); break;
+                    case "*=":
+                    case "multiplyby":
+                        returned = createScriptOperationMultiplyBy(blockSection, directValue, context); break;
+                    case "/":
+                    case "divide":
+                        returned = createScriptOperationDivide(blockSection, directValue, context); break;
+                    case "/=":
+                    case "divideby":
+                        returned = createScriptOperationDivideBy(blockSection, directValue, context); break;
+                    case "%":
+                    case "modulus":
+                        returned = createScriptOperationModulus(blockSection, directValue, context); break;
+                    case "%=":
+                    case "modulusof":
+                        returned = createScriptOperationModulusOf(blockSection, directValue, context); break;
+                    case "**":
+                    case "power":
+                        returned = createScriptOperationPower(blockSection, directValue, context); break;
+                    case "**=":
+                    case "powerof":
+                        returned = createScriptOperationPowerOf(blockSection, directValue, context); break;
+                    // logic
+                    case "&&":
+                    case "and":
+                        returned = createScriptOperationAnd(blockSection, directValue, context); break;
+                    case "!&&":
+                    case "nand":
+                        returned = createScriptOperationNand(blockSection, directValue, context); break;
+                    case "||":
+                    case "or":
+                        returned = createScriptOperationOr(blockSection, directValue, context); break;
+                    case "^":
+                    case "xor":
+                        returned = createScriptOperationXor(blockSection, directValue, context); break;
+                    case "!||":
+                    case "nor":
+                        returned = createScriptOperationNor(blockSection, directValue, context); break;
+                    case "!":
+                    case "not":
+                        returned = createScriptOperationNot(blockSection, directValue, blockName, context); break;
+                    // compare
+                    case "==":
+                    case "equal":
+                    case "equals":
+                        returned = createScriptOperationEqual(blockSection, directValue, context); break;
+                    case "!=":
+                    case "notequal":
+                    case "notequals":
+                        returned = createScriptOperationNotEqual(blockSection, directValue, context); break;
+                    case ">":
+                    case "greaterthan":
+                        returned = createScriptOperationGreaterThan(blockSection, directValue, context); break;
+                    case ">=":
+                    case "greaterthanorequalto":
+                        returned = createScriptOperationGreaterThanOrEqualTo(blockSection, directValue, context); break;
+                    case "<":
+                    case "lessthan":
+                        returned = createScriptOperationLessThan(blockSection, directValue, context); break;
+                    case "<=":
+                    case "lessthanorequalto":
+                        returned = createScriptOperationLessThanOrEqualTo(blockSection, directValue, context); break;
+                    // cast
+                    case "(boolean)":
+                    case "toboolean":
+                        returned = createScriptOperationToBoolean(blockSection, directValue, blockName, context); break;
+                    case "(double)":
+                    case "todouble":
+                        returned = createScriptOperationToDouble(blockSection, directValue, blockName, context); break;
+                    case "(long)":
+                    case "tolong":
+                        returned = createScriptOperationToLong(blockSection, directValue, blockName, context); break;
+                    case "(string)":
+                    case "tostring":
+                        returned = createScriptOperationToString(blockSection, directValue, blockName, context); break;
+                    // functions
+                    case "contains":
+                        returned = createScriptOperationContains(blockSection, directValue, context); break;
+                    case "length":
+                        returned = createScriptOperationLength(blockSection, directValue, blockName, context); break;
+                    case "=":
+                    case "setvalue":
+                        returned = createScriptOperationSetValue(blockSection, directValue, context); break;
+                    case "setvaluescope":
+                    case "setvaluescopeparameter":
+                        returned = createScriptOperationSetValueScopeParameter(blockSection, directValue, context); break;
+                    case "getvaluescope":
+                    case "getvaluescopeparameter":
+                        returned = createScriptOperationGetValueScopeParameter(blockSection, directValue, context); break;
+                    case "removescope":
+                    case "removescopeparameter":
+                        returned = createScriptOperationRemoveScopeParameter(blockSection, directValue, context); break;
+                    case "containsscope":
+                    case "containsscopeparameter":
+                        returned = createScriptOperationContainsScopeParameter(blockSection, directValue, context); break;
+                    case "wrapdata":
+                        returned = createScriptOperationWrapData(blockSection, directValue, context); break;
+                    case "wrapitem":
+                        returned = createScriptOperationWrapItem(blockSection, directValue, context); break;
+                    // flow
+                    case "if":
+                        returned = createScriptOperationIf(blockSection, directValue, context); break;
+                    case "func":
+                    case "function":
+                        returned = createScriptOperationFunction(blockSection, directValue, context); break;
+                    case "until-true":
+                        returned = createScriptOperationUntilTrue(blockSection, directValue, context); break;
+                    case "switch":
+                        returned = createScriptOperationSwitch(blockSection, directValue, context); break;
+                    // action
+                    case "changestage":
+                        returned = createScriptOperationChangeStage(blockSection, directValue, context); break;
+                    case "interact":
+                        returned = createScriptOperationInteract(blockSection, directValue, context); break;
+                    case "consumable":
+                        returned = createScriptOperationConsumable(blockSection, directValue, context); break;
+                    case "effects":
+                        returned = createScriptOperationEffects(blockSection, directValue, context); break;
+                    case "createblocks":
+                        returned = createScriptOperationCreatePlantBlocks(blockSection, directValue, context); break;
+                    case "scheduletask":
+                        returned = createScriptOperationScheduleTask(blockSection, directValue, context); break;
+                    case "canceltask":
+                        returned = createScriptOperationCancelTask(blockSection, directValue, context); break;
+                    // player
+                    case "isplayernull":
+                        returned = new ScriptOperationIsPlayerNull(); break;
+                    case "isplayerdead":
+                        returned = new ScriptOperationIsPlayerDead(); break;
+                    case "isplayersneaking":
+                        returned = new ScriptOperationIsPlayerSneaking(); break;
+                    case "isplayersprinting":
+                        returned = new ScriptOperationIsPlayerSprinting(); break;
+                    case "useplayerlocation":
+                        returned = createScriptOperationUsePlayerLocation(blockSection, directValue, blockName, context); break;
+                    case "passonlyplayer":
+                        returned = createScriptOperationPassOnlyPlayer(blockSection, directValue, blockName, context); break;
+                    case "heal":
+                        returned = createScriptOperationHeal(blockSection, directValue, blockName, context); break;
+                    // block
+                    case "isblocknull":
+                        returned = new ScriptOperationIsBlockNull(); break;
+                    case "useblocklocation":
+                        returned = createScriptOperationUseBlockLocation(blockSection, directValue, blockName, context); break;
+                    case "passonlyblock":
+                        returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, context); break;
+                    case "breakblock":
+                        returned = createScriptOperationBreakBlock(blockSection, directValue, blockName, context); break;
+                    // world
+                    case "getworld":
+                        returned = new ScriptOperationGetWorld(); break;
+                    // inventory
+                    case "getmainhand":
+                        returned = new ScriptOperationGetMainHand(); break;
+                    case "getoffhand":
+                        returned = new ScriptOperationGetOffhand(); break;
+                    case "gethelmet":
+                        returned = new ScriptOperationGetHelmet(); break;
+                    case "getchestplate":
+                        returned = new ScriptOperationGetChestplate(); break;
+                    case "getleggings":
+                        returned = new ScriptOperationGetLeggings(); break;
+                    case "getboots":
+                        returned = new ScriptOperationGetBoots(); break;
+                    case "hasmainhand":
+                        returned = new ScriptOperationHasMainHand(); break;
+                    case "hasoffhand":
+                        returned = new ScriptOperationHasOffhand(); break;
+                    case "hashelmet":
+                        returned = new ScriptOperationHasHelmet(); break;
+                    case "haschestplate":
+                        returned = new ScriptOperationHasChestplate(); break;
+                    case "hasleggings":
+                        returned = new ScriptOperationHasLeggings(); break;
+                    case "hasboots":
+                        returned = new ScriptOperationHasBoots(); break;
+                    // item
+                    case "getcurrentitem":
+                    case "getcurrentitemstack":
+                        returned = new ScriptOperationCurrentItem(); break;
+                    case "takeone":
+                        returned = createScriptOperationTakeOne(blockSection, directValue, blockName, context); break;
+                    case "getamount":
+                        returned = createScriptOperationGetAmount(blockSection, directValue, blockName, context); break;
+                    case "isitemanyplant":
+                        returned = createScriptOperationIsItemAnyPlant(blockSection, directValue, blockName, context); break;
+                    case "ispickaxe":
+                        returned = createScriptOperationIsPickaxe(blockSection, directValue, blockName, context); break;
+                    case "isaxe":
+                        returned = createScriptOperationIsAxe(blockSection, directValue, blockName, context); break;
+                    case "isshovel":
+                        returned = createScriptOperationIsShovel(blockSection, directValue, blockName, context); break;
+                    case "ishoe":
+                        returned = createScriptOperationIsHoe(blockSection, directValue, blockName, context); break;
+                    case "issword":
+                        returned = createScriptOperationIsSword(blockSection, directValue, blockName, context); break;
+                    case "iswearable":
+                        returned = createScriptOperationIsWearable(blockSection, directValue, blockName, context); break;
+                    case "isair":
+                        returned = createScriptOperationIsAir(blockSection, directValue, blockName, context); break;
+                    case "createitem":
+                    case "createitemstack":
+                        returned = createScriptOperationCreateItemStack(blockSection, directValue); break;
+                    case "aresimilar":
+                        returned = createScriptOperationAreSimilar(blockSection, directValue, context); break;
+                    case "itemismaterial":
+                        returned = createScriptOperationItemIsMaterial(blockSection, directValue, context); break;
+                    case "itemgetmaterial":
+                        returned = createScriptOperationGetMaterial(blockSection, directValue, blockName, context); break;
+                    case "getenchantmentlevel":
+                        returned = createScriptOperationGetEnchantmentLevel(blockSection, directValue, context); break;
+                    case "hasenchantment":
+                        returned = createScriptOperationHasEnchantment(blockSection, directValue, context); break;
+                    case "adddamage":
+                        returned = createScriptOperationAddDamage(blockSection, directValue, context); break;
+                    // random
+                    case "chance":
+                        returned = createScriptOperationChance(blockSection, directValue, blockName, context); break;
+                    case "choice":
+                        returned = createScriptOperationChoice(blockSection, directValue, context); break;
+                    case "randomdouble":
+                        returned = createScriptOperationRandomDouble(blockSection, directValue, context); break;
+                    case "randomlong":
+                        returned = createScriptOperationRandomLong(blockSection, directValue, context); break;
+                    // not recognized
+                    default:
+                        performantPlants.getLogger().warning(String.format("PlantScript block of type '%s' not recognized; this " +
+                                        "PlantScript will not be loaded until this is fixed in blockSection: %s",
+                                blockName, blockSection.getCurrentPath()));
+                        return null;
+                }
+            } catch (IllegalArgumentException e) {
+                performantPlants.getLogger().warning(String.format("Invalid input for %s: '%s' in section: %s", blockName, e.getMessage(), section.getCurrentPath()));
+                return null;
             }
             if (returned != null) {
                 return returned.optimizeSelf();
@@ -4689,6 +4709,34 @@ public class ConfigurationManager {
         }
         return new ScriptOperationFunction(scriptBlocks);
     }
+    ScriptOperation createScriptOperationUntilTrue(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationUntilTrue in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        int index = 0;
+        ScriptBlock[] scriptBlocks = new ScriptBlock[section.getKeys(false).size()];
+        for (String placeholder : section.getKeys(false)) {
+            if (!section.isSet(placeholder)) {
+                performantPlants.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
+                        "Until-True in section: %s", placeholder, section));
+                return null;
+            }
+            ScriptBlock scriptBlock = createPlantScript(section, placeholder, context);
+            if (scriptBlock == null) {
+                return null;
+            }
+            scriptBlocks[index] = scriptBlock;
+            index++;
+        }
+        if (scriptBlocks.length == 0) {
+            performantPlants.getLogger().warning("No subsections found to generate Until-True in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationUntilTrue(scriptBlocks);
+    }
     ScriptOperation createScriptOperationSwitch(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
@@ -5024,6 +5072,13 @@ public class ConfigurationManager {
     }
 
     //player
+    private ScriptBlock createScriptOperationUsePlayerLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationUsePlayerLocation(operand);
+    }
     private ScriptBlock createScriptOperationPassOnlyPlayer(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
@@ -5031,14 +5086,35 @@ public class ConfigurationManager {
         }
         return new ScriptOperationPassOnlyPlayer(operand);
     }
+    private ScriptBlock createScriptOperationHeal(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationHeal(operand);
+    }
 
     //block
+    private ScriptBlock createScriptOperationUseBlockLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationUseBlockLocation(operand);
+    }
     private ScriptBlock createScriptOperationPassOnlyBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationPassOnlyBlock(operand);
+    }
+    private ScriptBlock createScriptOperationBreakBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationBreakBlock(operand);
     }
 
     //inventory
@@ -5049,132 +5125,78 @@ public class ConfigurationManager {
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsAir(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsAir: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsAir(operand);
     }
     private ScriptBlock createScriptOperationIsPickaxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsPickaxe(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsPickaxe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsPickaxe(operand);
     }
     private ScriptBlock createScriptOperationIsAxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsAxe(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsAxe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsAxe(operand);
     }
     private ScriptBlock createScriptOperationIsShovel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsShovel(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsShovel: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsShovel(operand);
+
     }
     private ScriptBlock createScriptOperationIsHoe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsHoe(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsHoe: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsHoe(operand);
     }
     private ScriptBlock createScriptOperationIsSword(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsSword(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsSword: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsSword(operand);
     }
     private ScriptBlock createScriptOperationIsWearable(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsWearable(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsWearable: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsWearable(operand);
     }
     private ScriptBlock createScriptOperationIsItemAnyPlant(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationIsItemAnyPlant(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationIsItemAnyPlant: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationIsItemAnyPlant(operand);
     }
     private ScriptBlock createScriptOperationTakeOne(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationTakeOne(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationTakeOne: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationTakeOne(operand);
     }
     private ScriptBlock createScriptOperationGetAmount(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationGetAmount(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationGetAmount: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationGetAmount(operand);
     }
     private ScriptBlock createScriptOperationGetMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
-        try {
-            return new ScriptOperationItemGetMaterial(operand);
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationItemGetMaterial: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationItemGetMaterial(operand);
     }
     private ScriptBlock createScriptOperationCreateItemStack(ConfigurationSection section, boolean directValue) {
         if (directValue) {
@@ -5196,48 +5218,35 @@ public class ConfigurationManager {
         if (operands == null) {
             return null;
         }
-        try {
-            return new ScriptOperationAreSimilar(operands.get(0), operands.get(1));
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationAreSimilar: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationAreSimilar(operands.get(0), operands.get(1));
     }
     private ScriptBlock createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "material");
         if (operands == null) {
             return null;
         }
-        try {
-            return new ScriptOperationItemIsMaterial(operands.get(0), operands.get(1));
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationItemIsMaterial: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationItemIsMaterial(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptBlockOperationGetEnchantmentLevel(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptBlock createScriptOperationGetEnchantmentLevel(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
         if (operands == null) {
             return null;
         }
-        try {
-            return new ScriptOperationGetEnchantmentLevel(operands.get(0), operands.get(1));
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationGetEnchantmentLevel: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
-            return null;
-        }
+        return new ScriptOperationGetEnchantmentLevel(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptBlockOperationHasEnchantment(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptBlock createScriptOperationHasEnchantment(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
         if (operands == null) {
             return null;
         }
-        try {
-            return new ScriptOperationHasEnchantment(operands.get(0), operands.get(1));
-        } catch (IllegalArgumentException e) {
-            performantPlants.getLogger().warning(String.format("Invalid input for ScriptOperationHasEnchantment: '%s' in section: %s", e.getMessage(), section.getCurrentPath()));
+        return new ScriptOperationHasEnchantment(operands.get(0), operands.get(1));
+    }
+    private ScriptBlock createScriptOperationAddDamage(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "amount");
+        if (operands == null) {
             return null;
         }
+        return new ScriptOperationAddDamage(operands.get(0), operands.get(1));
     }
     //endregion
 

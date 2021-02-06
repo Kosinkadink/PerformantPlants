@@ -83,7 +83,13 @@ public class ItemHelper {
         return true;
     }
 
-    public static void updateDamage(ItemStack stack, int amount) {
+
+    /**
+     * @param stack ItemStack
+     * @param amount amount of damage to add
+     * @return true if item destroyed after adding damage, false otherwise
+     */
+    public static boolean updateDamage(ItemStack stack, int amount) {
         ItemMeta itemMeta = stack.getItemMeta();
         boolean destroyed = false;
         if (itemMeta instanceof Damageable) {
@@ -96,7 +102,9 @@ public class ItemHelper {
         }
         if (destroyed) {
             stack.setAmount(stack.getAmount() - 1);
+            return true;
         }
+        return false;
     }
 
     public static void setDamage(ItemStack stack, int amount) {

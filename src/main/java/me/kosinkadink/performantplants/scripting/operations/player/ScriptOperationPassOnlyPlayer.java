@@ -4,7 +4,7 @@ import me.kosinkadink.performantplants.scripting.*;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
+public class ScriptOperationPassOnlyPlayer extends ScriptOperationPlayer {
 
     public ScriptOperationPassOnlyPlayer(ScriptBlock scriptBlock) {
         super(scriptBlock);
@@ -27,12 +27,7 @@ public class ScriptOperationPassOnlyPlayer extends ScriptOperation {
     @Override
     protected void validateInputs() throws IllegalArgumentException {
         if (getScriptBlock() == null) {
-            throw new IllegalArgumentException("ScriptBlock cannot be null for ScriptOperationPassOnlyPlayer");
+            throw new IllegalArgumentException("input cannot be null");
         }
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.PLAYER;
     }
 }

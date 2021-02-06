@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationIsPlayerSprinting extends ScriptOperation {
+public class ScriptOperationIsPlayerSprinting extends ScriptOperationPlayer {
 
     @Override
     public @Nonnull ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
@@ -18,15 +18,4 @@ public class ScriptOperationIsPlayerSprinting extends ScriptOperation {
     protected void setType() {
         type = ScriptType.BOOLEAN;
     }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.PLAYER;
-    }
-
 }

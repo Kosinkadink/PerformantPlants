@@ -203,12 +203,12 @@ public class BlockHelper {
         return block.getLocation().add(0.5,0.5,0.5);
     }
 
-    public static void destroyPlantBlock(PerformantPlants performantPlants, Block block, PlantBlock plantBlock, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, PlantBlock plantBlock, boolean drops) {
         block.setType(Material.AIR);
         boolean removed = performantPlants.getPlantManager().removePlantBlock(plantBlock);
         // if block was not removed, don't do anything else
         if (!removed) {
-            return;
+            return false;
         }
         // handle drops
         if (drops) {
@@ -230,20 +230,30 @@ public class BlockHelper {
                 destroyPlantBlock(performantPlants, parentLocation, drops);
             }
         }
+        return true;
     }
 
-    public static void destroyPlantBlock(PerformantPlants performantPlants, Block block, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, PlantBlock plantBlock, boolean drops) {
+        if (plantBlock != null) {
+            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, drops);
+        }
+        return false;
+    }
+
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, boolean drops) {
         PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(block);
         if (plantBlock != null) {
-            destroyPlantBlock(performantPlants, block, plantBlock, drops);
+            return destroyPlantBlock(performantPlants, block, plantBlock, drops);
         }
+        return false;
     }
 
-    public static void destroyPlantBlock(PerformantPlants performantPlants, BlockLocation blockLocation, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, BlockLocation blockLocation, boolean drops) {
         PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockLocation);
         if (plantBlock != null) {
-            destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, drops);
+            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, drops);
         }
+        return false;
     }
 
 }
