@@ -4,7 +4,7 @@ import me.kosinkadink.performantplants.scripting.*;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationFunction extends ScriptOperation {
+public class ScriptOperationFunction extends ScriptOperationFlow {
 
     public ScriptOperationFunction(ScriptBlock ... inputs) {
         super(inputs);
@@ -30,11 +30,6 @@ public class ScriptOperationFunction extends ScriptOperation {
         if (inputs.length == 0) {
             throw new IllegalArgumentException("Function requires at least one input");
         }
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.FLOW;
     }
 
 }

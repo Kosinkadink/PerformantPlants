@@ -2,12 +2,15 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.storage.StageStorage;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationChangeStage extends ScriptOperation {
+public class ScriptOperationChangeStage extends ScriptOperationAction {
 
     PerformantPlants performantPlants;
 
@@ -73,15 +76,5 @@ public class ScriptOperationChangeStage extends ScriptOperation {
             throw new IllegalArgumentException("ChangeStage operation only accepts ScriptType BOOLEAN for its ifNext " +
                     "argument");
         }
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 }

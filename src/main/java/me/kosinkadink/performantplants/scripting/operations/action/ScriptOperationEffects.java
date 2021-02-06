@@ -1,11 +1,13 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.storage.PlantEffectStorage;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationEffects extends ScriptOperation {
+public class ScriptOperationEffects extends ScriptOperationAction {
 
     private final PlantEffectStorage storage;
 
@@ -24,15 +26,5 @@ public class ScriptOperationEffects extends ScriptOperation {
     @Override
     protected void setType() {
         type = ScriptType.BOOLEAN;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 }

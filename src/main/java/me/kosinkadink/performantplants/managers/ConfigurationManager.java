@@ -14,19 +14,13 @@ import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.SmithingRecipeKey;
 import me.kosinkadink.performantplants.scripting.*;
 import me.kosinkadink.performantplants.scripting.operations.action.*;
-import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationBreakBlock;
-import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationIsBlockNull;
-import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationPassOnlyBlock;
-import me.kosinkadink.performantplants.scripting.operations.block.ScriptOperationUseBlockLocation;
+import me.kosinkadink.performantplants.scripting.operations.block.*;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToBoolean;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToDouble;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToLong;
 import me.kosinkadink.performantplants.scripting.operations.cast.ScriptOperationToString;
 import me.kosinkadink.performantplants.scripting.operations.compare.*;
-import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationFunction;
-import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationIf;
-import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationSwitch;
-import me.kosinkadink.performantplants.scripting.operations.flow.ScriptOperationUntilTrue;
+import me.kosinkadink.performantplants.scripting.operations.flow.*;
 import me.kosinkadink.performantplants.scripting.operations.function.*;
 import me.kosinkadink.performantplants.scripting.operations.inventory.*;
 import me.kosinkadink.performantplants.scripting.operations.item.*;
@@ -3897,17 +3891,26 @@ public class ConfigurationManager {
                         returned = createScriptOperationWrapData(blockSection, directValue, context); break;
                     case "wrapitem":
                         returned = createScriptOperationWrapItem(blockSection, directValue, context); break;
+                    case "delay":
+                        returned = createScriptOperationDelay(blockSection, directValue, context); break;
                     // flow
                     case "if":
                         returned = createScriptOperationIf(blockSection, directValue, context); break;
+                    case "doif":
+                        returned = createScriptOperationDoIf(blockSection, directValue, context); break;
                     case "func":
                     case "function":
                         returned = createScriptOperationFunction(blockSection, directValue, context); break;
-                    case "until-true":
+                    case "untiltrue":
                         returned = createScriptOperationUntilTrue(blockSection, directValue, context); break;
+                    case "untiltruelimit":
+                        returned = createScriptOperationUntilTrueLimit(blockSection, directValue, context); break;
                     case "switch":
                         returned = createScriptOperationSwitch(blockSection, directValue, context); break;
                     // action
+                    case "eaten":
+                    case "iseaten":
+                        returned = new ScriptOperationIsEaten(); break;
                     case "changestage":
                         returned = createScriptOperationChangeStage(blockSection, directValue, context); break;
                     case "interact":
@@ -3922,6 +3925,19 @@ public class ConfigurationManager {
                         returned = createScriptOperationScheduleTask(blockSection, directValue, context); break;
                     case "canceltask":
                         returned = createScriptOperationCancelTask(blockSection, directValue, context); break;
+                    case "dodrops":
+                        returned = createScriptOperationDoDrops(blockSection, directValue, context); break;
+                    case "console":
+                    case "consolecommand":
+                        returned = createScriptOperationConsoleCommand(blockSection, directValue, blockName, context); break;
+                    case "sound":
+                    case "soundeffect":
+                        returned = createScriptOperationSoundEffect(blockSection, directValue, context); break;
+                    case "particle":
+                    case "particleeffect":
+                        returned = createScriptOperationParticleEffect(blockSection, directValue, context); break;
+                    case "explosion":
+                        returned = createScriptOperationExplosion(blockSection, directValue, context); break;
                     // player
                     case "isplayernull":
                         returned = new ScriptOperationIsPlayerNull(); break;
@@ -3931,17 +3947,35 @@ public class ConfigurationManager {
                         returned = new ScriptOperationIsPlayerSneaking(); break;
                     case "isplayersprinting":
                         returned = new ScriptOperationIsPlayerSprinting(); break;
+                    case "useplayer":
                     case "useplayerlocation":
                         returned = createScriptOperationUsePlayerLocation(blockSection, directValue, blockName, context); break;
+                    case "useeye":
+                    case "useeyelocation":
+                        returned = createScriptOperationUseEyeLocation(blockSection, directValue, blockName, context); break;
                     case "passonlyplayer":
                         returned = createScriptOperationPassOnlyPlayer(blockSection, directValue, blockName, context); break;
                     case "heal":
                         returned = createScriptOperationHeal(blockSection, directValue, blockName, context); break;
+                    case "feed":
+                        returned = createScriptOperationFeed(blockSection, directValue, context); break;
+                    case "message":
+                        returned = createScriptOperationMessage(blockSection, directValue, blockName, context); break;
+                    case "chat":
+                        returned = createScriptOperationChat(blockSection, directValue, blockName, context); break;
+                    case "playercommand":
+                        returned = createScriptOperationPlayerCommand(blockSection, directValue, blockName, context); break;
+                    case "potioneffect":
+                        returned = createScriptOperationPotionEffect(blockSection, directValue, context); break;
                     // block
                     case "isblocknull":
                         returned = new ScriptOperationIsBlockNull(); break;
+                    case "useblock":
                     case "useblocklocation":
                         returned = createScriptOperationUseBlockLocation(blockSection, directValue, blockName, context); break;
+                    case "useblockbottom":
+                    case "useblockbottomlocation":
+                        returned = createScriptOperationUseBlockBottomLocation(blockSection, directValue, blockName, context); break;
                     case "passonlyblock":
                         returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, context); break;
                     case "breakblock":
@@ -4129,6 +4163,46 @@ public class ConfigurationManager {
         arrayList.add(left);
         arrayList.add(right);
         return arrayList;
+    }
+
+    HashMap<String,ScriptBlock> createScriptOperationMultiple(ConfigurationSection section, boolean directValue, ExecutionContext context, String... paramNames) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "createScriptOperationMultiple in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        HashMap<String,ScriptBlock> valueMap = new HashMap<>();
+        for (String paramName : paramNames) {
+            if (!section.isSet(paramName)) {
+                performantPlants.getLogger().warning(String.format("%s operand missing in section: %s", paramName, section.getCurrentPath()));
+                return null;
+            }
+            ScriptBlock scriptBlock = createPlantScript(section, paramName, context);
+            if (scriptBlock == null) {
+                return null;
+            }
+            valueMap.put(paramName, scriptBlock);
+        }
+        return valueMap;
+    }
+    HashMap<String,ScriptBlock> createScriptOperationMultipleOptional(ConfigurationSection section, boolean directValue, ExecutionContext context, String... paramNames) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "createScriptOperationMultipleOptional in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        HashMap<String,ScriptBlock> valueMap = new HashMap<>();
+        for (String paramName : paramNames) {
+            if (!section.isSet(paramName)) {
+                continue;
+            }
+            ScriptBlock scriptBlock = createPlantScript(section, paramName, context);
+            if (scriptBlock == null) {
+                continue;
+            }
+            valueMap.put(paramName, scriptBlock);
+        }
+        return valueMap;
     }
 
     // stored script block
@@ -4648,6 +4722,13 @@ public class ConfigurationManager {
         }
         return new ScriptOperationWrapItem(itemBlock, scriptBlock);
     }
+    private ScriptBlock createScriptOperationDelay(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "delay", "script");
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationDelay(operands.get(0), operands.get(1));
+    }
 
     //flow
     ScriptOperation createScriptOperationIf(ConfigurationSection section, boolean directValue, ExecutionContext context) {
@@ -4680,6 +4761,13 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationIf(condition, ifTrue, ifFalse);
+    }
+    ScriptOperation createScriptOperationDoIf(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "condition", "script");
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationDoIf(operands.get(0), operands.get(1));
     }
     ScriptOperation createScriptOperationFunction(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         if (directValue) {
@@ -4720,7 +4808,7 @@ public class ConfigurationManager {
         for (String placeholder : section.getKeys(false)) {
             if (!section.isSet(placeholder)) {
                 performantPlants.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
-                        "Until-True in section: %s", placeholder, section));
+                        "UntilTrue in section: %s", placeholder, section));
                 return null;
             }
             ScriptBlock scriptBlock = createPlantScript(section, placeholder, context);
@@ -4731,11 +4819,53 @@ public class ConfigurationManager {
             index++;
         }
         if (scriptBlocks.length == 0) {
-            performantPlants.getLogger().warning("No subsections found to generate Until-True in section: " +
+            performantPlants.getLogger().warning("No subsections found to generate UntilTrue in section: " +
                     section.getCurrentPath());
             return null;
         }
         return new ScriptOperationUntilTrue(scriptBlocks);
+    }
+    ScriptOperation createScriptOperationUntilTrueLimit(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationUntilTrue in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        // get limit
+        if (!section.isSet("limit")) {
+            performantPlants.getLogger().warning("No limit set in UntilTrueLimit in section: " + section.getCurrentPath());
+            return null;
+        }
+        ScriptBlock limit = createPlantScript(section, "limit", context);
+        if (limit == null) {
+            return null;
+        }
+        // get scripts
+        if (!section.isConfigurationSection("scripts")) {
+            performantPlants.getLogger().warning("No scripts set in UntilTrueLimit in section: " + section.getCurrentPath());
+            return null;
+        }
+        // load scripts
+        ArrayList<ScriptBlock> scriptBlocks = new ArrayList<>();
+        ConfigurationSection scriptsSection = section.getConfigurationSection("scripts");
+        for (String placeholder : scriptsSection.getKeys(false)) {
+            if (!scriptsSection.isSet(placeholder)) {
+                performantPlants.getLogger().warning(String.format("No subsection found to generate PlantScript for line '%s' in " +
+                        "UntilTrueLimit in section: %s", placeholder, scriptsSection));
+                return null;
+            }
+            ScriptBlock scriptBlock = createPlantScript(scriptsSection, placeholder, context);
+            if (scriptBlock == null) {
+                return null;
+            }
+            scriptBlocks.add(scriptBlock);
+        }
+        if (scriptBlocks.size() == 0) {
+            performantPlants.getLogger().warning("No subsections found to generate scripts in UntilTrueLimit in section: " +
+                    section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationUntilTrueLimit(limit, scriptBlocks);
     }
     ScriptOperation createScriptOperationSwitch(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         if (directValue) {
@@ -5019,6 +5149,400 @@ public class ConfigurationManager {
         }
         return new ScriptOperationCancelTask(taskId);
     }
+    ScriptOperation createScriptOperationDoDrops(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        if (directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
+                    "ScriptOperationDoDrops in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        DropStorage dropStorage = new DropStorage();
+        boolean added = addDropsToDropStorage(section, dropStorage, context);
+        if (!added) {
+            performantPlants.getLogger().warning("DoDrops cannot be created; issue getting drops");
+            return null;
+        }
+        return new ScriptOperationDoDrops(dropStorage);
+    }
+    private ScriptOperation createScriptOperationConsoleCommand(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationConsoleCommand(operand);
+    }
+    private ScriptOperation createScriptOperationSoundEffect(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        String soundString = "sound";
+        String volumeString = "volume";
+        String pitchString = "pitch";
+        String offsetXString = "offset-x";
+        String offsetYString = "offset-y";
+        String offsetZString = "offset-z";
+        String multiplierString = "multiplier";
+        String ignoreDirectionYString = "ignore-direction-y";
+        String clientsideString = "clientside";
+        HashMap<String, ScriptBlock> paramMap = createScriptOperationMultipleOptional(section, directValue, context,
+                soundString, volumeString, pitchString,
+                offsetXString, offsetYString, offsetZString, multiplierString, ignoreDirectionYString, clientsideString);
+        if (paramMap == null) {
+            return null;
+        }
+
+        // check if sound is set
+        if (!paramMap.containsKey(soundString)) {
+            performantPlants.getLogger().warning("SoundEffect invalid; sound not found in section: " + section.getCurrentPath());
+            return null;
+        }
+        // if no variables, then check if sound is recognized
+        ScriptBlock sound = paramMap.get(soundString);
+        if (!sound.containsVariable()) {
+            String soundName = sound.loadValue(new ExecutionContext()).getStringValue();
+            if (EnumHelper.getSound(soundName) == null) {
+                performantPlants.getLogger().warning(String.format("SoundEffect invalid; sound '%s' not recognized", soundName));
+                return null;
+            }
+        }
+        // set volume, if not present
+        if (!paramMap.containsKey(volumeString)) {
+            ScriptBlock scriptBlock = new ScriptResult(1.0);
+            paramMap.put(volumeString, scriptBlock);
+            if (section.isSet(volumeString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", volumeString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set pitch, if not present
+        if (!paramMap.containsKey(pitchString)) {
+            ScriptBlock scriptBlock = new ScriptResult(1.0);
+            paramMap.put(pitchString, scriptBlock);
+            if (section.isSet(pitchString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", pitchString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset x, if not present
+        if (!paramMap.containsKey(offsetXString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetXString, scriptBlock);
+            if (section.isSet(offsetXString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetXString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset y, if not present
+        if (!paramMap.containsKey(offsetYString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetYString, scriptBlock);
+            if (section.isSet(offsetYString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetYString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset z, if not present
+        if (!paramMap.containsKey(offsetZString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetZString, scriptBlock);
+            if (section.isSet(offsetZString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetZString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set multiplier, if not present
+        if (!paramMap.containsKey(multiplierString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(multiplierString, scriptBlock);
+            if (section.isSet(multiplierString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", multiplierString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set ignore direction y, if not present
+        if (!paramMap.containsKey(ignoreDirectionYString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(ignoreDirectionYString, scriptBlock);
+            if (section.isSet(ignoreDirectionYString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", ignoreDirectionYString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set clientside, if not present
+        if (!paramMap.containsKey(clientsideString)) {
+            ScriptBlock scriptBlock = ScriptResult.TRUE;
+            paramMap.put(clientsideString, scriptBlock);
+            if (section.isSet(clientsideString)) {
+                performantPlants.getLogger().warning(
+                        String.format("SoundEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", clientsideString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+
+        ScriptBlock volume = paramMap.get(volumeString);
+        ScriptBlock pitch = paramMap.get(pitchString);
+        ScriptBlock offsetX = paramMap.get(offsetXString);
+        ScriptBlock offsetY = paramMap.get(offsetYString);
+        ScriptBlock offsetZ = paramMap.get(offsetZString);
+        ScriptBlock multiplier = paramMap.get(multiplierString);
+        ScriptBlock ignoreDirectionY = paramMap.get(ignoreDirectionYString);
+        ScriptBlock clientside = paramMap.get(clientsideString);
+        if (volume == null || pitch == null || offsetX == null || offsetY == null || offsetZ == null ||
+                multiplier == null || ignoreDirectionY == null || clientside == null) {
+            performantPlants.getLogger().warning(
+                    "BAD CODE: SoundEffect had unexpected null ScriptBlock in section: "
+                            + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationSoundEffect(sound,volume,pitch,offsetX,offsetY,offsetZ,multiplier,ignoreDirectionY,clientside);
+    }
+    private ScriptOperation createScriptOperationParticleEffect(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        String particleString = "particle";
+        String countString = "count";
+        String offsetXString = "offset-x";
+        String offsetYString = "offset-y";
+        String offsetZString = "offset-z";
+        String dataOffsetXString = "data-offset-x";
+        String dataOffsetYString = "data-offset-y";
+        String dataOffsetZString = "data-offset-z";
+        String extraString = "extra";
+        String multiplierString = "multiplier";
+        String ignoreDirectionYString = "ignore-direction-y";
+        String clientsideString = "clientside";
+        HashMap<String, ScriptBlock> paramMap = createScriptOperationMultipleOptional(section, directValue, context,
+                particleString, countString,
+                offsetXString, offsetYString, offsetZString,
+                dataOffsetXString, dataOffsetYString, dataOffsetZString,
+                extraString, multiplierString, ignoreDirectionYString, clientsideString);
+        if (paramMap == null) {
+            return null;
+        }
+
+        // check if sound is set
+        if (!paramMap.containsKey(particleString)) {
+            performantPlants.getLogger().warning("ParticleEffect invalid; particle not found in section: " + section.getCurrentPath());
+            return null;
+        }
+        // if no variables, then check if sound is recognized
+        ScriptBlock particle = paramMap.get(particleString);
+        if (!particle.containsVariable()) {
+            String particleName = particle.loadValue(new ExecutionContext()).getStringValue();
+            if (EnumHelper.getParticle(particleName) == null) {
+                performantPlants.getLogger().warning(String.format("ParticleEffect invalid; particle '%s' not recognized", particleName));
+                return null;
+            }
+        }
+        // set count, if not present
+        if (!paramMap.containsKey(countString)) {
+            ScriptBlock scriptBlock = new ScriptResult(1);
+            paramMap.put(countString, scriptBlock);
+            if (section.isSet(countString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", countString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset x, if not present
+        if (!paramMap.containsKey(offsetXString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetXString, scriptBlock);
+            if (section.isSet(offsetXString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetXString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset y, if not present
+        if (!paramMap.containsKey(offsetYString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetYString, scriptBlock);
+            if (section.isSet(offsetYString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetYString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check offset z, if not present
+        if (!paramMap.containsKey(offsetZString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(offsetZString, scriptBlock);
+            if (section.isSet(offsetZString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", offsetZString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+
+        // check data offset x, if not present
+        if (!paramMap.containsKey(dataOffsetXString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(dataOffsetXString, scriptBlock);
+            if (section.isSet(dataOffsetXString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", dataOffsetXString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check data offset y, if not present
+        if (!paramMap.containsKey(dataOffsetYString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(dataOffsetYString, scriptBlock);
+            if (section.isSet(dataOffsetYString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", dataOffsetYString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check data offset z, if not present
+        if (!paramMap.containsKey(dataOffsetZString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(dataOffsetZString, scriptBlock);
+            if (section.isSet(dataOffsetZString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", dataOffsetZString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set extra, if not present
+        if (!paramMap.containsKey(extraString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(extraString, scriptBlock);
+            if (section.isSet(extraString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", extraString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set multiplier, if not present
+        if (!paramMap.containsKey(multiplierString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(multiplierString, scriptBlock);
+            if (section.isSet(multiplierString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", multiplierString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set ignore direction y, if not present
+        if (!paramMap.containsKey(ignoreDirectionYString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(ignoreDirectionYString, scriptBlock);
+            if (section.isSet(ignoreDirectionYString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", ignoreDirectionYString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set clientside, if not present
+        if (!paramMap.containsKey(clientsideString)) {
+            ScriptBlock scriptBlock = ScriptResult.TRUE;
+            paramMap.put(clientsideString, scriptBlock);
+            if (section.isSet(clientsideString)) {
+                performantPlants.getLogger().warning(
+                        String.format("ParticleEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", clientsideString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+
+        ScriptBlock count = paramMap.get(countString);
+        ScriptBlock offsetX = paramMap.get(offsetXString);
+        ScriptBlock offsetY = paramMap.get(offsetYString);
+        ScriptBlock offsetZ = paramMap.get(offsetZString);
+        ScriptBlock dataOffsetX = paramMap.get(dataOffsetXString);
+        ScriptBlock dataOffsetY = paramMap.get(dataOffsetYString);
+        ScriptBlock dataOffsetZ = paramMap.get(dataOffsetZString);
+        ScriptBlock extra = paramMap.get(extraString);
+        ScriptBlock multiplier = paramMap.get(multiplierString);
+        ScriptBlock ignoreDirectionY = paramMap.get(ignoreDirectionYString);
+        ScriptBlock clientside = paramMap.get(clientsideString);
+        if (count == null || offsetX == null || offsetY == null || offsetZ == null ||
+                dataOffsetX == null || dataOffsetY == null || dataOffsetZ == null ||
+                extra == null || multiplier == null || ignoreDirectionY == null || clientside == null) {
+            performantPlants.getLogger().warning(
+                    "BAD CODE: ParticleEffect had unexpected null ScriptBlock in section: "
+                            + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationParticleEffect(particle,count,
+                offsetX,offsetY,offsetZ,
+                dataOffsetX,dataOffsetY,dataOffsetZ,
+                extra,multiplier,ignoreDirectionY,clientside);
+    }
+    private ScriptOperation createScriptOperationExplosion(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        String powerString = "power";
+        String fireString = "fire";
+        String breakString = "break";
+        HashMap<String, ScriptBlock> paramMap = createScriptOperationMultipleOptional(section, directValue, context,
+                powerString, fireString, breakString);
+        if (paramMap == null) {
+            return null;
+        }
+        // set power, if not present
+        if (!paramMap.containsKey(powerString)) {
+            ScriptBlock scriptBlock = new ScriptResult(1.0);
+            paramMap.put(powerString, scriptBlock);
+            if (section.isSet(powerString)) {
+                performantPlants.getLogger().warning(
+                        String.format("Explosion %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", powerString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set fire, if not present
+        if (!paramMap.containsKey(fireString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(fireString, scriptBlock);
+            if (section.isSet(fireString)) {
+                performantPlants.getLogger().warning(
+                        String.format("Explosion %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", fireString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set break, if not present
+        if (!paramMap.containsKey(breakString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(breakString, scriptBlock);
+            if (section.isSet(breakString)) {
+                performantPlants.getLogger().warning(
+                        String.format("Explosion %s invalid, will be set to %b; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", breakString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        ScriptBlock power = paramMap.get(powerString);
+        ScriptBlock fire = paramMap.get(fireString);
+        ScriptBlock breakScript = paramMap.get(breakString);
+        if (power == null || fire == null || breakScript == null) {
+            performantPlants.getLogger().warning(
+                    "BAD CODE: Explosion had unexpected null ScriptBlock in section: "
+                            + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationExplosion(power,fire,breakScript);
+    }
 
     //random
     ScriptOperation createScriptOperationChance(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
@@ -5072,44 +5596,182 @@ public class ConfigurationManager {
     }
 
     //player
-    private ScriptBlock createScriptOperationUsePlayerLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationUsePlayerLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationUsePlayerLocation(operand);
     }
-    private ScriptBlock createScriptOperationPassOnlyPlayer(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationUseEyeLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationUseEyeLocation(operand);
+    }
+    private ScriptOperation createScriptOperationPassOnlyPlayer(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationPassOnlyPlayer(operand);
     }
-    private ScriptBlock createScriptOperationHeal(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationHeal(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationHeal(operand);
     }
+    private ScriptOperation createScriptOperationFeed(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "food-amount", "saturate-amount");
+        if (operands == null) {
+            return null;
+        }
+        return new ScriptOperationFeed(operands.get(0), operands.get(1));
+    }
+    private ScriptOperation createScriptOperationMessage(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationMessage(operand);
+    }
+    private ScriptOperation createScriptOperationChat(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationChat(operand);
+    }
+    private ScriptOperation createScriptOperationPlayerCommand(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationPlayerCommand(operand);
+    }
+    private ScriptOperation createScriptOperationPotionEffect(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        String potionString = "potion";
+        String durationString = "duration";
+        String amplifierString = "amplifier";
+        String ambientString = "ambient";
+        String particlesString = "particles";
+        String iconString = "icon";
+        HashMap<String, ScriptBlock> paramMap = createScriptOperationMultipleOptional(section, directValue, context,
+                potionString, durationString, amplifierString, ambientString, particlesString, iconString);
+        if (paramMap == null) {
+            return null;
+        }
+
+        if (!paramMap.containsKey(potionString)) {
+            performantPlants.getLogger().warning("PotionEffect invalid; potion not found in section: " + section.getCurrentPath());
+            return null;
+        }
+        // if no variables, then check if potion is recognized
+        ScriptBlock potion = paramMap.get(potionString);
+        if (!potion.containsVariable()) {
+            String potionNameString = potion.loadValue(new ExecutionContext()).getStringValue();
+            PotionEffectType potionEffectType = PotionEffectType.getByName(potionNameString);
+            if (potionEffectType == null) {
+                performantPlants.getLogger().warning(String.format("PotionEffect invalid; potion '%s' not recognized", potionNameString));
+                return null;
+            }
+        }
+        // set duration, if not present
+        if (!paramMap.containsKey(durationString)) {
+            ScriptBlock scriptBlock = new ScriptResult(200);
+            paramMap.put(durationString, scriptBlock);
+            if (section.isSet(durationString)) {
+                performantPlants.getLogger().warning(
+                        String.format("PotionEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", durationString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set amplifier, if not present
+        if (!paramMap.containsKey(amplifierString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(amplifierString, scriptBlock);
+            if (section.isSet(amplifierString)) {
+                performantPlants.getLogger().warning(
+                        String.format("PotionEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", amplifierString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // check ambient, if not present
+        if (!paramMap.containsKey(ambientString)) {
+            ScriptBlock scriptBlock = ScriptResult.TRUE;
+            paramMap.put(ambientString, scriptBlock);
+            if (section.isSet(ambientString)) {
+                performantPlants.getLogger().warning(
+                        String.format("PotionEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", ambientString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set particles, if not present
+        if (!paramMap.containsKey(particlesString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(particlesString, scriptBlock);
+            if (section.isSet(particlesString)) {
+                performantPlants.getLogger().warning(
+                        String.format("PotionEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", particlesString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set icon, if not present
+        if (!paramMap.containsKey(iconString)) {
+            ScriptBlock scriptBlock = ScriptResult.FALSE;
+            paramMap.put(iconString, scriptBlock);
+            if (section.isSet(iconString)) {
+                performantPlants.getLogger().warning(
+                        String.format("PotionEffect %s invalid, will be set to %b; must be ScriptType BOOLEAN in " +
+                                        "section: %s", iconString, scriptBlock.loadValue(new ExecutionContext()).getBooleanValue(),
+                                section.getCurrentPath()));
+            }
+        }
+
+        ScriptBlock duration = paramMap.get(durationString);
+        ScriptBlock amplifier = paramMap.get(amplifierString);
+        ScriptBlock ambient = paramMap.get(ambientString);
+        ScriptBlock particles = paramMap.get(particlesString);
+        ScriptBlock icon = paramMap.get(iconString);
+        if (duration == null || amplifier == null || ambient == null || particles == null || icon == null) {
+            performantPlants.getLogger().warning(
+                    "BAD CODE: PotionEffect had unexpected null ScriptBlock in section: "
+                            + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationPotionEffect(potion,duration,amplifier,ambient,particles,icon);
+    }
 
     //block
-    private ScriptBlock createScriptOperationUseBlockLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationUseBlockLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationUseBlockLocation(operand);
     }
-    private ScriptBlock createScriptOperationPassOnlyBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationUseBlockBottomLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationUseBlockBottomLocation(operand);
+    }
+    private ScriptOperation createScriptOperationPassOnlyBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationPassOnlyBlock(operand);
     }
-    private ScriptBlock createScriptOperationBreakBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationBreakBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
@@ -5120,28 +5782,28 @@ public class ConfigurationManager {
     //inventory
 
     //item
-    private ScriptBlock createScriptOperationIsAir(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsAir(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsAir(operand);
     }
-    private ScriptBlock createScriptOperationIsPickaxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsPickaxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsPickaxe(operand);
     }
-    private ScriptBlock createScriptOperationIsAxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsAxe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsAxe(operand);
     }
-    private ScriptBlock createScriptOperationIsShovel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsShovel(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
@@ -5149,56 +5811,56 @@ public class ConfigurationManager {
         return new ScriptOperationIsShovel(operand);
 
     }
-    private ScriptBlock createScriptOperationIsHoe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsHoe(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsHoe(operand);
     }
-    private ScriptBlock createScriptOperationIsSword(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsSword(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsSword(operand);
     }
-    private ScriptBlock createScriptOperationIsWearable(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsWearable(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsWearable(operand);
     }
-    private ScriptBlock createScriptOperationIsItemAnyPlant(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationIsItemAnyPlant(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationIsItemAnyPlant(operand);
     }
-    private ScriptBlock createScriptOperationTakeOne(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationTakeOne(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationTakeOne(operand);
     }
-    private ScriptBlock createScriptOperationGetAmount(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationGetAmount(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationGetAmount(operand);
     }
-    private ScriptBlock createScriptOperationGetMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+    private ScriptOperation createScriptOperationGetMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
             return null;
         }
         return new ScriptOperationItemGetMaterial(operand);
     }
-    private ScriptBlock createScriptOperationCreateItemStack(ConfigurationSection section, boolean directValue) {
+    private ScriptOperation createScriptOperationCreateItemStack(ConfigurationSection section, boolean directValue) {
         if (directValue) {
             performantPlants.getLogger().warning(String.format("DirectValue section not supported in " +
                     "ScriptOperationItemStack in section: %s", section.getCurrentPath()));
@@ -5213,35 +5875,35 @@ public class ConfigurationManager {
         }
         return new ScriptOperationCreateItemStack(itemSettings.generateItemStack());
     }
-    private ScriptBlock createScriptOperationAreSimilar(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptOperation createScriptOperationAreSimilar(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context);
         if (operands == null) {
             return null;
         }
         return new ScriptOperationAreSimilar(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptOperation createScriptOperationItemIsMaterial(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "material");
         if (operands == null) {
             return null;
         }
         return new ScriptOperationItemIsMaterial(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptOperationGetEnchantmentLevel(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptOperation createScriptOperationGetEnchantmentLevel(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
         if (operands == null) {
             return null;
         }
         return new ScriptOperationGetEnchantmentLevel(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptOperationHasEnchantment(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptOperation createScriptOperationHasEnchantment(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "enchantment");
         if (operands == null) {
             return null;
         }
         return new ScriptOperationHasEnchantment(operands.get(0), operands.get(1));
     }
-    private ScriptBlock createScriptOperationAddDamage(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+    private ScriptOperation createScriptOperationAddDamage(ConfigurationSection section, boolean directValue, ExecutionContext context) {
         ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "itemstack", "amount");
         if (operands == null) {
             return null;

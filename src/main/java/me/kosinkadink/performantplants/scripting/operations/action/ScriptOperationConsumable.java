@@ -1,13 +1,16 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.plants.PlantConsumable;
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
 import org.bukkit.inventory.EquipmentSlot;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationConsumable extends ScriptOperation {
+public class ScriptOperationConsumable extends ScriptOperationAction {
 
     private final PlantConsumableStorage storage;
 
@@ -37,16 +40,6 @@ public class ScriptOperationConsumable extends ScriptOperation {
             }
         }
         return ScriptResult.TRUE;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 
     @Override

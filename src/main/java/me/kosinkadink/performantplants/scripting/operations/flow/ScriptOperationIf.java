@@ -4,7 +4,7 @@ import me.kosinkadink.performantplants.scripting.*;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationIf extends ScriptOperation {
+public class ScriptOperationIf extends ScriptOperationFlow {
 
     public ScriptOperationIf(ScriptBlock condition, ScriptBlock then) {
         this(condition, then, ScriptResult.getDefaultOfType(then.getType()));
@@ -47,11 +47,6 @@ public class ScriptOperationIf extends ScriptOperation {
         if (getThen().getType() != getElse().getType()) {
             throw new IllegalArgumentException("then and else blocks did not have matching ScriptType");
         }
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.FLOW;
     }
 
 }

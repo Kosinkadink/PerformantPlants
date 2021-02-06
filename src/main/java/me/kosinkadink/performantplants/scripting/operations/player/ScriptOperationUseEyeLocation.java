@@ -1,16 +1,15 @@
-package me.kosinkadink.performantplants.scripting.operations.block;
+package me.kosinkadink.performantplants.scripting.operations.player;
 
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Location;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationUseBlockLocation extends ScriptOperationBlock {
+public class ScriptOperationUseEyeLocation extends ScriptOperationPlayer {
 
-    public ScriptOperationUseBlockLocation(ScriptBlock scriptBlock) {
+    public ScriptOperationUseEyeLocation(ScriptBlock scriptBlock) {
         super(scriptBlock);
     }
 
@@ -22,8 +21,8 @@ public class ScriptOperationUseBlockLocation extends ScriptOperationBlock {
     @Override
     public ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         Location originalLocation = context.getLocation();
-        if (context.isPlantBlockSet()) {
-            context.setLocation(BlockHelper.getCenter(context.getPlantBlock().getBlock()));
+        if (context.isPlayerSet()) {
+            context.setLocation(context.getPlayer().getEyeLocation());
         }
         ScriptResult result = getScriptBlock().loadValue(context);
         // set location back to original

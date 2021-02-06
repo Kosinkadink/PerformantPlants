@@ -8,9 +8,9 @@ import org.bukkit.Location;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationUseBlockLocation extends ScriptOperationBlock {
+public class ScriptOperationUseBlockBottomLocation extends ScriptOperationBlock {
 
-    public ScriptOperationUseBlockLocation(ScriptBlock scriptBlock) {
+    public ScriptOperationUseBlockBottomLocation(ScriptBlock scriptBlock) {
         super(scriptBlock);
     }
 
@@ -23,7 +23,7 @@ public class ScriptOperationUseBlockLocation extends ScriptOperationBlock {
     public ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         Location originalLocation = context.getLocation();
         if (context.isPlantBlockSet()) {
-            context.setLocation(BlockHelper.getCenter(context.getPlantBlock().getBlock()));
+            context.setLocation(BlockHelper.getCenter(context.getPlantBlock().getBlock()).subtract(0, 0.5, 0));
         }
         ScriptResult result = getScriptBlock().loadValue(context);
         // set location back to original

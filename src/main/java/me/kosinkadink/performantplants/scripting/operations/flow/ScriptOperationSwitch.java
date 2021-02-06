@@ -5,7 +5,7 @@ import me.kosinkadink.performantplants.scripting.*;
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 
-public class ScriptOperationSwitch extends ScriptOperation {
+public class ScriptOperationSwitch extends ScriptOperationFlow {
 
     final int casesLength;
     HashMap<ScriptResult, ScriptBlock> caseMap = new HashMap<>();
@@ -41,11 +41,6 @@ public class ScriptOperationSwitch extends ScriptOperation {
             return action.loadValue(context);
         }
         return ScriptResult.getDefaultOfType(getType());
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.FLOW;
     }
 
     @Override

@@ -5,7 +5,9 @@ import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
@@ -14,7 +16,7 @@ import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
+public class ScriptOperationCreatePlantBlocks extends ScriptOperationAction {
 
     private final String[] growthStageBlockIds;
 
@@ -94,16 +96,6 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperation {
             }
         }
         return ScriptResult.TRUE;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 
     @Override

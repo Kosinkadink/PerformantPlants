@@ -17,6 +17,8 @@ public class ExecutionContext {
     private EquipmentSlot equipmentSlot = null;
     private Location location = null;
 
+    private boolean eaten = false;
+
     public ExecutionContext() {
 
     }
@@ -28,7 +30,8 @@ public class ExecutionContext {
                 .set(plantBlock)
                 .set(itemStack)
                 .set(equipmentSlot)
-                .set(location);
+                .set(location)
+                .setEaten(eaten);
     }
 
     //region Wrapper
@@ -165,7 +168,7 @@ public class ExecutionContext {
     //region Location
     public Location getLocation() {
         if (location != null) {
-            return location;
+            return location.clone();
         }
         if (isPlayerSet()) {
             return player.getLocation();
@@ -191,6 +194,17 @@ public class ExecutionContext {
 
     public ExecutionContext set(Location location) {
         return setLocation(location);
+    }
+    //endregion
+
+    //region isEaten
+    public boolean isEaten() {
+        return eaten;
+    }
+
+    public ExecutionContext setEaten(boolean eaten) {
+        this.eaten = eaten;
+        return this;
     }
     //endregion
 }

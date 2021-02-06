@@ -2,7 +2,10 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.plants.PlantConsumable;
 import me.kosinkadink.performantplants.plants.PlantInteract;
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
@@ -10,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationInteract extends ScriptOperation {
+public class ScriptOperationInteract extends ScriptOperationAction {
 
     private final PlantInteractStorage storage;
 
@@ -50,16 +53,6 @@ public class ScriptOperationInteract extends ScriptOperation {
             }
         }
         return ScriptResult.TRUE;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 
     @Override

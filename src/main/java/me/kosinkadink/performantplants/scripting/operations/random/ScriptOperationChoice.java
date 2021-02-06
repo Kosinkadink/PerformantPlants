@@ -5,7 +5,7 @@ import me.kosinkadink.performantplants.util.RandomHelper;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationChoice extends ScriptOperation {
+public class ScriptOperationChoice extends ScriptOperationRandom {
 
     private boolean containsString = false;
     private boolean containsLong = false;
@@ -80,16 +80,6 @@ public class ScriptOperationChoice extends ScriptOperation {
                                     input.getType().toString()));
             }
         }
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.RANDOM;
     }
 
 }

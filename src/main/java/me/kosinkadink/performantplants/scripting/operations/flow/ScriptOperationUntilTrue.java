@@ -5,7 +5,7 @@ import me.kosinkadink.performantplants.util.ScriptHelper;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationUntilTrue extends ScriptOperation {
+public class ScriptOperationUntilTrue extends ScriptOperationFlow {
 
     public ScriptOperationUntilTrue(ScriptBlock... inputs) {
         super(inputs);
@@ -39,11 +39,5 @@ public class ScriptOperationUntilTrue extends ScriptOperation {
                 throw new IllegalArgumentException("Until-true only accepts script blocks of ScriptType BOOLEAN");
             }
         }
-    }
-
-    @Nonnull
-    @Override
-    public ScriptCategory getCategory() {
-        return ScriptCategory.FLOW;
     }
 }

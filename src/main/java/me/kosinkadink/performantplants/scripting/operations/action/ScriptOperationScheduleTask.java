@@ -2,13 +2,16 @@ package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.plants.Plant;
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.tasks.PlantTask;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationScheduleTask extends ScriptOperation {
+public class ScriptOperationScheduleTask extends ScriptOperationAction {
 
     private final String plantId;
     private final String taskConfigId;
@@ -74,15 +77,5 @@ public class ScriptOperationScheduleTask extends ScriptOperation {
     @Override
     protected void setType() {
         type = ScriptType.STRING;
-    }
-
-    @Override
-    public boolean shouldOptimize() {
-        return false;
-    }
-
-    @Override
-    public @Nonnull ScriptCategory getCategory() {
-        return ScriptCategory.ACTION;
     }
 }
