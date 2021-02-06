@@ -14,7 +14,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Consumer;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ScriptOperationAreaEffect extends ScriptOperationAction {
@@ -74,7 +73,6 @@ public class ScriptOperationAreaEffect extends ScriptOperationAction {
             cloud.setReapplicationDelay(getReapplicationDelay().loadValue(context).getIntegerValue());
         };
     }
-
 
     @Nonnull
     @Override

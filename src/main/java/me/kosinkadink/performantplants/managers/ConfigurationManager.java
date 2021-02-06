@@ -3985,6 +3985,12 @@ public class ConfigurationManager {
                         returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, context); break;
                     case "breakblock":
                         returned = createScriptOperationBreakBlock(blockSection, directValue, blockName, context); break;
+                    case "blockfaces":
+                    case "requiredblockfaces":
+                        returned = createScriptOperationRequiredBlockFaces(blockSection, directValue, blockName, context); break;
+                    case "blockface":
+                    case "isblockface":
+                        returned = createScriptOperationIsBlockFace(blockSection, directValue, blockName, context); break;
                     // world
                     case "getworld":
                         returned = new ScriptOperationGetWorld(); break;
@@ -5906,6 +5912,64 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationBreakBlock(operand);
+    }
+    private ScriptOperation createScriptOperationRequiredBlockFaces(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        if (!directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue section required in " +
+                    "ScriptOperationRequiredBlockFaces in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        HashSet<BlockFace> blockFaces = new HashSet<>();
+        // set required block faces, if present
+        if (section.isList(sectionName)) {
+            for (String name : section.getStringList(sectionName)) {
+                BlockFace blockFace = EnumHelper.getBlockFace(name);
+                if (blockFace == null) {
+                    performantPlants.getLogger().warning(String.format("BlockFace '%s' not recognized in RequiredBlockFaces section: %s",
+                            name, section.getCurrentPath()));
+                    return null;
+                }
+                if (!BlockHelper.isOmnidirectionalBlockFace(blockFace)) {
+                    performantPlants.getLogger().warning(String.format("BlockFace '%s' is not a valid omnidirectional block face " +
+                                    "(UP,DOWN,EAST,WEST,NORTH,SOUTH) in RequiredBlockFaces section: %s",
+                            name, section.getCurrentPath()));
+                    return null;
+                }
+                blockFaces.add(blockFace);
+            }
+        } else {
+            performantPlants.getLogger().warning(String.format("No list of strings found in RequiredBlockFaces " +
+                    "section: %s", section.getCurrentPath()));
+            return null;
+        }
+        if (blockFaces.isEmpty()) {
+            performantPlants.getLogger().warning("No block faces present for RequiredBlockFaces section: "
+                    + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationRequiredBlockFaces(blockFaces);
+    }
+    private ScriptOperation createScriptOperationIsBlockFace(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        if (!operand.containsVariable()) {
+            String blockFaceName = operand.loadValue(new ExecutionContext()).getStringValue();
+            BlockFace blockFace = EnumHelper.getBlockFace(blockFaceName);
+            if (blockFace == null) {
+                performantPlants.getLogger().warning(String.format("IsBlockFace invalid; BlockFace '%s' not " +
+                        "recognized in section: %s", blockFaceName, section.getCurrentPath()));
+                return null;
+            }
+            if (!BlockHelper.isOmnidirectionalBlockFace(blockFace)) {
+                performantPlants.getLogger().warning(String.format("BlockFace '%s' is not a valid omnidirectional block face " +
+                                "(UP,DOWN,EAST,WEST,NORTH,SOUTH) in IsBlockFace section: %s",
+                        blockFaceName, section.getCurrentPath()));
+                return null;
+            }
+        }
+        return new ScriptOperationIsBlockFace(operand);
     }
 
     //inventory
