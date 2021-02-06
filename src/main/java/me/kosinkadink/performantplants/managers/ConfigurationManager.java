@@ -3938,6 +3938,9 @@ public class ConfigurationManager {
                         returned = createScriptOperationParticleEffect(blockSection, directValue, context); break;
                     case "explosion":
                         returned = createScriptOperationExplosion(blockSection, directValue, context); break;
+                    case "area":
+                    case "areaeffect":
+                        returned = createScriptOperationAreaEffect(blockSection, directValue, context); break;
                     // player
                     case "isplayernull":
                         returned = new ScriptOperationIsPlayerNull(); break;
@@ -3959,6 +3962,8 @@ public class ConfigurationManager {
                         returned = createScriptOperationHeal(blockSection, directValue, blockName, context); break;
                     case "feed":
                         returned = createScriptOperationFeed(blockSection, directValue, context); break;
+                    case "air":
+                        returned = createScriptOperationAir(blockSection, directValue, blockName, context); break;
                     case "message":
                         returned = createScriptOperationMessage(blockSection, directValue, blockName, context); break;
                     case "chat":
@@ -5543,6 +5548,123 @@ public class ConfigurationManager {
         }
         return new ScriptOperationExplosion(power,fire,breakScript);
     }
+    ScriptOperation createScriptOperationAreaEffect(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        // get potion effects, if present
+        List<PotionEffect> potionEffects = loadPotionEffects(section);
+        // get color, if set
+        ScriptColor color = new ScriptColor();
+        if (section.isConfigurationSection("color")) {
+            ConfigurationSection colorSection = section.getConfigurationSection("color");
+            if (colorSection != null) {
+                color = createColor(colorSection, context);
+            }
+        }
+
+        String durationString = "duration";
+        String durationOnUseString = "duration-on-use";
+        String particleString = "particle";
+        String radiusString = "radius";
+        String radiusOnUseString = "radius-on-use";
+        String radiusPerTickString = "radius-per-tick";
+        String reapplicationDelayString = "reapplication-delay";
+        HashMap<String, ScriptBlock> paramMap = createScriptOperationMultipleOptional(section, directValue, context,
+                durationString, durationOnUseString, particleString,
+                radiusString, radiusOnUseString, radiusPerTickString, reapplicationDelayString);
+        if (paramMap == null) {
+            return null;
+        }
+
+        // set duration, if not present
+        if (!paramMap.containsKey(durationString)) {
+            ScriptBlock scriptBlock = new ScriptResult(200);
+            paramMap.put(durationString, scriptBlock);
+            if (section.isSet(durationString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", durationString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set duration on use, if not present
+        if (!paramMap.containsKey(durationOnUseString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(durationOnUseString, scriptBlock);
+            if (section.isSet(durationOnUseString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", durationOnUseString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set particle, if not present
+        if (!paramMap.containsKey(particleString)) {
+            ScriptBlock scriptBlock = ScriptResult.EMPTY;
+            paramMap.put(particleString, scriptBlock);
+            if (section.isSet(particleString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to none; must be ScriptType STRING in " +
+                                        "section: %s", particleString, section.getCurrentPath()));
+            }
+        }
+        // set radius, if not present
+        if (!paramMap.containsKey(radiusString)) {
+            ScriptBlock scriptBlock = new ScriptResult(1.0);
+            paramMap.put(radiusString, scriptBlock);
+            if (section.isSet(radiusString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", radiusString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set radius on use, if not present
+        if (!paramMap.containsKey(radiusOnUseString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(radiusOnUseString, scriptBlock);
+            if (section.isSet(radiusOnUseString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", radiusOnUseString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set radius per tick, if not present
+        if (!paramMap.containsKey(radiusPerTickString)) {
+            ScriptBlock scriptBlock = ScriptResult.ZERO;
+            paramMap.put(radiusPerTickString, scriptBlock);
+            if (section.isSet(radiusPerTickString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG or DOUBLE in " +
+                                        "section: %s", radiusPerTickString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        // set reapplication delay, if not present
+        if (!paramMap.containsKey(reapplicationDelayString)) {
+            ScriptBlock scriptBlock = new ScriptResult(5);
+            paramMap.put(reapplicationDelayString, scriptBlock);
+            if (section.isSet(reapplicationDelayString)) {
+                performantPlants.getLogger().warning(
+                        String.format("AreaEffect %s invalid, will be set to %d; must be ScriptType LONG in " +
+                                        "section: %s", reapplicationDelayString, scriptBlock.loadValue(new ExecutionContext()).getIntegerValue(),
+                                section.getCurrentPath()));
+            }
+        }
+        ScriptBlock duration = paramMap.get(durationString);
+        ScriptBlock durationOnUse = paramMap.get(durationOnUseString);
+        ScriptBlock particle = paramMap.get(particleString);
+        ScriptBlock radius = paramMap.get(radiusString);
+        ScriptBlock radiusOnUse = paramMap.get(radiusOnUseString);
+        ScriptBlock radiusPerTick = paramMap.get(radiusPerTickString);
+        ScriptBlock reapplicationDelay = paramMap.get(reapplicationDelayString);
+        if (duration == null || durationOnUse == null || particle == null || radius == null || radiusOnUse == null || radiusPerTick == null || reapplicationDelay == null) {
+            performantPlants.getLogger().warning(
+                    "BAD CODE: AreaEffect had unexpected null ScriptBlock in section: "
+                            + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationAreaEffect(potionEffects, color, duration, durationOnUse, particle, radius, radiusOnUse, radiusPerTick, reapplicationDelay);
+    }
 
     //random
     ScriptOperation createScriptOperationChance(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
@@ -5630,6 +5752,13 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationFeed(operands.get(0), operands.get(1));
+    }
+    private ScriptOperation createScriptOperationAir(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationAir(operand);
     }
     private ScriptOperation createScriptOperationMessage(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);

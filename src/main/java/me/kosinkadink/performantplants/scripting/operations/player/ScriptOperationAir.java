@@ -8,9 +8,9 @@ import me.kosinkadink.performantplants.util.ScriptHelper;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationHeal extends ScriptOperationPlayer {
+public class ScriptOperationAir extends ScriptOperationPlayer {
 
-    public ScriptOperationHeal(ScriptBlock amount) {
+    public ScriptOperationAir(ScriptBlock amount) {
         super(amount);
     }
 
@@ -22,9 +22,10 @@ public class ScriptOperationHeal extends ScriptOperationPlayer {
     @Override
     public ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
         if (context.isPlayerSet()) {
-            double amount = getAmount().loadValue(context).getDoubleValue();
-            context.getPlayer().setHealth(Math.max(0, Math.min(20, context.getPlayer().getHealth() + amount)));
-            return new ScriptResult(context.getPlayer().getHealth());
+            int amount = getAmount().loadValue(context).getIntegerValue();
+            context.getPlayer().setRemainingAir(Math.min(context.getPlayer().getMaximumAir(),
+                    Math.max(0, context.getPlayer().getRemainingAir() + amount)));
+            return new ScriptResult(context.getPlayer().getRemainingAir());
         }
         return ScriptResult.ZERO;
     }
@@ -36,8 +37,8 @@ public class ScriptOperationHeal extends ScriptOperationPlayer {
 
     @Override
     protected void validateInputs() throws IllegalArgumentException {
-        if (!ScriptHelper.isNumeric(getAmount())) {
-            throw new IllegalArgumentException(String.format("amount must be ScriptType LONG or DOUBLE, not %s", getAmount().getType()));
+        if (!ScriptHelper.isLong(getAmount())) {
+            throw new IllegalArgumentException(String.format("amount must be ScriptType LONG, not %s", getAmount().getType()));
         }
     }
 }
