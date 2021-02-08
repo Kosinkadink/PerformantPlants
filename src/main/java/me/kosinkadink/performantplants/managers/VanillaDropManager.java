@@ -1,7 +1,7 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -12,26 +12,26 @@ public class VanillaDropManager {
 
     private PerformantPlants performantPlants;
 
-    private ConcurrentHashMap<Material, PlantInteractStorage> blockDropInteractMap = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<EntityType, PlantInteractStorage> entityDropInteractMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Material, ScriptBlock> blockDropInteractMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<EntityType, ScriptBlock> entityDropInteractMap = new ConcurrentHashMap<>();
 
     public VanillaDropManager(PerformantPlants performantPlants) {
         this.performantPlants = performantPlants;
     }
 
-    public PlantInteractStorage getInteract(Block block) {
+    public ScriptBlock getInteract(Block block) {
         return blockDropInteractMap.get(block.getType());
     }
 
-    public PlantInteractStorage getInteract(EntityType type) {
+    public ScriptBlock getInteract(EntityType type) {
         return entityDropInteractMap.get(type);
     }
 
-    public void addInteract(Material material, PlantInteractStorage storage) {
+    public void addInteract(Material material, ScriptBlock storage) {
         blockDropInteractMap.put(material, storage);
     }
 
-    public void addInteract(EntityType type, PlantInteractStorage storage) {
+    public void addInteract(EntityType type, ScriptBlock storage) {
         entityDropInteractMap.put(type, storage);
     }
 

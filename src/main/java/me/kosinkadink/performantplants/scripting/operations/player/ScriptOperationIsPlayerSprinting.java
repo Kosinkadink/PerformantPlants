@@ -1,6 +1,8 @@
 package me.kosinkadink.performantplants.scripting.operations.player;
 
-import me.kosinkadink.performantplants.scripting.*;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
+import me.kosinkadink.performantplants.scripting.ScriptType;
 import org.bukkit.entity.Player;
 
 import javax.annotation.Nonnull;

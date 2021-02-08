@@ -7,7 +7,6 @@ import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.storage.ScriptTask;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.storage.StageStorage;
 import org.bukkit.Material;
@@ -276,34 +275,13 @@ public class Plant {
     }
 
     public boolean validateStages() {
-        for (GrowthStage growthStage : stageStorage.getGrowthStages()) {
-            // verify go to stages use valid stage ids
-            for (GrowthStageBlock growthStageBlock : growthStage.getBlocks().values()) {
-                PlantInteractStorage interactStorage = growthStageBlock.getOnInteract();
-                if (interactStorage == null) {
-                    continue;
-                }
-                ArrayList<PlantInteract> checkInteractList = new ArrayList<>();
-                // add default interact to check, if present
-                if (interactStorage.getDefaultInteract() != null) {
-                    checkInteractList.add(interactStorage.getDefaultInteract());
-                }
-                // add all item interacts to check
-                checkInteractList.addAll(interactStorage.getInteractList());
-                // check interacts for any stage changes
-                // TODO: parse all ScriptBlocks and if any ChangeStage or Interact operations are found,
-                //  make sure the stages exist
-                for (PlantInteract plantInteract : checkInteractList) {
-//                    if (plantInteract.getGoToStage() != null) {
-//                        if (!stageStorage.isValidStage(plantInteract.getGoToStage())) {
-//                            Bukkit.getLogger().warning(String.format("Stage with id '%s' does not exist for plant: %s",
-//                                    plantInteract.getGoToStage(), id));
-//                            return false;
-//                        }
-//                    }
-                }
-            }
-        }
+//        for (GrowthStage growthStage : stageStorage.getGrowthStages()) {
+//            // verify go to stages use valid stage ids
+//            for (GrowthStageBlock growthStageBlock : growthStage.getBlocks().values()) {
+//                // TODO: parse all ScriptBlocks and if any ChangeStage or Interact operations are found,
+//                //  make sure the stages exist
+//            }
+//        }
         return true;
     }
 

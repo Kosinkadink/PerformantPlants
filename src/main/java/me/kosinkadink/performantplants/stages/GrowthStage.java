@@ -1,7 +1,6 @@
 package me.kosinkadink.performantplants.stages;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
-import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
@@ -18,8 +17,8 @@ public class GrowthStage {
     private boolean growthCheckpoint = false;
     private DropStorage dropStorage = new DropStorage();
     private RequirementStorage requirementStorage = new RequirementStorage();
-    private PlantInteract onExecute;
-    private PlantInteract onFail;
+    private ScriptBlock onExecute;
+    private ScriptBlock onFail;
 
     public GrowthStage(String id) {
         this.id = id;
@@ -77,19 +76,19 @@ public class GrowthStage {
         this.growthCheckpoint = growthCheckpoint;
     }
 
-    public PlantInteract getOnExecute() {
+    public ScriptBlock getOnExecute() {
         return onExecute;
     }
 
-    public void setOnExecute(PlantInteract onExecute) {
+    public void setOnExecute(ScriptBlock onExecute) {
         this.onExecute = onExecute;
     }
 
-    public PlantInteract getOnFail() {
+    public ScriptBlock getOnFail() {
         return onFail;
     }
 
-    public void setOnFail(PlantInteract onFail) {
+    public void setOnFail(ScriptBlock onFail) {
         this.onFail = onFail;
     }
 }

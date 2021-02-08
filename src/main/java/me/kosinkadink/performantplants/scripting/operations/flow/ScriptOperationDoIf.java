@@ -40,7 +40,7 @@ public class ScriptOperationDoIf extends ScriptOperationFlow {
 
     @Override
     protected void validateInputs() throws IllegalArgumentException {
-        if (ScriptHelper.isBoolean(getCondition())) {
+        if (!ScriptHelper.isBoolean(getCondition())) {
             throw new IllegalArgumentException("condition should be ScriptType BOOLEAN, not " + getCondition().getType());
         }
     }

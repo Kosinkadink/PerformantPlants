@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.plants;
 
-import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import org.bukkit.inventory.ItemStack;
 
 public class PlantItem {
@@ -11,8 +11,8 @@ public class PlantItem {
     private ItemStack itemStack;
     private double buyPrice;
     private double sellPrice;
-    private PlantConsumableStorage consumable;
-    private PlantConsumableStorage clickable;
+    private ScriptBlock consumable = null;
+    private ScriptBlock clickable = null;
     private int burnTime = 0;
 
     private boolean vanillaItem = false;
@@ -106,11 +106,11 @@ public class PlantItem {
         return consumable != null;
     }
 
-    public PlantConsumableStorage getConsumableStorage() {
+    public ScriptBlock getConsumableStorage() {
         return consumable;
     }
 
-    public void setConsumableStorage(PlantConsumableStorage consumable) {
+    public void setConsumableStorage(ScriptBlock consumable) {
         this.consumable = consumable;
     }
 
@@ -118,11 +118,11 @@ public class PlantItem {
         return clickable != null;
     }
 
-    public PlantConsumableStorage getClickableStorage() {
+    public ScriptBlock getClickableStorage() {
         return clickable;
     }
 
-    public void setClickableStorage(PlantConsumableStorage clickable) {
+    public void setClickableStorage(ScriptBlock clickable) {
         this.clickable = clickable;
     }
     //endregion

@@ -29,11 +29,14 @@ public class ScriptOperationWrapItem extends ScriptOperation {
     @Nonnull
     @Override
     public ScriptResult perform(@Nonnull ExecutionContext context) throws IllegalArgumentException {
+        // keep hold of original itemstack
         ItemStack oldItemStack = context.getItemStack();
         // set context item stack
         ItemStack itemStack = getItem().loadValue(context).getItemStackValue();
         context.set(itemStack);
+        // perform action
         ScriptResult result = getScriptBlock().loadValue(context);
+        // set back to original itemstack
         context.set(oldItemStack);
         return result;
     }

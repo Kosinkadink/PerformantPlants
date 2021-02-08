@@ -1,18 +1,13 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.PerformantPlants;
-import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.plants.PlantConsumable;
-import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.plants.PlantItem;
 import me.kosinkadink.performantplants.recipes.*;
 import me.kosinkadink.performantplants.recipes.keys.PotionRecipeKey;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
-import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.util.RecipeHelper;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.block.Furnace;
 import org.bukkit.entity.Player;
@@ -53,39 +48,24 @@ public class RecipeEventListener implements Listener {
             if (plantRecipe == null) {
                 return;
             }
-            PlantInteractStorage storage = plantRecipe.getStorage();
-            if (storage != null) {
+            ScriptBlock interact = plantRecipe.getInteract();
+            if (interact != null) {
                 ExecutionContext context = new ExecutionContext()
                         .set((Player) event.getWhoClicked())
                         .set(event.getWhoClicked().getInventory().getItemInMainHand());
-                PlantInteract interact = storage.getPlantInteract(context, null);
-                if (interact != null) {
-                    if (plantRecipe.isIgnoreResult()) {
-                        event.setCurrentItem(new ItemStack(Material.AIR));
-                        // removing current item causes ingredients not to be consumed
-                        // so consume them manually
-                        for (ItemStack itemStack : event.getInventory().getMatrix()) {
-                            if (itemStack != null && itemStack.getType() != Material.AIR) {
-                                itemStack.setAmount(itemStack.getAmount()-1);
-                            }
-                        }
-                    }
-                    // perform effects on block
-                    Block block = null;
-                    try {
-                        block = event.getInventory().getLocation().getBlock();
-                        context.setPlantBlock(PlantBlock.wrapBlock(block));
-                        interact.getEffectStorage().performEffectsBlock(context);
-                    } catch (NullPointerException ignored) { }
-                    // perform effects on player, if any
-                    PlantConsumableStorage consumableStorage = interact.getConsumableStorage();
-                    if (consumableStorage != null) {
-                        PlantConsumable consumable = consumableStorage.getConsumable(context, EquipmentSlot.HAND);
-                        if (consumable != null) {
-                            consumable.getEffectStorage().performEffectsPlayer(context);
+                // do ignore result stuff, if set
+                if (plantRecipe.isIgnoreResult()) {
+                    event.setCurrentItem(new ItemStack(Material.AIR));
+                    // removing current item causes ingredients not to be consumed
+                    // so consume them manually
+                    for (ItemStack itemStack : event.getInventory().getMatrix()) {
+                        if (itemStack != null && itemStack.getType() != Material.AIR) {
+                            itemStack.setAmount(itemStack.getAmount()-1);
                         }
                     }
                 }
+                // perform script
+                interact.loadValue(context).getBooleanValue();
             }
         }
     }

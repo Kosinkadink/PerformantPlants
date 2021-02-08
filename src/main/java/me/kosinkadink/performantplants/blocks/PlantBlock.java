@@ -4,21 +4,19 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Plant;
-import me.kosinkadink.performantplants.plants.PlantInteract;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.stages.GrowthStage;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
-import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import me.kosinkadink.performantplants.util.TimeHelper;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -316,49 +314,49 @@ public class PlantBlock {
         return false;
     }
 
-    public PlantInteract getOnInteract(ExecutionContext context, BlockFace blockFace) {
+    public ScriptBlock getOnInteract() {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract(context, blockFace);
+                return stageBlock.getOnInteract();
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract(context, blockFace);
+                return growthStageBlock.getOnInteract();
             }
         }
         return null;
     }
 
-    public PlantInteract getOnClick(ExecutionContext context, BlockFace blockFace) {
+    public ScriptBlock getOnClick() {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick(context, blockFace);
+                return stageBlock.getOnClick();
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick(context, blockFace);
+                return growthStageBlock.getOnClick();
             }
         }
         return null;
     }
 
-    public PlantInteract getOnBreak(ExecutionContext context) {
+    public ScriptBlock getOnBreak() {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnBreak(context);
+                return stageBlock.getOnBreak();
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnBreak(context);
+                return growthStageBlock.getOnBreak();
             }
         }
         return null;
@@ -571,36 +569,27 @@ public class PlantBlock {
             // perform on-execute
             if (!executedStage) {
                 executedStage = true;
-                PlantInteract onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
+                ScriptBlock onExecute = plant.getGrowthStage(dropStageIndex).getOnExecute();
                 if (onExecute != null) {
                     ExecutionContext context = new ExecutionContext().set(this);
-                    DropHelper.performDrops(onExecute.getDropStorage(), getBlock().getLocation(), context);
-                    // perform any effects set
-                    onExecute.getEffectStorage().performEffectsBlock(context);
-                    if (onExecute.getScriptBlock() != null) {
-                        int currentStageIndex = stageIndex;
-                        onExecute.getScriptBlock().loadValue(context);
-                        // make sure no advancement happens if script block causes growth stage change
-                        if (currentStageIndex != stageIndex) {
-                            advance = false;
-                        }
+                    int currentStageIndex = stageIndex;
+                    onExecute.loadValue(context).getBooleanValue();
+                    // make sure no advancement happens if script block causes growth stage change
+                    if (currentStageIndex != stageIndex) {
+                        advance = false;
                     }
                 }
             }
         }
         if (!canGrow) {
-            PlantInteract onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
+            ScriptBlock onFail = plant.getGrowthStage(dropStageIndex).getOnFail();
             if (onFail != null) {
                 ExecutionContext context = new ExecutionContext().set(this);
-                DropHelper.performDrops(onFail.getDropStorage(), getBlock().getLocation(), context);
-                onFail.getEffectStorage().performEffectsBlock(context);
-                if (onFail.getScriptBlock() != null) {
-                    int currentStageIndex = stageIndex;
-                    onFail.getScriptBlock().loadValue(new ExecutionContext().set(this));
-                    // make sure no advancement happens if script block causes growth stage change
-                    if (currentStageIndex != stageIndex) {
-                        advance = false;
-                    }
+                int currentStageIndex = stageIndex;
+                onFail.loadValue(context);
+                // make sure no advancement happens if script block causes growth stage change
+                if (currentStageIndex != stageIndex) {
+                    advance = false;
                 }
             }
         }

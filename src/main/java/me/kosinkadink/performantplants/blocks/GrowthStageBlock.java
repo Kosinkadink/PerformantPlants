@@ -1,13 +1,10 @@
 package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.locations.RelativeLocation;
-import me.kosinkadink.performantplants.plants.PlantInteract;
-import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.storage.DropStorage;
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 
 import java.util.ArrayList;
@@ -26,9 +23,9 @@ public class GrowthStageBlock {
     private boolean stopGrowth = false;
     private boolean randomOrientation = false;
     private boolean placedOrientation = false;
-    private PlantInteractStorage onInteract;
-    private PlantInteractStorage onClick;
-    private PlantInteractStorage onBreak;
+    private ScriptBlock onInteract = null;
+    private ScriptBlock onClick = null;
+    private ScriptBlock onBreak = null;
     private DropStorage dropStorage = new DropStorage();
     // block replacement variables
     private boolean replacePlantBlock = false;
@@ -130,48 +127,27 @@ public class GrowthStageBlock {
         this.placedOrientation = placedOrientation;
     }
 
-    public PlantInteractStorage getOnInteract() {
+    public ScriptBlock getOnInteract() {
         return onInteract;
     }
 
-    public PlantInteract getOnInteract(ExecutionContext context, BlockFace blockFace) {
-        if (onInteract != null) {
-            return onInteract.getPlantInteract(context, blockFace);
-        }
-        return null;
-    }
-
-    public void setOnInteract(PlantInteractStorage onInteract) {
+    public void setOnInteract(ScriptBlock onInteract) {
         this.onInteract = onInteract;
     }
 
-    public PlantInteractStorage getOnClick() {
+    public ScriptBlock getOnClick() {
         return onClick;
     }
 
-    public PlantInteract getOnClick(ExecutionContext context, BlockFace blockFace) {
-        if (onClick != null) {
-            return onClick.getPlantInteract(context, blockFace);
-        }
-        return null;
-    }
-
-    public void setOnClick(PlantInteractStorage onClick) {
+    public void setOnClick(ScriptBlock onClick) {
         this.onClick = onClick;
     }
 
-    public PlantInteractStorage getOnBreak() {
+    public ScriptBlock getOnBreak() {
         return onBreak;
     }
 
-    public PlantInteract getOnBreak(ExecutionContext context) {
-        if (onBreak != null) {
-            return onBreak.getPlantInteract(context);
-        }
-        return null;
-    }
-
-    public void setOnBreak(PlantInteractStorage onBreak) {
+    public void setOnBreak(ScriptBlock onBreak) {
         this.onBreak = onBreak;
     }
 

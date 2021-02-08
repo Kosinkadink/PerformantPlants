@@ -24,7 +24,24 @@ public class ScriptPlantData {
     public PlantData createPlantData(ExecutionContext context) {
         PlantData currentData = baseData.cloneWithoutParse();
         for (Map.Entry<String, ScriptBlock> entry : scriptBlockMap.entrySet()) {
-            baseData.updateVariable(entry.getKey(), entry.getValue());
+            ScriptResult result = entry.getValue().loadValue(context);
+            switch(result.getType()) {
+                case BOOLEAN:
+                    currentData.updateVariable(entry.getKey(), result.getBooleanValue());
+                    break;
+                case LONG:
+                    currentData.updateVariable(entry.getKey(), result.getLongValue());
+                    break;
+                case DOUBLE:
+                    currentData.updateVariable(entry.getKey(), result.getDoubleValue());
+                    break;
+                case STRING:
+                    currentData.updateVariable(entry.getKey(), result.getStringValue());
+                    break;
+                case ITEMSTACK:
+                    currentData.updateVariable(entry.getKey(), result.getItemStackValue());
+                    break;
+            }
         }
         return currentData;
     }

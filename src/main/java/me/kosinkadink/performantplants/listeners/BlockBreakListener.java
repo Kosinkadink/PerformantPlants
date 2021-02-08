@@ -10,7 +10,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 
 public class BlockBreakListener implements Listener {
 
-    private PerformantPlants performantPlants;
+    private final PerformantPlants performantPlants;
 
     public BlockBreakListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;

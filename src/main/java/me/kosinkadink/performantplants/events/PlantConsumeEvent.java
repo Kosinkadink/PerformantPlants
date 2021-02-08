@@ -1,6 +1,6 @@
 package me.kosinkadink.performantplants.events;
 
-import me.kosinkadink.performantplants.plants.PlantConsumable;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -13,25 +13,35 @@ public class PlantConsumeEvent extends Event implements Cancellable {
     private boolean isCancelled;
 
     private final Player player;
-    private final PlantConsumable consumable;
+    private final ScriptBlock consumable;
     private final EquipmentSlot hand;
+    private boolean eaten = false;
 
-    public PlantConsumeEvent(Player player, PlantConsumable consumable, EquipmentSlot hand) {
+    public PlantConsumeEvent(Player player, ScriptBlock consumable, EquipmentSlot hand) {
         this.player = player;
         this.consumable = consumable;
         this.hand = hand;
+    }
+
+    public PlantConsumeEvent(Player player, ScriptBlock consumable, EquipmentSlot hand, boolean eaten) {
+        this(player, consumable, hand);
+        this.eaten = eaten;
     }
 
     public Player getPlayer() {
         return player;
     }
 
-    public PlantConsumable getConsumable() {
+    public ScriptBlock getConsumable() {
         return consumable;
     }
 
     public EquipmentSlot getHand() {
         return hand;
+    }
+
+    public boolean isEaten() {
+        return eaten;
     }
 
     public static HandlerList getHandlerList() {

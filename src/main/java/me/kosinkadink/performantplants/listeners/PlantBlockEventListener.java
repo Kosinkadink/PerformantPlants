@@ -4,12 +4,12 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
-import me.kosinkadink.performantplants.plants.PlantConsumable;
-import me.kosinkadink.performantplants.plants.PlantInteract;
-import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
-import me.kosinkadink.performantplants.storage.PlantConsumableStorage;
-import me.kosinkadink.performantplants.util.*;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.util.BlockHelper;
+import me.kosinkadink.performantplants.util.ItemHelper;
+import me.kosinkadink.performantplants.util.MetadataHelper;
+import me.kosinkadink.performantplants.util.PermissionHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -20,7 +20,6 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -92,9 +91,6 @@ public class PlantBlockEventListener implements Listener {
             }
             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                 performantPlants.getLogger().info("Reviewing PlantBreakEvent for block: " + event.getBlock().getLocation().toString());
-            // track if block should break and if drops should occur
-            boolean actuallyBreakBlock = true;
-            boolean giveBlockDrops = true;
             // get item in main hand, used to break the block
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
             // get PlantInteract behavior for main hand, if any
@@ -102,50 +98,15 @@ public class PlantBlockEventListener implements Listener {
                     .set(event.getPlayer())
                     .set(event.getPlantBlock())
                     .set(itemStack);
-            PlantInteract plantInteract = event.getPlantBlock().getOnBreak(context);
+            ScriptBlock plantInteract = event.getPlantBlock().getOnBreak();
             if (plantInteract != null) {
-                // see if should do
-                boolean shouldDo = plantInteract.generateDoIf(context);
-                boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(context);
-                boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(context);
-                boolean onlyConsumableEffectsOnDo = plantInteract.isOnlyConsumableEffectsOnDo(context);
-                // see if drops should occur
-                giveBlockDrops = plantInteract.isGiveBlockDropsNull() || plantInteract.isGiveBlockDrops(context);
-                // determine if block should be broken
-                if (!onlyBreakOnDo || shouldDo) {
-                    if (!plantInteract.isBreakBlockNull() && !plantInteract.isBreakBlock(context)) {
-                        actuallyBreakBlock = false;
-                    }
-                }
-                if (!onlyEffectsOnDo || shouldDo) {
-                    plantInteract.getEffectStorage().performEffectsBlock(context);
-                }
-                if (!onlyConsumableEffectsOnDo || shouldDo) {
-                    PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
-                    // do consumable actions
-                    if (consumableStorage != null) {
-                        PlantConsumable consumable = consumableStorage.getConsumable(context, EquipmentSlot.HAND);
-                        if (consumable != null) {
-                            consumable.getEffectStorage().performEffectsDynamic(context);
-                        }
-                    }
-                }
-                // perform all applicable script blocks
-                if (shouldDo) {
-                    if (plantInteract.getScriptBlockOnDo() != null) {
-                        plantInteract.getScriptBlockOnDo().loadValue(context);
-                    }
-                } else {
-                    if (plantInteract.getScriptBlockOnNotDo() != null) {
-                        plantInteract.getScriptBlockOnNotDo().loadValue(context);
-                    }
-                }
-                if (plantInteract.getScriptBlock() != null) {
-                    plantInteract.getScriptBlock().loadValue(context);
+                boolean performed = plantInteract.loadValue(context).getBooleanValue();
+                if (!performed) {
+                    event.setCancelled(true);
                 }
             }
-            if (actuallyBreakBlock) {
-                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), giveBlockDrops);
+            else {
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), true);
                 event.setBlockBroken(true);
             }
         }
@@ -190,85 +151,36 @@ public class PlantBlockEventListener implements Listener {
             // create context
             ExecutionContext context = new ExecutionContext()
                     .set(event.getPlayer())
-                    .set(event.getPlantBlock());
+                    .set(event.getPlantBlock())
+                    .set(event.getBlockFace());
             // get item in main hand
             EquipmentSlot hand = EquipmentSlot.HAND;
             ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
-            context.set(itemStack);
+            context.set(itemStack).set(hand);
             // get PlantInteract to use
-            PlantInteract plantInteract;
+            ScriptBlock plantInteract;
             if (!event.isUseOnClick()) {
                 // get PlantInteract behavior for main hand, if any
-                plantInteract = event.getPlantBlock().getOnInteract(context, event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnInteract();
                 // if no plant interact behavior, try again for the offhand
                 if (plantInteract == null) {
                     hand = EquipmentSlot.OFF_HAND;
                     itemStack = event.getPlayer().getInventory().getItemInOffHand();
-                    context.set(itemStack);
-                    plantInteract = event.getPlantBlock().getOnInteract(context, event.getBlockFace());
+                    context.set(itemStack).set(hand);
+                    plantInteract = event.getPlantBlock().getOnInteract();
                 }
             } else {
-                plantInteract = event.getPlantBlock().getOnClick(context, event.getBlockFace());
+                plantInteract = event.getPlantBlock().getOnClick();
             }
             // if still no plant interact behavior, cancel event and return
             if (plantInteract == null) {
                 event.setCancelled(true);
                 return;
             }
-            PlantConsumableStorage consumableStorage = plantInteract.getConsumableStorage();
-            PlantConsumable consumable = null;
-            if (consumableStorage != null) {
-                consumable = consumableStorage.getConsumable(context, event.getHand());
-                if (consumable == null) {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-            // see if should do
-            boolean shouldDo = plantInteract.generateDoIf(context);
-            boolean onlyEffectsOnDo = plantInteract.isOnlyEffectsOnDo(context);
-            // try to load onlyConsumableEffectsOnDo if consumable exists
-            boolean onlyConsumableEffectsOnDo = consumable != null && plantInteract.isOnlyConsumableEffectsOnDo(context);
-            boolean onlyTakeItemOnDo = plantInteract.isOnlyTakeItemOnDo(context);
-            boolean onlyBreakOnDo = plantInteract.isOnlyBreakBlockOnDo(context);
-            boolean onlyDropOnDo = plantInteract.isOnlyDropOnDo(context);
-            // break block, if applicable
-            if (!onlyBreakOnDo || shouldDo) {
-                if (plantInteract.isBreakBlock(context)) {
-                    BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), plantInteract.isGiveBlockDrops(context));
-                }
-            }
-            // drop items, if applicable
-            if (!onlyDropOnDo || shouldDo) {
-                DropHelper.performDrops(plantInteract.getDropStorage(), event.getBlock().getLocation(), context);
-            }
-            // take item, if applicable
-            if (!onlyTakeItemOnDo || shouldDo) {
-                if (plantInteract.isTakeItem(context)) {
-                    ItemHelper.decrementItemStack(itemStack);
-                }
-            }
-            // do break actions for block
-            if (!onlyEffectsOnDo || shouldDo) {
-                plantInteract.getEffectStorage().performEffectsBlock(context);
-            }
-            if (!onlyConsumableEffectsOnDo || shouldDo) {
-                if (consumable != null) {
-                    consumable.getEffectStorage().performEffectsDynamic(context);
-                }
-            }
-            // perform all applicable script blocks
-            if (shouldDo) {
-                if (plantInteract.getScriptBlockOnDo() != null) {
-                    plantInteract.getScriptBlockOnDo().loadValue(context);
-                }
-            } else {
-                if (plantInteract.getScriptBlockOnNotDo() != null) {
-                    plantInteract.getScriptBlockOnNotDo().loadValue(context);
-                }
-            }
-            if (plantInteract.getScriptBlock() != null) {
-                plantInteract.getScriptBlock().loadValue(context);
+            // try to perform actions
+            boolean performed = plantInteract.loadValue(context).getBooleanValue();
+            if (!performed) {
+                event.setCancelled(true);
             }
         }
     }
@@ -281,9 +193,9 @@ public class PlantBlockEventListener implements Listener {
             return;
         }
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Reviewing PlantConsumeEvent for item");
-        PlantConsumable plantConsumable = event.getConsumable();
-        if (plantConsumable == null) {
-            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Consumable not found for current inventory status");
+        ScriptBlock consumable = event.getConsumable();
+        if (consumable == null) {
+            if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Consumable is null");
             event.setCancelled(true);
             return;
         }
@@ -299,87 +211,15 @@ public class PlantBlockEventListener implements Listener {
 
         // see if should do
         ExecutionContext context = new ExecutionContext()
-                .set(event.getPlayer());
-        boolean shouldDo = plantConsumable.generateDoIf(context);
-        boolean onlyEffectsOnDo = plantConsumable.isOnlyEffectsOnDo(context);
-        boolean onlyTakeItemOnDo = plantConsumable.isOnlyTakeItemOnDo(context);
-        boolean onlyTakeRequiredItemsOnDo = plantConsumable.isOnlyTakeRequiredItemsOnDo(context);
-        boolean onlyGiveItemsOnDo = plantConsumable.isOnlyGiveItemsOnDo(context);
-        boolean onlyAddDamageOnDo = plantConsumable.isOnlyAddDamageOnDo(context);
+                .set(event.getPlayer())
+                .set(callStack)
+                .set(event.getHand())
+                .setEaten(event.isEaten());
 
-
-        // do actions stored in item's PlantConsumable
-        // give items, if set
-        if (!onlyGiveItemsOnDo || shouldDo) {
-            for (ItemStack itemToGive : plantConsumable.getItemsToGive()) {
-                DropHelper.givePlayerItemStack(event.getPlayer(), itemToGive);
-            }
-        }
-        // decrement item, if set
-        if (!onlyTakeItemOnDo || shouldDo) {
-            if (plantConsumable.isTakeItem(context)) {
-                ItemHelper.decrementItemStack(callStack);
-            }
-        }
-        // add damage to item, if set
-        if (!onlyAddDamageOnDo || shouldDo) {
-            int addDamageAmount = plantConsumable.getAddDamage(context);
-            if (addDamageAmount != 0) {
-                ItemHelper.updateDamage(callStack, addDamageAmount);
-            }
-        }
-        // decrement required items, if set
-        if (!onlyTakeRequiredItemsOnDo || shouldDo) {
-            for (RequiredItem requirement : plantConsumable.getRequiredItems()) {
-                if (requirement.isTakeItem(context)) {
-                    // if should be in hand, decrement other hand's stack
-                    if (requirement.isInHand(context)) {
-                        ItemHelper.decrementItemStack(otherStack);
-                    }
-                    // otherwise take required item out of inventory
-                    else {
-                        ItemStack removeStack = requirement.getItemStack().clone();
-                        removeStack.setAmount(1);
-                        event.getPlayer().getInventory().removeItem(removeStack);
-                    }
-                }
-                int requirementAddDamageAmount = requirement.getAddDamage(context);
-                if (requirementAddDamageAmount != 0) {
-                    if (requirement.isInHand(context)) {
-                        ItemHelper.updateDamage(otherStack, requirementAddDamageAmount);
-                    } else {
-                        int slot;
-                        if (requirement.getItemStack().getItemMeta() instanceof Damageable) {
-                            slot = event.getPlayer().getInventory().first(requirement.getItemStack().getType());
-                        } else {
-                            slot = event.getPlayer().getInventory().first(requirement.getItemStack());
-                        }
-                        if (slot >= 0) {
-                            ItemStack slotStack = event.getPlayer().getInventory().getItem(slot);
-                            if (slotStack != null) {
-                                ItemHelper.updateDamage(slotStack, requirementAddDamageAmount);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // perform effects, if applicable
-        if (!onlyEffectsOnDo || shouldDo) {
-            plantConsumable.getEffectStorage().performEffectsDynamic(context);
-        }
-        // perform all applicable script blocks
-        if (shouldDo) {
-            if (plantConsumable.getScriptBlockOnDo() != null) {
-                plantConsumable.getScriptBlockOnDo().loadValue(context);
-            }
-        } else {
-            if (plantConsumable.getScriptBlockOnNotDo() != null) {
-                plantConsumable.getScriptBlockOnNotDo().loadValue(context);
-            }
-        }
-        if (plantConsumable.getScriptBlock() != null) {
-            plantConsumable.getScriptBlock().loadValue(context);
+        // try to perform script
+        boolean performed = consumable.loadValue(context).getBooleanValue();
+        if (!performed) {
+            event.setCancelled(true);
         }
     }
 

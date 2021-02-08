@@ -1,17 +1,17 @@
 package me.kosinkadink.performantplants.recipes;
 
-import me.kosinkadink.performantplants.storage.PlantInteractStorage;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import org.bukkit.inventory.Recipe;
 
 public class PlantRecipe {
 
     private Recipe recipe;
-    private PlantInteractStorage storage;
+    private ScriptBlock interact;
     private boolean ignoreResult = false;
 
-    public PlantRecipe(Recipe recipe, PlantInteractStorage storage) {
+    public PlantRecipe(Recipe recipe, ScriptBlock interact) {
         this.recipe = recipe;
-        this.storage = storage;
+        this.interact = interact;
     }
 
     public PlantRecipe(Recipe recipe) {
@@ -26,12 +26,12 @@ public class PlantRecipe {
         this.recipe = recipe;
     }
 
-    public PlantInteractStorage getStorage() {
-        return storage;
+    public ScriptBlock getInteract() {
+        return interact;
     }
 
-    public void setStorage(PlantInteractStorage storage) {
-        this.storage = storage;
+    public void setInteract(ScriptBlock interact) {
+        this.interact = interact;
     }
 
     public boolean isIgnoreResult() {

@@ -6,6 +6,7 @@ import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 
@@ -35,8 +36,10 @@ public class ScriptOperationItemIsMaterial extends ScriptOperationItem {
         if (material == null) {
             return ScriptResult.FALSE;
         }
+        // get itemstack
+        ItemStack itemStack = getItemStack().loadValue(context).getItemStackValue();
         // check if material matches
-        return new ScriptResult(context.getItemStack().getType() == material);
+        return new ScriptResult(itemStack.getType() == material);
     }
 
     @Override
