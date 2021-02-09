@@ -1,5 +1,8 @@
 package me.kosinkadink.performantplants;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import me.kosinkadink.performantplants.adapters.ClientDropPacketAdapter;
 import me.kosinkadink.performantplants.commands.*;
 import me.kosinkadink.performantplants.expansions.PerformantPlantExpansion;
 import me.kosinkadink.performantplants.listeners.*;
@@ -15,6 +18,7 @@ public class PerformantPlants extends JavaPlugin {
     private static PerformantPlants performantPlants;
 
     private Economy economy;
+    private ProtocolManager protocolManager;
 
     private PluginManager pluginManager;
     private CommandManager commandManager;
@@ -27,6 +31,8 @@ public class PerformantPlants extends JavaPlugin {
     private VanillaDropManager vanillaDropManager;
     private TaskManager taskManager;
 
+    private PlayerInteractListener playerInteractListener;
+
     private boolean enabled;
 
     @Override
@@ -34,12 +40,20 @@ public class PerformantPlants extends JavaPlugin {
         performantPlants = this;
         enablePP();
         setupEconomy();
+        setupProtocolLib();
         setupMetrics();
         registerManagers();
         registerListeners();
         registerCommands();
         if (!hasEconomy()) {
-            getServer().getConsoleSender().sendMessage(String.format("%s[PerformantPlants] Vault not found; buy/sell commands will be disabled",
+            getServer().getConsoleSender().sendMessage(
+                    String.format("%s[PerformantPlants] Vault not found; buy/sell commands will be disabled",
+                    ChatColor.YELLOW));
+        }
+        if (!hasProtocolLib()) {
+            getServer().getConsoleSender().sendMessage(
+                    String.format("%s[PerformantPlants] ProtocolLib not found; on-drop and on-drop-all " +
+                                    "item interaction will be disabled",
                     ChatColor.YELLOW));
         }
         if (pluginManager.getPlugin("PlaceholderAPI") != null) {
@@ -85,6 +99,12 @@ public class PerformantPlants extends JavaPlugin {
         economy = rsp.getProvider();
     }
 
+    private void setupProtocolLib() {
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+            protocolManager = ProtocolLibrary.getProtocolManager();
+        }
+    }
+
     private void setupMetrics() {
         int bStatsId = 10015;
         Metrics metrics = new Metrics(this, bStatsId);
@@ -104,14 +124,20 @@ public class PerformantPlants extends JavaPlugin {
     }
 
     private void registerListeners() {
+        // setup player interact listener
+        playerInteractListener = new PlayerInteractListener(this);
+        pluginManager.registerEvents(playerInteractListener, this);
+        // setup other listeners
         pluginManager.registerEvents(new ChunkEventListener(this), this);
-        pluginManager.registerEvents(new PlayerInteractListener(this), this);
         pluginManager.registerEvents(new BlockBreakListener(this), this);
         pluginManager.registerEvents(new PlantBlockEventListener(this), this);
         pluginManager.registerEvents(new RecipeEventListener(this), this);
         pluginManager.registerEvents(new VanillaDropListener(this), this);
         pluginManager.registerEvents(new HookListener(this), this);
         pluginManager.registerEvents(new InventoryEventListener(this), this);
+        if (hasProtocolLib()) {
+            ClientDropPacketAdapter.register(this, protocolManager);
+        }
     }
 
     private void registerCommands() {
@@ -151,6 +177,10 @@ public class PerformantPlants extends JavaPlugin {
         return economy;
     }
 
+    public boolean hasProtocolLib() {
+        return protocolManager != null;
+    }
+
     public CommandManager getCommandManager() {
         return commandManager;
     }
@@ -185,6 +215,10 @@ public class PerformantPlants extends JavaPlugin {
 
     public TaskManager getTaskManager() {
         return taskManager;
+    }
+
+    public PlayerInteractListener getPlayerInteractListener() {
+        return playerInteractListener;
     }
 
     public boolean isPPEnabled() {

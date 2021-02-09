@@ -1426,7 +1426,30 @@ public class ConfigurationManager {
                 plantItem.setOnConsume(onConsume);
             }
         }
-        // TODO: add on-drop
+        // add drop behavior
+        if (section.isConfigurationSection("on-drop")) {
+            if (performantPlants.hasProtocolLib()) {
+                ScriptBlock onDrop = createPlantScript(section, "on-drop", context);
+                if (onDrop != null) {
+                    plantItem.setOnDrop(onDrop);
+                }
+            } else {
+                performantPlants.getLogger().warning("on-drop ignored due to ProtocolLib plugin not " +
+                        "found, in section: " + section.getCurrentPath());
+            }
+        }
+        // add drop all behavior
+        if (section.isConfigurationSection("on-drop-all")) {
+            if (performantPlants.hasProtocolLib()) {
+                ScriptBlock onDropAll = createPlantScript(section, "on-drop-all", context);
+                if (onDropAll != null) {
+                    plantItem.setOnDropAll(onDropAll);
+                }
+            } else {
+                performantPlants.getLogger().warning("on-drop-all ignored due to ProtocolLib plugin not " +
+                        "found, in section: " + section.getCurrentPath());
+            }
+        }
     }
 
     //region Add Recipes

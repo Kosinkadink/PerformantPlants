@@ -33,7 +33,9 @@ public class PlayerInteractListener implements Listener {
 
     private final PerformantPlants performantPlants;
     private final HashMap<UUID, Boolean> mainHandActionMap = new HashMap<>();
+    private final HashMap<UUID, Boolean> dropActionMap = new HashMap<>();
 
+    //region MainHandAction
     private boolean isMainHandAction(Player player) {
         Boolean action = mainHandActionMap.get(player.getUniqueId());
         if (action != null) {
@@ -53,6 +55,29 @@ public class PlayerInteractListener implements Listener {
     private void resetMainHandAction(Player player) {
         mainHandActionMap.remove(player.getUniqueId());
     }
+    //endregion
+    //region DropAction
+    private boolean isDropAction(Player player, Action action) {
+        if (action == Action.LEFT_CLICK_AIR) {
+            Boolean hasAction = dropActionMap.get(player.getUniqueId());
+            if (hasAction != null) {
+                return hasAction;
+            }
+        } else {
+            resetDropAction(player);
+        }
+        return false;
+    }
+
+    public void setDropAction(Player player) {
+        dropActionMap.put(player.getUniqueId(), true);
+    }
+
+    public void resetDropAction(Player player) {
+        dropActionMap.remove(player.getUniqueId());
+    }
+    //endregion
+
 
     public PlayerInteractListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
@@ -146,6 +171,13 @@ public class PlayerInteractListener implements Listener {
         }
         else {
             // interacting with main hand
+            if (isDropAction(player, event.getAction())) {
+                event.setCancelled(true);
+                resetDropAction(player);
+                resetMainHandAction(player);
+                return;
+            }
+            resetDropAction(player);
             itemStack = player.getInventory().getItemInMainHand();
             otherStack = player.getInventory().getItemInOffHand();
             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
@@ -235,8 +267,8 @@ public class PlayerInteractListener implements Listener {
                                 );
                                 return;
                             }
-                            // cancel event unless plant item can and is allowed to be worn
-                            if (!(ItemHelper.isMaterialWearableWithRightClick(plantItem.getItemStack()) && plantItem.isAllowWear())) {
+                            // cancel event unless plant item can and is allowed to be worn, or is edible
+                            if (!(itemStack.getType().isEdible() || ItemHelper.isMaterialWearableWithRightClick(plantItem.getItemStack()) && plantItem.isAllowWear())) {
                                 event.setCancelled(true);
                             }
                         }

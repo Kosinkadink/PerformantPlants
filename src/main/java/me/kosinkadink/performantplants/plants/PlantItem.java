@@ -15,6 +15,7 @@ public class PlantItem {
     private ScriptBlock onLeftClick = null;
     private ScriptBlock onConsume = null;
     private ScriptBlock onDrop = null;
+    private ScriptBlock onDropAll = null;
     private int burnTime = 0;
 
     private boolean vanillaItem = false;
@@ -151,6 +152,18 @@ public class PlantItem {
 
     public void setOnDrop(ScriptBlock onDrop) {
         this.onDrop = onDrop;
+    }
+    // drop all
+    public boolean hasOnDropAll() {
+        return onDropAll != null;
+    }
+
+    public ScriptBlock getOnDropAll() {
+        return onDropAll;
+    }
+
+    public void setOnDropAll(ScriptBlock onDropAll) {
+        this.onDropAll = onDropAll;
     }
     //endregion
 
