@@ -6,7 +6,7 @@ import me.kosinkadink.performantplants.scripting.ScriptResult;
 public class DropSettings {
 
     private ScriptBlock amount = new ScriptResult(1);
-    private ScriptBlock doIf = ScriptResult.TRUE;
+    private ScriptBlock condition = ScriptResult.TRUE;
     private ItemSettings itemSettings;
 
     public DropSettings() {}
@@ -20,12 +20,12 @@ public class DropSettings {
         this.amount = amount;
     }
 
-    public ScriptBlock getDoIf() {
-        return doIf;
+    public ScriptBlock getCondition() {
+        return condition;
     }
 
-    public void setDoIf(ScriptBlock doIf) {
-        this.doIf = doIf;
+    public void setCondition(ScriptBlock condition) {
+        this.condition = condition;
     }
 
     public ItemSettings getItemSettings() {

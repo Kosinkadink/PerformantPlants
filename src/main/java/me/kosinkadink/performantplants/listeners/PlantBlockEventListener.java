@@ -134,7 +134,7 @@ public class PlantBlockEventListener implements Listener {
     }
 
     @EventHandler
-    public void onPlantInteract(PlantInteractEvent event) {
+    public void onPlantBlockInteract(PlantBlockInteractEvent event) {
         if (!event.isCancelled()) {
             // check if player has permission
             if (!event.getPlayer().hasPermission(PermissionHelper.Interact)) {
@@ -186,7 +186,7 @@ public class PlantBlockEventListener implements Listener {
     }
 
     @EventHandler
-    public void onPlantConsume(PlantConsumeEvent event) {
+    public void onPlantItemInteract(PlantItemInteractEvent event) {
         // check if player has permission
         if (!event.getPlayer().hasPermission(PermissionHelper.Consume)) {
             event.setCancelled(true);
@@ -213,8 +213,7 @@ public class PlantBlockEventListener implements Listener {
         ExecutionContext context = new ExecutionContext()
                 .set(event.getPlayer())
                 .set(callStack)
-                .set(event.getHand())
-                .setEaten(event.isEaten());
+                .set(event.getHand());
 
         // try to perform script
         boolean performed = consumable.loadValue(context).getBooleanValue();

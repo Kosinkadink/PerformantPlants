@@ -2,9 +2,9 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.events.PlantConsumeEvent;
+import me.kosinkadink.performantplants.events.PlantItemInteractEvent;
 import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
-import me.kosinkadink.performantplants.events.PlantInteractEvent;
+import me.kosinkadink.performantplants.events.PlantBlockInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
@@ -74,16 +74,16 @@ public class PlayerInteractListener implements Listener {
         if (plantItem != null && !plantItem.isAllowConsume()) {
             event.setCancelled(true);
             // create PlantConsumeEvent if is consumable by default consume
-            if (plantItem.getConsumableStorage() != null) {
+            if (plantItem.hasOnConsume()) {
                 EquipmentSlot hand;
                 if (event.getItem().isSimilar(event.getPlayer().getInventory().getItemInOffHand())) {
                     hand = EquipmentSlot.OFF_HAND;
                 } else {
                     hand = EquipmentSlot.HAND;
                 }
-                ScriptBlock consumable = plantItem.getConsumableStorage();
+                ScriptBlock consumable = plantItem.getOnConsume();
                 performantPlants.getServer().getPluginManager().callEvent(
-                        new PlantConsumeEvent(event.getPlayer(), consumable, hand, true)
+                        new PlantItemInteractEvent(event.getPlayer(), consumable, hand)
                 );
             }
         }
@@ -191,10 +191,10 @@ public class PlayerInteractListener implements Listener {
                     // only process main hand to avoid double interaction
                     if (event.getHand() == EquipmentSlot.HAND) {
                         // send out PlantInteractEvent
-                        PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand());
-                        performantPlants.getServer().getPluginManager().callEvent(plantInteractEvent);
+                        PlantBlockInteractEvent plantBlockInteractEvent = new PlantBlockInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand());
+                        performantPlants.getServer().getPluginManager().callEvent(plantBlockInteractEvent);
                         // cancel this event if plantInteractEvent was not cancelled
-                        if (!plantInteractEvent.isCancelled()) {
+                        if (!plantBlockInteractEvent.isCancelled()) {
                             event.setCancelled(true);
                             setMainHandAction(player, event.getHand());
                         }
@@ -224,7 +224,7 @@ public class PlayerInteractListener implements Listener {
                         }
                         // check if item is consumable or player is sneaking
                         plantItem = plant.getItemByItemStack(itemStack);
-                        if (!plantItem.isConsumable() || player.isSneaking()) {
+                        if (!plantItem.hasOnRightClick() || player.isSneaking()) {
                             // check if item is a seed
                             if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
                                 // cancel event and send out PlantBlockEvent
@@ -248,12 +248,12 @@ public class PlayerInteractListener implements Listener {
                     if (plantItem == null) {
                         plantItem = plant.getItemByItemStack(itemStack);
                     }
-                    if (plantItem.isConsumable()) {
+                    if (plantItem.hasOnRightClick()) {
                         // if in offhand and main hand is consumable, don't do anything
                         boolean performConsumeForThisHand = true;
                         if (event.getHand() == EquipmentSlot.OFF_HAND) {
                             PlantItem otherItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(otherStack);
-                            if (otherItem != null && otherItem.isConsumable()) {
+                            if (otherItem != null && otherItem.hasOnRightClick()) {
                                 performConsumeForThisHand = false;
                             }
                         }
@@ -261,10 +261,10 @@ public class PlayerInteractListener implements Listener {
                             if (!itemStack.getType().isEdible()) {
                                 event.setCancelled(true);
                             }
-                            PlantConsumeEvent plantConsumeEvent = new PlantConsumeEvent(player, plantItem.getConsumableStorage(), event.getHand());
-                            performantPlants.getServer().getPluginManager().callEvent(plantConsumeEvent);
+                            PlantItemInteractEvent plantItemInteractEvent = new PlantItemInteractEvent(player, plantItem.getOnRightClick(), event.getHand());
+                            performantPlants.getServer().getPluginManager().callEvent(plantItemInteractEvent);
 
-                            if (!plantConsumeEvent.isCancelled()) {
+                            if (!plantItemInteractEvent.isCancelled()) {
                                 setMainHandAction(player, event.getHand());
                                 return;
                             }
@@ -278,7 +278,7 @@ public class PlayerInteractListener implements Listener {
                     // check if item in other hand is consumable
                     if (!otherStack.getType().isAir() && !itemStack.getType().isEdible() && !performantPlants.getPlantTypeManager().isPlantItemStack(itemStack)) {
                         PlantItem otherItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(otherStack);
-                        if (otherItem != null && otherItem.isConsumable()) {
+                        if (otherItem != null && otherItem.hasOnRightClick()) {
                             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                                 performantPlants.getLogger().info("Prevented required block for consumable to perform its own action");
                             if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
@@ -288,10 +288,10 @@ public class PlayerInteractListener implements Listener {
                                     resetMainHandAction(player);
                                     return;
                                 }
-                                ScriptBlock otherConsumable = otherItem.getConsumableStorage();
-                                PlantConsumeEvent plantConsumeEvent = new PlantConsumeEvent(player, otherConsumable, EquipmentSlot.OFF_HAND);
-                                performantPlants.getServer().getPluginManager().callEvent(plantConsumeEvent);
-                                if (!plantConsumeEvent.isCancelled()) {
+                                ScriptBlock otherConsumable = otherItem.getOnRightClick();
+                                PlantItemInteractEvent plantItemInteractEvent = new PlantItemInteractEvent(player, otherConsumable, EquipmentSlot.OFF_HAND);
+                                performantPlants.getServer().getPluginManager().callEvent(plantItemInteractEvent);
+                                if (!plantItemInteractEvent.isCancelled()) {
                                     event.setCancelled(true);
                                     resetMainHandAction(player);
                                     return;
@@ -317,9 +317,9 @@ public class PlayerInteractListener implements Listener {
                 // get plant block interacted with
                 PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(block);
                 if (plantBlock != null) {
-                    PlantInteractEvent plantInteractEvent = new PlantInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand(), true);
+                    PlantBlockInteractEvent plantBlockInteractEvent = new PlantBlockInteractEvent(player, plantBlock, block, event.getBlockFace(), event.getHand(), true);
                     performantPlants.getServer().getPluginManager().callEvent(
-                            plantInteractEvent
+                            plantBlockInteractEvent
                     );
                     return;
                 }
@@ -330,10 +330,10 @@ public class PlayerInteractListener implements Listener {
                 if (plant != null) {
                     PlantItem plantItem;
                     plantItem = plant.getItemByItemStack(itemStack);
-                    if (plantItem.isClickable()) {
-                        ScriptBlock consumable = plantItem.getClickableStorage();
-                        PlantConsumeEvent plantConsumeEvent = new PlantConsumeEvent(player, consumable, event.getHand());
-                        performantPlants.getServer().getPluginManager().callEvent(plantConsumeEvent);
+                    if (plantItem.hasOnLeftClick()) {
+                        ScriptBlock consumable = plantItem.getOnLeftClick();
+                        PlantItemInteractEvent plantItemInteractEvent = new PlantItemInteractEvent(player, consumable, event.getHand());
+                        performantPlants.getServer().getPluginManager().callEvent(plantItemInteractEvent);
                     }
                 }
             }

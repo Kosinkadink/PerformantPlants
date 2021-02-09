@@ -23,8 +23,8 @@ public class GrowthStageBlock {
     private boolean stopGrowth = false;
     private boolean randomOrientation = false;
     private boolean placedOrientation = false;
-    private ScriptBlock onInteract = null;
-    private ScriptBlock onClick = null;
+    private ScriptBlock onRightClick = null;
+    private ScriptBlock onLeftClick = null;
     private ScriptBlock onBreak = null;
     private DropStorage dropStorage = new DropStorage();
     // block replacement variables
@@ -127,20 +127,20 @@ public class GrowthStageBlock {
         this.placedOrientation = placedOrientation;
     }
 
-    public ScriptBlock getOnInteract() {
-        return onInteract;
+    public ScriptBlock getOnRightClick() {
+        return onRightClick;
     }
 
-    public void setOnInteract(ScriptBlock onInteract) {
-        this.onInteract = onInteract;
+    public void setOnRightClick(ScriptBlock onRightClick) {
+        this.onRightClick = onRightClick;
     }
 
-    public ScriptBlock getOnClick() {
-        return onClick;
+    public ScriptBlock getOnLeftClick() {
+        return onLeftClick;
     }
 
-    public void setOnClick(ScriptBlock onClick) {
-        this.onClick = onClick;
+    public void setOnLeftClick(ScriptBlock onLeftClick) {
+        this.onLeftClick = onLeftClick;
     }
 
     public ScriptBlock getOnBreak() {

@@ -9,7 +9,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 
-public class PlantInteractEvent extends Event implements Cancellable {
+public class PlantBlockInteractEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
@@ -21,7 +21,7 @@ public class PlantInteractEvent extends Event implements Cancellable {
     private final EquipmentSlot hand;
     private boolean useOnClick = false;
 
-    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand) {
+    public PlantBlockInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand) {
         this.player = player;
         this.plantBlock = plantBlock;
         this.block = block;
@@ -29,7 +29,7 @@ public class PlantInteractEvent extends Event implements Cancellable {
         this.hand = hand;
     }
 
-    public PlantInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand, boolean useOnClick) {
+    public PlantBlockInteractEvent(Player player, PlantBlock plantBlock, Block block, BlockFace blockFace, EquipmentSlot hand, boolean useOnClick) {
         this(player, plantBlock, block, blockFace, hand);
         this.useOnClick = useOnClick;
     }

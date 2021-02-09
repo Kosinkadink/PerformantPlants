@@ -8,7 +8,6 @@ import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
-import me.kosinkadink.performantplants.plants.RequiredItem;
 import me.kosinkadink.performantplants.recipes.*;
 import me.kosinkadink.performantplants.recipes.keys.AnvilRecipeKey;
 import me.kosinkadink.performantplants.recipes.keys.ItemStackRecipeKey;
@@ -259,6 +258,8 @@ public class ConfigurationManager {
             performantPlants.getLogger().warning("Plant tasks and stored-script-blocks could not be registered for plant:" + plantId);
             return;
         }
+        // add item interaction
+        addPlantItemInteraction(itemConfig, plantItem, context);
         // if growing section is present, get seed item + stages
         if (growingConfig != null) {
             ConfigurationSection seedConfig = growingConfig.getConfigurationSection("seed-item");
@@ -275,6 +276,8 @@ public class ConfigurationManager {
                         PlantItem seedItem = new PlantItem(seedItemSettings.generatePlantItemStack(plantId, true));
                         addPropertiesToPlantItem(seedConfig, seedItem);
                         plant.setSeedItem(seedItem);
+                        // add seed item interaction
+                        addPlantItemInteraction(seedConfig, seedItem, context);
                     } else {
                         performantPlants.getLogger().info("seedItemSettings were null for plant: " + plantId);
                         return;
@@ -415,19 +418,6 @@ public class ConfigurationManager {
                 performantPlants.getLogger().info("seedConfig was null for plant: " + plantId);
             }
         }
-        // add consumable behavior
-        if (itemConfig.isConfigurationSection("consumable")) {
-            ScriptBlock consumable = createPlantScript(itemConfig, "consumable", context);
-            if (consumable != null) {
-                plantItem.setConsumableStorage(consumable);
-            }
-        }
-        if (itemConfig.isConfigurationSection("clickable")) {
-            ScriptBlock clickable = createPlantScript(itemConfig, "clickable", context);
-            if (clickable != null) {
-                plantItem.setClickableStorage(clickable);
-            }
-        }
         // load plant goods; failure here shouldn't abort plant loading
         if (plantConfig.isConfigurationSection("goods")) {
             ConfigurationSection goodsSection = plantConfig.getConfigurationSection("goods");
@@ -441,18 +431,7 @@ public class ConfigurationManager {
                 if (goodSettings != null) {
                     PlantItem goodItem = new PlantItem(goodSettings.generatePlantItemStack(goodId));
                     addPropertiesToPlantItem(goodSection, goodItem);
-                    if (goodSection.isConfigurationSection("consumable")) {
-                        ScriptBlock goodConsumable = createPlantScript(goodSection, "consumable", context);
-                        if (goodConsumable != null) {
-                            goodItem.setConsumableStorage(goodConsumable);
-                        }
-                    }
-                    if (goodSection.isConfigurationSection("clickable")) {
-                        ScriptBlock goodClickable = createPlantScript(goodSection, "clickable", context);
-                        if (goodClickable != null) {
-                            goodItem.setClickableStorage(goodClickable);
-                        }
-                    }
+                    addPlantItemInteraction(goodSection, goodItem, context);
                     plant.addGoodItem(goodId, goodItem);
                     performantPlants.getLogger().info(String.format("Added good item '%s' to plant: %s", goodId, plantId));
                 }
@@ -883,15 +862,15 @@ public class ConfigurationManager {
                     dropSettings.setAmount(value);
                 }
             }
-            // set drop do-if, if present
-            if (section.isSet("do-if")) {
-                ScriptBlock value = createPlantScript(section, "do-if", context);
+            // set drop condition, if present
+            if (section.isSet("condition")) {
+                ScriptBlock value = createPlantScript(section, "condition", context);
                 if (value == null || !ScriptHelper.isBoolean(value)) {
-                    performantPlants.getLogger().warning(String.format("do-if value could not be read or was not ScriptType BOOLEAN in drop section: %s",
+                    performantPlants.getLogger().warning(String.format("condition value could not be read or was not ScriptType BOOLEAN in drop section: %s",
                             section.getCurrentPath()));
                     return null;
                 } else {
-                    dropSettings.setDoIf(value);
+                    dropSettings.setCondition(value);
                 }
             }
             // set ItemSettings
@@ -1050,25 +1029,25 @@ public class ConfigurationManager {
                     }
                 }
             }
-            // set interact behavior, if present
-            if (blockConfig.isConfigurationSection("on-interact")) {
-                ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-interact", context);
+            // set right click behavior, if present
+            if (blockConfig.isConfigurationSection("on-right")) {
+                ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-right", context);
                 if (plantInteractStorage == null) {
-                    performantPlants.getLogger().warning("Could not load on-interact section: " + blockConfig.getCurrentPath());
+                    performantPlants.getLogger().warning("Could not load on-right section: " + blockConfig.getCurrentPath());
                     return null;
                 }
                 // add interactions to growth stage block
-                growthStageBlock.setOnInteract(plantInteractStorage);
+                growthStageBlock.setOnRightClick(plantInteractStorage);
             }
-            // set click behavior, if present
-            if (blockConfig.isConfigurationSection("on-click")) {
-                ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-click", context);
+            // set left click behavior, if present
+            if (blockConfig.isConfigurationSection("on-left")) {
+                ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-left", context);
                 if (plantInteractStorage == null) {
-                    performantPlants.getLogger().warning("Could not load on-click section: " + blockConfig.getCurrentPath());
+                    performantPlants.getLogger().warning("Could not load on-left section: " + blockConfig.getCurrentPath());
                     return null;
                 }
                 // add interactions to growth stage block
-                growthStageBlock.setOnClick(plantInteractStorage);
+                growthStageBlock.setOnLeftClick(plantInteractStorage);
             }
             // set break behavior, if present
             if (blockConfig.isConfigurationSection("on-break")) {
@@ -1084,71 +1063,6 @@ public class ConfigurationManager {
             blocks.add(growthStageBlock);
         }
         return blocks;
-    }
-
-    RequiredItem loadRequiredItem(ConfigurationSection section, String sectionName, ExecutionContext context) {
-        // set item
-        ConfigurationSection itemSection = section.getConfigurationSection("item");
-        if (itemSection == null) {
-            performantPlants.getLogger().warning(String.format("No item section found for required item '%s' in section: %s;" +
-                            "will continue to load, but item won't be consumable (fix config)",
-                    sectionName, section));
-            return null;
-        }
-        ItemSettings itemSettings = loadItemConfig(itemSection, true);
-        if (itemSettings == null) {
-            performantPlants.getLogger().warning(String.format("Problem getting required item in section %s;" +
-                            "will continue to load, but this item will not be consumable (fix config)",
-                    itemSection.getCurrentPath()));
-            return null;
-        }
-        // create required item from item
-        RequiredItem requiredItem = new RequiredItem(itemSettings.generateItemStack());
-        // set take item, if set
-        if (section.isSet("take-item")) {
-            ScriptBlock value = createPlantScript(section, "take-item", context);
-            if (value == null || !ScriptHelper.isBoolean(value)) {
-                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen take-item value and instead will be" +
-                                " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isTakeItem(new ExecutionContext()), section.getCurrentPath()));
-            } else {
-                requiredItem.setTakeItem(value);
-            }
-        }
-        // set if required item should be in hand (offhand or main hand), if set
-        if (section.isSet("in-hand")) {
-            ScriptBlock value = createPlantScript(section, "in-hand", context);
-            if (value == null || !ScriptHelper.isBoolean(value)) {
-                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen in-hand value and instead will be" +
-                                " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isInHand(new ExecutionContext()), section.getCurrentPath()));
-            } else {
-                requiredItem.setInHand(value);
-            }
-        }
-        // set damage to add to item, if present
-        if (section.isSet("add-damage")) {
-            ScriptBlock value = createPlantScript(section, "add-damage", context);
-            if (value == null || !ScriptHelper.isLong(value)) {
-                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen add-damage value and instead will be" +
-                                " %d; must be ScriptType LONG in section: %s",
-                        requiredItem.getAddDamage(new ExecutionContext()), section.getCurrentPath()));
-            } else {
-                requiredItem.setAddDamage(value);
-            }
-        }
-        // set condition for match, if present
-        if (section.isSet("condition")) {
-            ScriptBlock value = createPlantScript(section, "condition", context);
-            if (value == null || !ScriptHelper.isBoolean(value)) {
-                performantPlants.getLogger().warning(String.format("RequiredItem will not have chosen condition value and instead will be" +
-                                " %b; must be ScriptType BOOLEAN in section: %s",
-                        requiredItem.isConditionMet(new ExecutionContext()), section.getCurrentPath()));
-            } else {
-                requiredItem.setCondition(value);
-            }
-        }
-        return requiredItem;
     }
 
     ScriptColor createColor(ConfigurationSection section, ExecutionContext context) {
@@ -1385,7 +1299,7 @@ public class ConfigurationManager {
                 Drop drop = new Drop(
                         dropItemSettings.generateItemStack(),
                         dropSettings.getAmount(),
-                        dropSettings.getDoIf()
+                        dropSettings.getCondition()
                 );
                 dropStorage.addDrop(drop);
             }
@@ -1485,6 +1399,34 @@ public class ConfigurationManager {
             plantItem.setAllowWear(section.getBoolean("allow-wear"));
         }
 
+    }
+
+    void addPlantItemInteraction(ConfigurationSection section, PlantItem plantItem, ExecutionContext context) {
+        if (section == null) {
+            return;
+        }
+        // add right click behavior
+        if (section.isConfigurationSection("on-right")) {
+            ScriptBlock onRightClick = createPlantScript(section, "on-right", context);
+            if (onRightClick != null) {
+                plantItem.setOnRightClick(onRightClick);
+            }
+        }
+        // add left click behavior
+        if (section.isConfigurationSection("on-left")) {
+            ScriptBlock onLeftClick = createPlantScript(section, "on-left", context);
+            if (onLeftClick != null) {
+                plantItem.setOnLeftClick(onLeftClick);
+            }
+        }
+        // add consume behavior
+        if (section.isConfigurationSection("on-consume")) {
+            ScriptBlock onConsume = createPlantScript(section, "on-consume", context);
+            if (onConsume != null) {
+                plantItem.setOnConsume(onConsume);
+            }
+        }
+        // TODO: add on-drop
     }
 
     //region Add Recipes
@@ -2754,9 +2696,6 @@ public class ConfigurationManager {
                     case "switch":
                         returned = createScriptOperationSwitch(blockSection, directValue, context); break;
                     // action
-                    case "eaten":
-                    case "iseaten":
-                        returned = new ScriptOperationIsEaten(); break;
                     case "changestage":
                         returned = createScriptOperationChangeStage(blockSection, directValue, context); break;
                     case "createblocks":

@@ -11,8 +11,10 @@ public class PlantItem {
     private ItemStack itemStack;
     private double buyPrice;
     private double sellPrice;
-    private ScriptBlock consumable = null;
-    private ScriptBlock clickable = null;
+    private ScriptBlock onRightClick = null;
+    private ScriptBlock onLeftClick = null;
+    private ScriptBlock onConsume = null;
+    private ScriptBlock onDrop = null;
     private int burnTime = 0;
 
     private boolean vanillaItem = false;
@@ -101,29 +103,54 @@ public class PlantItem {
     }
     //endregion
 
-    //region Click Interaction
-    public boolean isConsumable() {
-        return consumable != null;
+    //region Interaction
+    // right click
+    public boolean hasOnRightClick() {
+        return onRightClick != null;
     }
 
-    public ScriptBlock getConsumableStorage() {
-        return consumable;
+    public ScriptBlock getOnRightClick() {
+        return onRightClick;
     }
 
-    public void setConsumableStorage(ScriptBlock consumable) {
-        this.consumable = consumable;
+    public void setOnRightClick(ScriptBlock onRightClick) {
+        this.onRightClick = onRightClick;
+    }
+    // left click
+    public boolean hasOnLeftClick() {
+        return onLeftClick != null;
     }
 
-    public boolean isClickable() {
-        return clickable != null;
+    public ScriptBlock getOnLeftClick() {
+        return onLeftClick;
     }
 
-    public ScriptBlock getClickableStorage() {
-        return clickable;
+    public void setOnLeftClick(ScriptBlock onLeftClick) {
+        this.onLeftClick = onLeftClick;
+    }
+    // consume
+    public boolean hasOnConsume() {
+        return onConsume != null;
     }
 
-    public void setClickableStorage(ScriptBlock clickable) {
-        this.clickable = clickable;
+    public ScriptBlock getOnConsume() {
+        return onConsume;
+    }
+
+    public void setOnConsume(ScriptBlock onConsume) {
+        this.onConsume = onConsume;
+    }
+    // drop
+    public boolean hasOnDrop() {
+        return onDrop != null;
+    }
+
+    public ScriptBlock getOnDrop() {
+        return onDrop;
+    }
+
+    public void setOnDrop(ScriptBlock onDrop) {
+        this.onDrop = onDrop;
     }
     //endregion
 

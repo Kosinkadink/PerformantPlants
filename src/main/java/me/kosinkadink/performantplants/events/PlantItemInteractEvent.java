@@ -7,7 +7,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 
-public class PlantConsumeEvent extends Event implements Cancellable {
+public class PlantItemInteractEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private boolean isCancelled;
@@ -15,17 +15,11 @@ public class PlantConsumeEvent extends Event implements Cancellable {
     private final Player player;
     private final ScriptBlock consumable;
     private final EquipmentSlot hand;
-    private boolean eaten = false;
 
-    public PlantConsumeEvent(Player player, ScriptBlock consumable, EquipmentSlot hand) {
+    public PlantItemInteractEvent(Player player, ScriptBlock consumable, EquipmentSlot hand) {
         this.player = player;
         this.consumable = consumable;
         this.hand = hand;
-    }
-
-    public PlantConsumeEvent(Player player, ScriptBlock consumable, EquipmentSlot hand, boolean eaten) {
-        this(player, consumable, hand);
-        this.eaten = eaten;
     }
 
     public Player getPlayer() {
@@ -38,10 +32,6 @@ public class PlantConsumeEvent extends Event implements Cancellable {
 
     public EquipmentSlot getHand() {
         return hand;
-    }
-
-    public boolean isEaten() {
-        return eaten;
     }
 
     public static HandlerList getHandlerList() {

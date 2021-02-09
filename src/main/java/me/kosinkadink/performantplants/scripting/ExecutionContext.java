@@ -19,8 +19,6 @@ public class ExecutionContext {
     private Location location = null;
     private BlockFace blockFace = null;
 
-    private boolean eaten = false;
-
     public ExecutionContext() {
 
     }
@@ -33,8 +31,7 @@ public class ExecutionContext {
                 .set(itemStack)
                 .set(equipmentSlot)
                 .set(location)
-                .set(blockFace)
-                .setEaten(eaten);
+                .set(blockFace);
     }
 
     //region Wrapper
@@ -216,17 +213,6 @@ public class ExecutionContext {
 
     public ExecutionContext set(BlockFace blockFace) {
         return setBlockFace(blockFace);
-    }
-    //endregion
-
-    //region isEaten
-    public boolean isEaten() {
-        return eaten;
-    }
-
-    public ExecutionContext setEaten(boolean eaten) {
-        this.eaten = eaten;
-        return this;
     }
     //endregion
 }

@@ -318,13 +318,13 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnInteract();
+                return stageBlock.getOnRightClick();
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnInteract();
+                return growthStageBlock.getOnRightClick();
             }
         }
         return null;
@@ -334,13 +334,13 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnClick();
+                return stageBlock.getOnLeftClick();
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
-                return growthStageBlock.getOnClick();
+                return growthStageBlock.getOnLeftClick();
             }
         }
         return null;
