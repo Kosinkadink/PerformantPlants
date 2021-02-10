@@ -326,7 +326,6 @@ public class InventoryEventListener implements Listener {
             }
         }
     }
-
     //endregion
 
 }

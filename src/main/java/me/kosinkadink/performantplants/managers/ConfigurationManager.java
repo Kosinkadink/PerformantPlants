@@ -1450,6 +1450,12 @@ public class ConfigurationManager {
                         "found, in section: " + section.getCurrentPath());
             }
         }
+        // check if extend-on-drop is set
+        boolean extendOnDrop = section.getBoolean("extend-on-drop", true);
+        if (extendOnDrop && !plantItem.hasOnDropAll()) {
+            // onDropAll will have same behavior as onDrop
+            plantItem.setOnDropAll(plantItem.getOnDrop());
+        }
     }
 
     //region Add Recipes
