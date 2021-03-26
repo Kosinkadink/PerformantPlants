@@ -26,7 +26,10 @@ public class GrowthStageBlock {
     private ScriptBlock onRightClick = null;
     private ScriptBlock onLeftClick = null;
     private ScriptBlock onBreak = null;
-    private DropStorage dropStorage = new DropStorage();
+    private ScriptBlock onExplode = null;
+    private ScriptBlock onBurn = null;
+    private ScriptBlock onPiston = null;
+    private ScriptBlock onDestroy = null; // default destroy behavior
     // block replacement variables
     private boolean replacePlantBlock = false;
     private boolean replaceVanillaBlock = false;
@@ -151,12 +154,36 @@ public class GrowthStageBlock {
         this.onBreak = onBreak;
     }
 
-    public DropStorage getDropStorage() {
-        return dropStorage;
+    public ScriptBlock getOnExplode() {
+        return onExplode;
     }
 
-    public void setDropStorage(DropStorage dropStorage) {
-        this.dropStorage = dropStorage;
+    public void setOnExplode(ScriptBlock onExplode) {
+        this.onExplode = onExplode;
+    }
+
+    public ScriptBlock getOnBurn() {
+        return onBurn;
+    }
+
+    public void setOnBurn(ScriptBlock onBurn) {
+        this.onBurn = onBurn;
+    }
+
+    public ScriptBlock getOnPiston() {
+        return onPiston;
+    }
+
+    public void setOnPiston(ScriptBlock onPiston) {
+        this.onPiston = onPiston;
+    }
+
+    public ScriptBlock getOnDestroy() {
+        return onDestroy;
+    }
+
+    public void setOnDestroy(ScriptBlock onDestroy) {
+        this.onDestroy = onDestroy;
     }
 
     // block replacement

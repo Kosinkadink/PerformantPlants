@@ -38,10 +38,10 @@ public class PlantBlock {
     private BukkitTask growthTask;
     private UUID playerUUID;
     private final UUID plantUUID;
-    private DropStorage dropStorage = new DropStorage();
     private PlantData plantData = null;
     // temporary state variables
     private boolean isNewlyPlaced = false;
+    private boolean destroyBehaviorExecuted = false;
     // cached values
     private Block block = null;
 
@@ -89,6 +89,14 @@ public class PlantBlock {
 
     public void setNewlyPlaced(boolean newlyPlaced) {
         isNewlyPlaced = newlyPlaced;
+    }
+
+    public boolean isDestroyBehaviorExecuted() {
+        return destroyBehaviorExecuted;
+    }
+
+    public void setDestroyBehaviorExecuted(boolean destroyBehaviorExecuted) {
+        this.destroyBehaviorExecuted = destroyBehaviorExecuted;
     }
 
     public BlockLocation getLocation() {
@@ -224,32 +232,6 @@ public class PlantBlock {
         return plantUUID;
     }
 
-    public DropStorage getDropStorage() {
-        if (dropStageIndex == -1) {
-            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
-            if (stageBlock != null) {
-                return stageBlock.getDropStorage();
-            }
-        }
-        else if (plant.hasGrowthStages()) {
-            GrowthStage growthStage = plant.getGrowthStage(dropStageIndex);
-            if (growthStage != null) {
-                GrowthStageBlock stageBlock = growthStage.getGrowthStageBlock(stageBlockId);
-                // get stageBlock's drops if exist
-                if (stageBlock != null && stageBlock.getDropStorage().getDrops().size() > 0) {
-                    return stageBlock.getDropStorage();
-                }
-                // otherwise use growthStage's drops
-                return growthStage.getDropStorage();
-            }
-        }
-        return dropStorage;
-    }
-
-    public void setDropStorage(DropStorage dropStorage) {
-        this.dropStorage = dropStorage;
-    }
-
     public boolean isBreakChildren() {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
@@ -357,6 +339,70 @@ public class PlantBlock {
             GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
             if (growthStageBlock != null) {
                 return growthStageBlock.getOnBreak();
+            }
+        }
+        return null;
+    }
+
+    public ScriptBlock getOnExplode() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnExplode();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnExplode();
+            }
+        }
+        return null;
+    }
+
+    public ScriptBlock getOnBurn() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnBurn();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnBurn();
+            }
+        }
+        return null;
+    }
+
+    public ScriptBlock getOnPiston() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnPiston();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnPiston();
+            }
+        }
+        return null;
+    }
+
+    public ScriptBlock getOnDestroy() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnDestroy();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnDestroy();
             }
         }
         return null;

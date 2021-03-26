@@ -1,12 +1,14 @@
 package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.PlantBrokenEvent;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
+import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -203,55 +205,118 @@ public class BlockHelper {
         return block.getLocation().add(0.5,0.5,0.5);
     }
 
-    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, PlantBlock plantBlock, boolean drops) {
-        block.setType(Material.AIR);
-        boolean removed = performantPlants.getPlantManager().removePlantBlock(plantBlock);
-        // if block was not removed, don't do anything else
-        if (!removed) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, PlantBlock plantBlock,
+                                            DestroyReason reason, ExecutionContext context) {
+        // if destroy behavior was already executed for this plant block, do nothing
+        if (plantBlock.isDestroyBehaviorExecuted()) {
+            return true;
+        }
+
+        DestroyReason newReason = reason.getRelativeEquivalent();
+        boolean destroyed = true;
+        if (reason != DestroyReason.REPLACE) {
+            ScriptBlock destroyBehavior = null;
+            // set destroy behavior; use onDestroy if proper ScriptBlock is null
+            switch (newReason) {
+                case RELATIVE_BREAK:
+                    destroyBehavior = plantBlock.getOnBreak();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
+                case RELATIVE_EXPLODE:
+                    destroyBehavior = plantBlock.getOnExplode();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
+                case RELATIVE_BURN:
+                    destroyBehavior = plantBlock.getOnBurn();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
+                case RELATIVE_PISTON:
+                    destroyBehavior = plantBlock.getOnPiston();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
+                case RELATIVE_DESTROY:
+                    destroyBehavior = plantBlock.getOnDestroy();
+                    break;
+            }
+            // if destroy behavior set, use it to determine if block should be broken
+            if (destroyBehavior != null) {
+                if (context == null) {
+                    context = new ExecutionContext().set(plantBlock);
+                }
+                context.setDestroyReason(reason);
+                destroyed = destroyBehavior.loadValue(context).getBooleanValue();
+            }
+            plantBlock.setDestroyBehaviorExecuted(true);
+        }
+
+        // ignore destroyed result if reason is relative
+        if (!reason.isRelative() && !destroyed) {
+            plantBlock.setDestroyBehaviorExecuted(false);
             return false;
         }
-        // handle drops
-        if (drops) {
-            DropHelper.performDrops(plantBlock.getDropStorage(), block.getLocation(), new ExecutionContext().set(plantBlock));
+
+        block.setType(Material.AIR);
+        boolean removed = performantPlants.getPlantManager().removePlantBlock(plantBlock);
+        // call PlantBrokenEvent to signal a plant block has been broken, if removed
+        if (removed) {
+            performantPlants.getServer().getPluginManager().callEvent(new PlantBrokenEvent(null, plantBlock, block));
         }
-        // call PlantBrokenEvent to signal a plant block has been broken
-        performantPlants.getServer().getPluginManager().callEvent(new PlantBrokenEvent(null, plantBlock, block));
         // if block's children should be removed, remove them
         if (plantBlock.isBreakChildren()) {
             ArrayList<BlockLocation> childLocations = new ArrayList<>(plantBlock.getChildLocations());
             for (BlockLocation childLocation : childLocations) {
-                destroyPlantBlock(performantPlants, childLocation, drops);
+                destroyPlantBlock(performantPlants, childLocation, newReason, context);
             }
         }
         // if block's parent should be removed, remove it
         if (plantBlock.isBreakParent()) {
             BlockLocation parentLocation = plantBlock.getParentLocation();
             if (parentLocation != null) {
-                destroyPlantBlock(performantPlants, parentLocation, drops);
+                destroyPlantBlock(performantPlants, parentLocation, newReason, context);
             }
         }
         return true;
     }
 
-    public static boolean destroyPlantBlock(PerformantPlants performantPlants, PlantBlock plantBlock, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, PlantBlock plantBlock,
+                                            DestroyReason reason, ExecutionContext context) {
         if (plantBlock != null) {
-            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, drops);
+            if (context != null) {
+                context.set(plantBlock);
+            }
+            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, reason , context);
         }
         return false;
     }
 
-    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, DestroyReason reason,
+                                            ExecutionContext context) {
         PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(block);
         if (plantBlock != null) {
-            return destroyPlantBlock(performantPlants, block, plantBlock, drops);
+            if (context != null) {
+                context.set(plantBlock);
+            }
+            return destroyPlantBlock(performantPlants, block, plantBlock, reason, context);
         }
         return false;
     }
 
-    public static boolean destroyPlantBlock(PerformantPlants performantPlants, BlockLocation blockLocation, boolean drops) {
+    public static boolean destroyPlantBlock(PerformantPlants performantPlants, BlockLocation blockLocation,
+                                            DestroyReason reason, ExecutionContext context) {
         PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockLocation);
         if (plantBlock != null) {
-            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, drops);
+            if (context != null) {
+                context.set(plantBlock);
+            }
+            return destroyPlantBlock(performantPlants, plantBlock.getBlock(), plantBlock, reason, context);
         }
         return false;
     }

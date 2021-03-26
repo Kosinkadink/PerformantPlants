@@ -354,10 +354,6 @@ public class ConfigurationManager {
                                     growthStage.setGrowthTime(growthTime);
                                 }
                             }
-                            // set drops and/or drop limit
-                            if (!addDropsToDropStorage(stageConfig, growthStage.getDropStorage(), context)) {
-                                return;
-                            }
                             // set growth checkpoint, if present
                             if (stageConfig.isBoolean("growth-checkpoint")) {
                                 growthStage.setGrowthCheckpoint(stageConfig.getBoolean("growth-checkpoint"));
@@ -624,60 +620,12 @@ public class ConfigurationManager {
             // if link to another item is allowed, check for it
             if (allowLink) {
                 if (section.isSet("link")) {
-                    String link = section.getString("link");
-                    if (link == null) {
-                        performantPlants.getLogger().warning("link string could not be read in item section: " + section.getCurrentPath());
+                    LinkedItemSettings returnedSettings = loadLinkedItemSettings(section);
+                    if (returnedSettings == null) {
                         return null;
                     }
-                    // if set, need to load from appropriate config section
-                    String[] plantInfo = link.split("\\.", 2);
-                    plantId = plantInfo[0];
-                    String itemString = "";
-                    if (plantInfo.length > 1) {
-                        itemString = plantInfo[1];
-                    }
-                    // load plant item from config file
-                    YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
-                    if (linkedPlantConfig == null) {
-                        performantPlants.getLogger().warning("PlantId '" + plantId + "' does not match any plant config in item section: " + section.getCurrentPath());
-                        return null;
-                    }
-                    // if item, get item
-                    if (itemString.equals("")) {
-                        if (!linkedPlantConfig.isConfigurationSection("item")) {
-                            performantPlants.getLogger().warning(String.format("Linked plant %s does not contain item section",
-                                    plantId));
-                            return null;
-                        }
-                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("item");
-                        linkedItemSettings = loadItemConfig(itemSection, false);
-                    } else if (itemString.equalsIgnoreCase("seed")) {
-                        // if seed, get growing.seed-item
-                        if (!linkedPlantConfig.isConfigurationSection("growing.seed-item")) {
-                            performantPlants.getLogger().warning(String.format("Linked plant %s does not contain item section",
-                                    plantId));
-                            return null;
-                        }
-                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
-                        linkedItemSettings = loadItemConfig(itemSection, false);
-                    } else if (!itemString.endsWith("goods")) {
-                        String goodId = itemString;
-                        itemString = "goods." + itemString;
-                        if (!linkedPlantConfig.isConfigurationSection(itemString)) {
-                            performantPlants.getLogger().warning(String.format("Linked plant %s does not contain good %s", plantId, goodId));
-                            return null;
-                        }
-                        ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection(itemString);
-                        linkedItemSettings = loadItemConfig(itemSection, false);
-                    } else {
-                        performantPlants.getLogger().warning("Linked item was neither item, seed, or good in item section: " + section.getCurrentPath());
-                        return null;
-                    }
-                    // if linkedItem settings null, return null
-                    if (linkedItemSettings == null) {
-                        performantPlants.getLogger().warning("Linked item could not be loaded from item section: " + section.getCurrentPath());
-                        return null;
-                    }
+                    linkedItemSettings = returnedSettings.getLinkedItemSettings();
+                    plantId = returnedSettings.getPlantId();
                 }
             }
             // get item-related details from section
@@ -799,6 +747,66 @@ public class ConfigurationManager {
         }
         return null;
     }
+    LinkedItemSettings loadLinkedItemSettings(ConfigurationSection section) {
+        ItemSettings linkedItemSettings = null;
+        String plantId = null;
+
+        String link = section.getString("link");
+        if (link == null) {
+            performantPlants.getLogger().warning("link string could not be read in item section: " + section.getCurrentPath());
+            return null;
+        }
+        // if set, need to load from appropriate config section
+        String[] plantInfo = link.split("\\.", 2);
+        plantId = plantInfo[0];
+        String itemString = "";
+        if (plantInfo.length > 1) {
+            itemString = plantInfo[1];
+        }
+        // load plant item from config file
+        YamlConfiguration linkedPlantConfig = plantConfigMap.get(plantId);
+        if (linkedPlantConfig == null) {
+            performantPlants.getLogger().warning("PlantId '" + plantId + "' does not match any plant config in item section: " + section.getCurrentPath());
+            return null;
+        }
+        // if item, get item
+        if (itemString.equals("")) {
+            if (!linkedPlantConfig.isConfigurationSection("item")) {
+                performantPlants.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                        plantId));
+                return null;
+            }
+            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("item");
+            linkedItemSettings = loadItemConfig(itemSection, false);
+        } else if (itemString.equalsIgnoreCase("seed")) {
+            // if seed, get growing.seed-item
+            if (!linkedPlantConfig.isConfigurationSection("growing.seed-item")) {
+                performantPlants.getLogger().warning(String.format("Linked plant %s does not contain item section",
+                        plantId));
+                return null;
+            }
+            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection("growing.seed-item");
+            linkedItemSettings = loadItemConfig(itemSection, false);
+        } else if (!itemString.endsWith("goods")) {
+            String goodId = itemString;
+            itemString = "goods." + itemString;
+            if (!linkedPlantConfig.isConfigurationSection(itemString)) {
+                performantPlants.getLogger().warning(String.format("Linked plant %s does not contain good %s", plantId, goodId));
+                return null;
+            }
+            ConfigurationSection itemSection = linkedPlantConfig.getConfigurationSection(itemString);
+            linkedItemSettings = loadItemConfig(itemSection, false);
+        } else {
+            performantPlants.getLogger().warning("Linked item was neither item, seed, or good in item section: " + section.getCurrentPath());
+            return null;
+        }
+        // if linkedItem settings null, return null
+        if (linkedItemSettings == null) {
+            performantPlants.getLogger().warning("Linked item could not be loaded from item section: " + section.getCurrentPath());
+            return null;
+        }
+        return new LinkedItemSettings(plantId, linkedItemSettings);
+    }
 
     BlockSettings loadBlockConfig(ConfigurationSection section) {
         if (section != null) {
@@ -874,15 +882,19 @@ public class ConfigurationManager {
                 }
             }
             // set ItemSettings
-            if (!section.isSet("item")) {
-                performantPlants.getLogger().warning("item not set for drop section: " + section.getCurrentPath());
+            if (!section.isSet("drop")) {
+                performantPlants.getLogger().warning("drop not set for drop section: " + section.getCurrentPath());
                 return null;
+            } else {
+                ScriptBlock value = createPlantScript(section, "drop", context);
+                if (value == null || !ScriptHelper.isItemStack(value)) {
+                    performantPlants.getLogger().warning(String.format("drop value could not be read or was not ScriptType ITEMSTACK in drop section: %s",
+                            section.getCurrentPath()));
+                    return null;
+                } else {
+                    dropSettings.setItemStack(value);
+                }
             }
-            ItemSettings itemSettings = loadItemConfig(section.getConfigurationSection("item"),true);
-            if (itemSettings == null) {
-                performantPlants.getLogger().warning("itemSettings could not be created for drop section: " + section.getCurrentPath());
-            }
-            dropSettings.setItemSettings(itemSettings);
             return dropSettings;
         }
         return null;
@@ -1015,20 +1027,6 @@ public class ConfigurationManager {
                         blockConfig.getInt("child-of.z")
                 ));
             }
-            // set drops, if present
-            if (blockConfig.isSet("drops")) {
-                // add drops
-                boolean valid = addDropsToDropStorage(blockConfig, growthStageBlock.getDropStorage(), context);
-                if (!valid) {
-                    return null;
-                }
-                // if no limit defined for growthStageBlock but is defined for growth stage, apply it
-                if (growthStage != null) {
-                    if (!growthStageBlock.getDropStorage().isDropLimitSet() && growthStage.getDropStorage().isDropLimitSet()) {
-                        growthStageBlock.getDropStorage().setDropLimit(growthStage.getDropStorage().getDropLimit());
-                    }
-                }
-            }
             // set right click behavior, if present
             if (blockConfig.isConfigurationSection("on-right")) {
                 ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-right", context);
@@ -1049,15 +1047,77 @@ public class ConfigurationManager {
                 // add interactions to growth stage block
                 growthStageBlock.setOnLeftClick(plantInteractStorage);
             }
-            // set break behavior, if present
-            if (blockConfig.isConfigurationSection("on-break")) {
-                ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-break", context);
-                if (plantInteractStorage == null) {
-                    performantPlants.getLogger().warning("Could not load on-break section: " + blockConfig.getCurrentPath());
-                    return null;
+            // set on destroy behavior, if present
+            if (blockConfig.isSet("on-destroy")) {
+                if (blockConfig.isBoolean("on-destroy")) {
+                    growthStageBlock.setOnDestroy(new ScriptResult(blockConfig.getBoolean("on-destroy")));
                 }
-                // add interactions to growth stage block
-                growthStageBlock.setOnBreak(plantInteractStorage);
+                else if (blockConfig.isConfigurationSection("on-destroy")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-destroy", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-destroy section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnDestroy(plantInteractStorage);
+                }
+            }
+            // set on break behavior, if present
+            if (blockConfig.isSet("on-break")) {
+                if (blockConfig.isBoolean("on-break")) {
+                    growthStageBlock.setOnBreak(new ScriptResult(blockConfig.getBoolean("on-break")));
+                }
+                else if (blockConfig.isConfigurationSection("on-break")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-break", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-break section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnBreak(plantInteractStorage);
+                }
+            }
+            // set on explode behavior, if present
+            if (blockConfig.isSet("on-explode")) {
+                if (blockConfig.isBoolean("on-explode")) {
+                    growthStageBlock.setOnExplode(new ScriptResult(blockConfig.getBoolean("on-explode")));
+                } else if (blockConfig.isConfigurationSection("on-explode")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-explode", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-explode section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnExplode(plantInteractStorage);
+                }
+            }
+            // set on burn behavior, if present
+            if (blockConfig.isSet("on-burn")) {
+                if (blockConfig.isBoolean("on-burn")) {
+                    growthStageBlock.setOnBurn(new ScriptResult(blockConfig.getBoolean("on-burn")));
+                } else if (blockConfig.isConfigurationSection("on-burn")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-burn", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-burn section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnBurn(plantInteractStorage);
+                }
+            }
+            // set on piston behavior, if present
+            if (blockConfig.isSet("on-piston")) {
+                if (blockConfig.isBoolean("on-piston")) {
+                    growthStageBlock.setOnPiston(new ScriptResult(blockConfig.getBoolean("on-piston")));
+                } else if (blockConfig.isConfigurationSection("on-piston")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-piston", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-piston section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnPiston(plantInteractStorage);
+                }
             }
             // add growth stage block to stage
             blocks.add(growthStageBlock);
@@ -1291,13 +1351,8 @@ public class ConfigurationManager {
                     performantPlants.getLogger().warning("dropSettings were null in section: " + section.getCurrentPath());
                     return false;
                 }
-                ItemSettings dropItemSettings = dropSettings.getItemSettings();
-                if (dropItemSettings == null) {
-                    performantPlants.getLogger().warning("dropItemSettings were null in section: " + section.getCurrentPath());
-                    return false;
-                }
                 Drop drop = new Drop(
-                        dropItemSettings.generateItemStack(),
+                        dropSettings.getItemStack(),
                         dropSettings.getAmount(),
                         dropSettings.getCondition()
                 );
@@ -2792,10 +2847,15 @@ public class ConfigurationManager {
                     case "useblockbottom":
                     case "useblockbottomlocation":
                         returned = createScriptOperationUseBlockBottomLocation(blockSection, directValue, blockName, context); break;
+                    case "useblockcenter":
+                    case "useblockcenterlocation":
+                        returned = createScriptOperationUseBlockCenterLocation(blockSection, directValue, blockName, context); break;
                     case "passonlyblock":
                         returned = createScriptOperationPassOnlyBlock(blockSection, directValue, blockName, context); break;
                     case "breakblock":
                         returned = createScriptOperationBreakBlock(blockSection, directValue, blockName, context); break;
+                    case "breakblockanddrop":
+                        returned = createScriptOperationBreakBlockAndDrop(blockSection, directValue, context); break;
                     case "blockfaces":
                     case "requiredblockfaces":
                         returned = createScriptOperationRequiredBlockFaces(blockSection, directValue, blockName, context); break;
@@ -2867,6 +2927,10 @@ public class ConfigurationManager {
                         returned = createScriptOperationIsAir(blockSection, directValue, blockName, context); break;
                     case "item":
                         returned = createScriptOperationCreateItemStack(blockSection, directValue); break;
+                    case "material":
+                        returned = createScriptOperationCreateItemStackMaterial(blockSection, directValue, blockName, context); break;
+                    case "link":
+                        returned = createScriptOperationCreateItemStackLink(blockSection, directValue, blockName, context); break;
                     case "aresimilar":
                         returned = createScriptOperationAreSimilar(blockSection, directValue, context); break;
                     case "itemismaterial":
@@ -4672,6 +4736,13 @@ public class ConfigurationManager {
         }
         return new ScriptOperationUseBlockBottomLocation(operand);
     }
+    private ScriptOperation createScriptOperationUseBlockCenterLocation(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
+        if (operand == null) {
+            return null;
+        }
+        return new ScriptOperationUseBlockCenterLocation(operand);
+    }
     private ScriptOperation createScriptOperationPassOnlyBlock(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         ScriptBlock operand = createScriptOperationUnary(section, directValue, sectionName, context);
         if (operand == null) {
@@ -4685,6 +4756,27 @@ public class ConfigurationManager {
             return null;
         }
         return new ScriptOperationBreakBlock(operand);
+    }
+    private ScriptOperation createScriptOperationBreakBlockAndDrop(ConfigurationSection section, boolean directValue, ExecutionContext context) {
+        HashMap<String, ScriptBlock> operands = createScriptOperationMultipleOptional(section, directValue, context, "use-block-drops");
+        if (operands == null) {
+            return null;
+        }
+        ScriptBlock doBlockDrops = operands.get("do-block-drops");
+        if (doBlockDrops == null) {
+            doBlockDrops = ScriptResult.FALSE;
+        } else if (!ScriptHelper.isBoolean(doBlockDrops)) {
+            performantPlants.getLogger().warning(String.format("do-block-drops block was not set to ScriptType VALUE," +
+                    " will use FALSE by default in section: %s", section));
+            doBlockDrops = ScriptResult.FALSE;
+        }
+        // get drop storage
+        DropStorage dropStorage = new DropStorage();
+        if (!addDropsToDropStorage(section, dropStorage, context)) {
+            performantPlants.getLogger().warning("BreakBlockAndDrop cannot be created; issue getting drops");
+            return null;
+        }
+        return new ScriptOperationBreakBlockAndDrop(doBlockDrops, dropStorage);
     }
     private ScriptOperation createScriptOperationRequiredBlockFaces(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
         if (!directValue) {
@@ -4851,6 +4943,30 @@ public class ConfigurationManager {
         if (itemSettings == null) {
             performantPlants.getLogger().warning(
                     "Item could not be generated for ScriptOperationItemStack in section: " + section.getCurrentPath());
+            return null;
+        }
+        return new ScriptOperationCreateItemStack(itemSettings.generateItemStack());
+    }
+    private ScriptOperation createScriptOperationCreateItemStackMaterial(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        if (!directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue required in " +
+                    "ScriptOperationItemStackMaterial in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        ItemSettings itemSettings = loadItemConfig(section, false);
+        if (itemSettings == null) {
+            return null;
+        }
+        return new ScriptOperationCreateItemStack(itemSettings.generateItemStack());
+    }
+    private ScriptOperation createScriptOperationCreateItemStackLink(ConfigurationSection section, boolean directValue, String sectionName, ExecutionContext context) {
+        if (!directValue) {
+            performantPlants.getLogger().warning(String.format("DirectValue required in " +
+                    "ScriptOperationItemStackLink in section: %s", section.getCurrentPath()));
+            return null;
+        }
+        ItemSettings itemSettings = loadItemConfig(section, true);
+        if (itemSettings == null) {
             return null;
         }
         return new ScriptOperationCreateItemStack(itemSettings.generateItemStack());

@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.scripting;
 
+import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -18,6 +19,7 @@ public class ExecutionContext {
     private EquipmentSlot equipmentSlot = null;
     private Location location = null;
     private BlockFace blockFace = null;
+    private DestroyReason destroyReason = null;
 
     public ExecutionContext() {
 
@@ -31,7 +33,8 @@ public class ExecutionContext {
                 .set(itemStack)
                 .set(equipmentSlot)
                 .set(location)
-                .set(blockFace);
+                .set(blockFace)
+                .set(destroyReason);
     }
 
     //region Wrapper
@@ -170,11 +173,11 @@ public class ExecutionContext {
         if (location != null) {
             return location.clone();
         }
-        if (isPlayerSet()) {
-            return player.getLocation();
-        }
         if (isPlantBlockSet()) {
             return plantBlock.getBlock().getLocation();
+        }
+        if (isPlayerSet()) {
+            return player.getLocation();
         }
         return null;
     }
@@ -213,6 +216,25 @@ public class ExecutionContext {
 
     public ExecutionContext set(BlockFace blockFace) {
         return setBlockFace(blockFace);
+    }
+    //endregion
+
+    //region DestroyReason
+    public DestroyReason getDestroyReason() {
+        return destroyReason;
+    }
+
+    public boolean isDestroyReasonSet() {
+        return destroyReason != null;
+    }
+
+    public ExecutionContext setDestroyReason(DestroyReason destroyReason) {
+        this.destroyReason = destroyReason;
+        return this;
+    }
+
+    public ExecutionContext set(DestroyReason destroyReason) {
+        return setDestroyReason(destroyReason);
     }
     //endregion
 }

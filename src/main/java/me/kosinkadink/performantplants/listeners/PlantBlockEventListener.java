@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.events.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -48,7 +49,7 @@ public class PlantBlockEventListener implements Listener {
                 // check if empty block has plant metadata
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     // if so, destroy; erroneous existence and continue
-                    BlockHelper.destroyPlantBlock(performantPlants, block, false);
+                    BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.REPLACE, null);
                 }
                 // get item in appropriate hand hand
                 ItemStack itemStack;
@@ -98,16 +99,12 @@ public class PlantBlockEventListener implements Listener {
                     .set(event.getPlayer())
                     .set(event.getPlantBlock())
                     .set(itemStack);
-            ScriptBlock plantInteract = event.getPlantBlock().getOnBreak();
-            if (plantInteract != null) {
-                boolean performed = plantInteract.loadValue(context).getBooleanValue();
-                if (!performed) {
-                    event.setCancelled(true);
-                }
-            }
-            else {
-                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), true);
+
+            boolean destroyed = BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), DestroyReason.BREAK, context);
+            if (destroyed) {
                 event.setBlockBroken(true);
+            } else {
+                event.setCancelled(true);
             }
         }
     }
@@ -125,7 +122,10 @@ public class PlantBlockEventListener implements Listener {
             // set trampled block to dirt for growth requirement check purposes
             event.getTrampledBlock().setType(Material.DIRT);
             if (!event.getPlantBlock().checkGrowthRequirements()) {
-                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), true);
+                ExecutionContext context = new ExecutionContext()
+                        .set(event.getPlayer())
+                        .set(event.getPlantBlock());
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), event.getPlantBlock(), DestroyReason.RELATIVE_BREAK, context);
             }
             // set it back to farmland to avoid weird effect on player
             // actual turning into dirt should happen due to PlayerInteractEvent not being cancelled
@@ -301,7 +301,7 @@ public class PlantBlockEventListener implements Listener {
         if (!event.isCancelled()) {
             if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
                 event.setCancelled(true);
-                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), false);
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.BURN, null);
             }
         }
     }
@@ -311,7 +311,7 @@ public class PlantBlockEventListener implements Listener {
         // check if exploded blocks were Plants, and if so destroy them
         for (Block block : event.blockList()) {
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                BlockHelper.destroyPlantBlock(performantPlants, block, false);
+                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
             }
         }
     }
@@ -321,7 +321,7 @@ public class PlantBlockEventListener implements Listener {
         // check if exploded blocks were Plants, and if so destroy them
         for (Block block : event.blockList()) {
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                BlockHelper.destroyPlantBlock(performantPlants, block, false);
+                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
             }
         }
     }
@@ -331,7 +331,7 @@ public class PlantBlockEventListener implements Listener {
         if (MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
                 !event.getToBlock().getType().isSolid()) {
             Block block = event.getToBlock();
-            BlockHelper.destroyPlantBlock(performantPlants, block, true);
+            BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
             event.setCancelled(true);
         }
     }
@@ -345,10 +345,10 @@ public class PlantBlockEventListener implements Listener {
             if ((source.getType().isAir() || source.getType() == Material.MOVING_PISTON) &&
                     !block.getType().isSolid() &&
                     block.getLocation().getBlockY()-source.getLocation().getBlockY() > 0) {
-                BlockHelper.destroyPlantBlock(performantPlants, block, true);
+                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
                 // only destroy source block if it is a plant block
                 if (MetadataHelper.hasPlantBlockMetadata(source)) {
-                    BlockHelper.destroyPlantBlock(performantPlants, source, true);
+                    BlockHelper.destroyPlantBlock(performantPlants, source, DestroyReason.RELATIVE_BREAK, null);
                 }
             }
             event.setCancelled(true);
@@ -384,7 +384,7 @@ public class PlantBlockEventListener implements Listener {
             if (anyPlantBlocks) {
                 // destroy any plant blocks immediately being moved by piston
                 if (MetadataHelper.hasPlantBlockMetadata(eventBlocks.get(0))) {
-                    BlockHelper.destroyPlantBlock(performantPlants, eventBlocks.get(0), true);
+                    BlockHelper.destroyPlantBlock(performantPlants, eventBlocks.get(0), DestroyReason.PISTON, null);
                     if (eventBlocks.get(0).getType().isSolid()) {
                         event.setCancelled(true);
                     }
@@ -434,7 +434,12 @@ public class PlantBlockEventListener implements Listener {
                     }
                     // destroy any plant blocks marked for destruction
                     for (Block plantBlock : plantBlocksToDestroy) {
-                        BlockHelper.destroyPlantBlock(performantPlants, plantBlock, true);
+                        boolean destroyed = BlockHelper.destroyPlantBlock(performantPlants, plantBlock, DestroyReason.PISTON, null);
+                        // if block couldn't be destroyed for whatever reason, cancel event and don't destroy any other blocks
+                        if (!destroyed) {
+                            event.setCancelled(true);
+                            return;
+                        }
                     }
                 }
             }

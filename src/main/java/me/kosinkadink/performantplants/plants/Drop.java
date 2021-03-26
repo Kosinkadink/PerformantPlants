@@ -6,17 +6,17 @@ import org.bukkit.inventory.ItemStack;
 
 public class Drop {
 
-    private final ItemStack itemStack;
+    private final ScriptBlock itemStack;
     private final ScriptBlock amount;
     private final ScriptBlock doIf;
 
-    public Drop(ItemStack itemStack, ScriptBlock amount, ScriptBlock doIf) {
+    public Drop(ScriptBlock itemStack, ScriptBlock amount, ScriptBlock doIf) {
         this.itemStack = itemStack;
         this.amount = amount;
         this.doIf = doIf;
     }
 
-    public ItemStack getItemStack() {
+    public ScriptBlock getItemStack() {
         return itemStack;
     }
 
@@ -37,7 +37,7 @@ public class Drop {
     }
 
     public ItemStack generateDrop(ExecutionContext context) {
-        ItemStack dropStack = itemStack.clone();
+        ItemStack dropStack = itemStack.loadValue(context).getItemStackValue().clone();
         // if doIf true, drop amount
         if (isDoIf(context)) {
             int amount = Math.max(0, getAmountValue(context));

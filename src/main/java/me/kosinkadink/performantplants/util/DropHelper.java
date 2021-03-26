@@ -40,7 +40,7 @@ public class DropHelper {
                 break;
             }
             ItemStack dropStack = drop.generateDrop(context);
-            if (dropStack.getAmount() != 0) {
+            if (dropStack.getAmount() != 0 && !dropStack.getType().isAir()) {
                 dropCount++;
                 location.getWorld().dropItemNaturally(location, dropStack);
             }

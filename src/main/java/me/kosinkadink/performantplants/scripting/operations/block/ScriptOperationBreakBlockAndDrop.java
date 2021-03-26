@@ -6,15 +6,20 @@ import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
+import me.kosinkadink.performantplants.util.DropHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 
 import javax.annotation.Nonnull;
 
-public class ScriptOperationBreakBlock extends ScriptOperationBlock {
+public class ScriptOperationBreakBlockAndDrop extends ScriptOperationBlock {
 
-    public ScriptOperationBreakBlock(ScriptBlock drops) {
+    private final DropStorage dropStorage;
+
+    public ScriptOperationBreakBlockAndDrop(ScriptBlock drops, DropStorage dropStorage) {
         super(drops);
+        this.dropStorage = dropStorage;
     }
 
     public ScriptBlock getDrops() {
@@ -29,7 +34,13 @@ public class ScriptOperationBreakBlock extends ScriptOperationBlock {
             if (context.isDestroyReasonSet()) {
                 destroyReason = DestroyReason.RELATIVE_BREAK;
             }
-            return new ScriptResult(BlockHelper.destroyPlantBlock(PerformantPlants.getInstance(), context.getPlantBlock(), destroyReason, context));
+
+            boolean drops = getDrops().loadValue(context).getBooleanValue();
+            boolean blockBroken = BlockHelper.destroyPlantBlock(PerformantPlants.getInstance(), context.getPlantBlock(), destroyReason, context);
+            if (blockBroken) {
+                DropHelper.performDrops(dropStorage, context.getPlantBlock().getBlock().getLocation(), context);
+            }
+            return new ScriptResult(blockBroken);
         }
         return ScriptResult.FALSE;
     }

@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.scripting.operations.action;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
@@ -53,7 +54,7 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperationAction {
                     if (MetadataHelper.hasPlantBlockMetadata(absoluteBlock) && !growthStageBlock.isReplacePlantBlock()) {
                         continue;
                     } else {
-                        BlockHelper.destroyPlantBlock(PerformantPlants.getInstance(),absoluteBlock, false);
+                        BlockHelper.destroyPlantBlock(PerformantPlants.getInstance(), absoluteBlock, DestroyReason.REPLACE, context);
                     }
                     if (!absoluteBlock.isEmpty() && !growthStageBlock.isReplaceVanillaBlock()) {
                         continue;

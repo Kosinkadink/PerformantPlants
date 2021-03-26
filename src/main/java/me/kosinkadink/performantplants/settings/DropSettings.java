@@ -7,7 +7,7 @@ public class DropSettings {
 
     private ScriptBlock amount = new ScriptResult(1);
     private ScriptBlock condition = ScriptResult.TRUE;
-    private ItemSettings itemSettings;
+    private ScriptBlock itemStack;
 
     public DropSettings() {}
 
@@ -28,11 +28,11 @@ public class DropSettings {
         this.condition = condition;
     }
 
-    public ItemSettings getItemSettings() {
-        return itemSettings;
+    public ScriptBlock getItemStack() {
+        return itemStack;
     }
 
-    public void setItemSettings(ItemSettings itemSettings) {
-        this.itemSettings = itemSettings;
+    public void setItemStack(ScriptBlock itemStack) {
+        this.itemStack = itemStack;
     }
 }

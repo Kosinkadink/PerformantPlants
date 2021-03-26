@@ -15,7 +15,6 @@ public class GrowthStage {
     private final HashMap<String,GrowthStageBlock> blocks = new HashMap<>();
     private ScriptBlock growthTime = new ScriptResult(-1);
     private boolean growthCheckpoint = false;
-    private DropStorage dropStorage = new DropStorage();
     private RequirementStorage requirementStorage = new RequirementStorage();
     private ScriptBlock onExecute;
     private ScriptBlock onFail;
@@ -26,14 +25,6 @@ public class GrowthStage {
 
     public String getId() {
         return id;
-    }
-
-    public DropStorage getDropStorage() {
-        return dropStorage;
-    }
-
-    public void setDropStorage(DropStorage dropStorage) {
-        this.dropStorage = dropStorage;
     }
 
     public RequirementStorage getRequirementStorage() {
