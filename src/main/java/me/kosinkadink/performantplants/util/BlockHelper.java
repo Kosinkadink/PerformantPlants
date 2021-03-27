@@ -17,6 +17,7 @@ import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.block.data.type.RedstoneWire;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BlockHelper {
@@ -35,6 +36,10 @@ public class BlockHelper {
     private static final BlockFace[] omnidirectionalBlockFaces = {
             BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN
     };
+
+    public static BlockFace[] getDirectionalBlockFaces() {
+        return directionalBlockFaces.clone();
+    }
 
     public static BlockData createBlockData(Material material, ArrayList<String> blockDataStrings) {
         // if any blockData provided, format it into string and include it

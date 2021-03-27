@@ -416,6 +416,7 @@ public class PlantBlock {
 
     public void setBlockYaw(float blockYaw) {
         this.blockYaw = blockYaw;
+        direction = null;
     }
 
     public BlockFace getDirection() {

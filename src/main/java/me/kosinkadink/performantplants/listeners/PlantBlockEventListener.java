@@ -1,5 +1,6 @@
 package me.kosinkadink.performantplants.listeners;
 
+import com.google.common.collect.Lists;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
@@ -7,10 +8,7 @@ import me.kosinkadink.performantplants.events.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import me.kosinkadink.performantplants.util.BlockHelper;
-import me.kosinkadink.performantplants.util.ItemHelper;
-import me.kosinkadink.performantplants.util.MetadataHelper;
-import me.kosinkadink.performantplants.util.PermissionHelper;
+import me.kosinkadink.performantplants.util.*;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -23,10 +21,7 @@ import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -68,18 +63,35 @@ public class PlantBlockEventListener implements Listener {
                 BlockLocation blockLocation = new BlockLocation(block);
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
-                // set block orientation
-                if (plantBlock.getPlant().isRandomRotate()) {
-                    plantBlock.setBlockYaw(BlockHelper.getYawFromRotation(BlockHelper.getRandomDirectionalBlockFace()));
-                } else {
-                    plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
-                }
                 if (plantBlock.isGrows()) {
-                    // set newly placed; will check plant requirements instead of growth requirements, if present
-                    plantBlock.setNewlyPlaced(true);
-                    if (!plantBlock.checkAllRequirements(performantPlants)) {
-                        event.setCancelled(true);
-                        return;
+                    // if random rotate, try possible orientations until success or exhaustion
+                    if (plantBlock.getPlant().isRandomRotate()) {
+                        List<BlockFace> blockFaces = Lists.newArrayList(BlockHelper.getDirectionalBlockFaces());
+                        int fullSize = blockFaces.size();
+                        for (int i = 0; i < fullSize; i++) {
+                            int randomIndex = RandomHelper.generateRandomIntInRange(0, blockFaces.size()-1);
+                            plantBlock.setBlockYaw(BlockHelper.getYawFromRotation(blockFaces.get(randomIndex)));
+                            // set newly placed; will check plant requirements instead of growth requirements, if present
+                            plantBlock.setNewlyPlaced(true);
+                            if (plantBlock.checkAllRequirements(performantPlants)) {
+                                break;
+                            }
+                            blockFaces.remove(randomIndex);
+                        }
+                        // if list is empty, then no success
+                        if (blockFaces.isEmpty()) {
+                            event.setCancelled(true);
+                            return;
+                        }
+                    } else {
+                        // set block orientation
+                        plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
+                        // set newly placed; will check plant requirements instead of growth requirements, if present
+                        plantBlock.setNewlyPlaced(true);
+                        if (!plantBlock.checkAllRequirements(performantPlants)) {
+                            event.setCancelled(true);
+                            return;
+                        }
                     }
                 }
                 performantPlants.getPlantManager().addPlantBlock(plantBlock);
