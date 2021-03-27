@@ -9,15 +9,12 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.Rotatable;
-import org.bukkit.block.data.Waterlogged;
+import org.bukkit.block.data.*;
+import org.bukkit.block.data.type.Jigsaw;
+import org.bukkit.block.data.type.RedstoneWire;
 
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
@@ -62,19 +59,356 @@ public class BlockHelper {
         return Bukkit.createBlockData(material);
     }
 
-    public static Block getAbsoluteBlock(Block anchor, RelativeLocation relative) {
+    public static Block getAbsoluteBlock(Block anchor, RelativeLocation relative, PlantBlock plantBlock, BlockFace direction) {
+        if (plantBlock != null && plantBlock.getPlant().isRotatePlant()) {
+            if (direction == null) {
+                direction = getDirectionFromYaw(plantBlock.getBlockYaw());
+            }
+            RelativeLocation newRelative = calculateNewLocation(relative, direction.getOppositeFace());
+            return anchor.getWorld().getBlockAt(
+                    anchor.getX() + newRelative.getX(),
+                    anchor.getY() + newRelative.getY(),
+                    anchor.getZ() + newRelative.getZ()
+            );
+        }
         return anchor.getWorld().getBlockAt(
-                 anchor.getX() + relative.getX(),
+                anchor.getX() + relative.getX(),
                 anchor.getY() + relative.getY(),
                 anchor.getZ() + relative.getZ()
         );
     }
 
-    public static void setBlockData(Block block, GrowthStageBlock stageBlock, PlantBlock plantBlock) {
-        block.setBlockData(stageBlock.getBlockData());
+    public static RelativeLocation calculateNewLocation(RelativeLocation relative, BlockFace direction) {
+        switch(direction) {
+            case EAST:
+                return new RelativeLocation(-1*relative.getZ(), relative.getY(), relative.getX());
+            case SOUTH:
+                return new RelativeLocation(-1*relative.getX(), relative.getY(), -1*relative.getZ());
+            case WEST:
+                return new RelativeLocation(relative.getZ(), relative.getY(), -1*relative.getX());
+            default:
+                return new RelativeLocation(relative.getX(), relative.getY(), relative.getZ());
+        }
+    }
+
+    public static BlockData calculateNewBlockData(BlockData blockData, BlockFace rotation) {
+        // check if block data is directional
+        BlockData newBlockData = null;
+        if (blockData instanceof Directional) {
+            newBlockData = blockData.clone();
+            Directional directional = (Directional) newBlockData;
+            // ignore UP and DOWN cases
+            switch(directional.getFacing()) {
+                case UP:
+                case DOWN:
+                    return blockData;
+                default:
+                    directional.setFacing(BlockHelper.getNormalizedBlockFaceDirection(directional.getFacing(), rotation));
+            }
+        }
+        if (blockData instanceof Rotatable) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            Rotatable rotatable = (Rotatable) newBlockData;
+            rotatable.setRotation(BlockHelper.getNormalizedBlockFaceRotation(rotatable.getRotation(), rotation));
+        }
+        if (blockData instanceof Orientable) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            Orientable orientable = (Orientable) newBlockData;
+            switch(orientable.getAxis()) {
+                case X:
+                    switch(rotation) {
+                        case EAST:
+                        case WEST:
+                            orientable.setAxis(Axis.Z);
+                    } break;
+                case Z:
+                    switch(rotation) {
+                        case EAST:
+                        case WEST:
+                            orientable.setAxis(Axis.X);
+                    } break;
+            }
+        }
+        if (blockData instanceof MultipleFacing) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            MultipleFacing multipleFacing = (MultipleFacing) newBlockData;
+            if (rotation != BlockFace.NORTH) {
+                boolean north = multipleFacing.hasFace(BlockFace.NORTH);
+                boolean east = multipleFacing.hasFace(BlockFace.EAST);
+                boolean south = multipleFacing.hasFace(BlockFace.SOUTH);
+                boolean west = multipleFacing.hasFace(BlockFace.WEST);
+                switch(rotation) {
+                    case EAST:
+                        multipleFacing.setFace(BlockFace.NORTH, west);
+                        multipleFacing.setFace(BlockFace.EAST, north);
+                        multipleFacing.setFace(BlockFace.SOUTH, east);
+                        multipleFacing.setFace(BlockFace.WEST, south);
+                        break;
+                    case SOUTH:
+                        multipleFacing.setFace(BlockFace.NORTH, south);
+                        multipleFacing.setFace(BlockFace.EAST, west);
+                        multipleFacing.setFace(BlockFace.SOUTH, north);
+                        multipleFacing.setFace(BlockFace.WEST, east);
+                        break;
+                    case WEST:
+                        multipleFacing.setFace(BlockFace.NORTH, east);
+                        multipleFacing.setFace(BlockFace.EAST, south);
+                        multipleFacing.setFace(BlockFace.SOUTH, west);
+                        multipleFacing.setFace(BlockFace.WEST, north);
+                        break;
+                }
+            }
+        }
+        if (blockData instanceof RedstoneWire) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            RedstoneWire redstoneWire = (RedstoneWire) newBlockData;
+            if (rotation != BlockFace.NORTH) {
+                RedstoneWire.Connection north = redstoneWire.getFace(BlockFace.NORTH);
+                RedstoneWire.Connection east = redstoneWire.getFace(BlockFace.EAST);
+                RedstoneWire.Connection south = redstoneWire.getFace(BlockFace.SOUTH);
+                RedstoneWire.Connection west = redstoneWire.getFace(BlockFace.WEST);
+                switch(rotation) {
+                    case EAST:
+                        redstoneWire.setFace(BlockFace.NORTH, west);
+                        redstoneWire.setFace(BlockFace.EAST, north);
+                        redstoneWire.setFace(BlockFace.SOUTH, east);
+                        redstoneWire.setFace(BlockFace.WEST, south);
+                        break;
+                    case SOUTH:
+                        redstoneWire.setFace(BlockFace.NORTH, south);
+                        redstoneWire.setFace(BlockFace.EAST, west);
+                        redstoneWire.setFace(BlockFace.SOUTH, north);
+                        redstoneWire.setFace(BlockFace.WEST, east);
+                        break;
+                    case WEST:
+                        redstoneWire.setFace(BlockFace.NORTH, east);
+                        redstoneWire.setFace(BlockFace.EAST, south);
+                        redstoneWire.setFace(BlockFace.SOUTH, west);
+                        redstoneWire.setFace(BlockFace.WEST, north);
+                        break;
+                }
+            }
+        }
+        if (blockData instanceof Rail) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            Rail rail = (Rail) newBlockData;
+            switch(rotation) {
+                case EAST:
+                    switch(rail.getShape()) {
+                        // ascending
+                        case ASCENDING_NORTH:
+                            rail.setShape(Rail.Shape.ASCENDING_EAST); break;
+                        case ASCENDING_EAST:
+                            rail.setShape(Rail.Shape.ASCENDING_SOUTH); break;
+                        case ASCENDING_SOUTH:
+                            rail.setShape(Rail.Shape.ASCENDING_WEST); break;
+                        case ASCENDING_WEST:
+                            rail.setShape(Rail.Shape.ASCENDING_NORTH); break;
+                        // corner
+                        case NORTH_EAST:
+                            rail.setShape(Rail.Shape.SOUTH_EAST); break;
+                        case SOUTH_EAST:
+                            rail.setShape(Rail.Shape.SOUTH_WEST); break;
+                        case SOUTH_WEST:
+                            rail.setShape(Rail.Shape.NORTH_WEST); break;
+                        case NORTH_WEST:
+                            rail.setShape(Rail.Shape.NORTH_EAST); break;
+                        // straight
+                        case NORTH_SOUTH:
+                            rail.setShape(Rail.Shape.EAST_WEST); break;
+                        case EAST_WEST:
+                            rail.setShape(Rail.Shape.NORTH_SOUTH); break;
+                    } break;
+                case SOUTH:
+                    switch(rail.getShape()) {
+                        // ascending
+                        case ASCENDING_NORTH:
+                            rail.setShape(Rail.Shape.ASCENDING_SOUTH); break;
+                        case ASCENDING_EAST:
+                            rail.setShape(Rail.Shape.ASCENDING_WEST); break;
+                        case ASCENDING_SOUTH:
+                            rail.setShape(Rail.Shape.ASCENDING_NORTH); break;
+                        case ASCENDING_WEST:
+                            rail.setShape(Rail.Shape.ASCENDING_EAST); break;
+                        // corner
+                        case NORTH_EAST:
+                            rail.setShape(Rail.Shape.SOUTH_WEST); break;
+                        case SOUTH_EAST:
+                            rail.setShape(Rail.Shape.NORTH_WEST); break;
+                        case SOUTH_WEST:
+                            rail.setShape(Rail.Shape.NORTH_EAST); break;
+                        case NORTH_WEST:
+                            rail.setShape(Rail.Shape.SOUTH_EAST); break;
+                    } break;
+                case WEST:
+                    switch(rail.getShape()) {
+                        // ascending
+                        case ASCENDING_NORTH:
+                            rail.setShape(Rail.Shape.ASCENDING_WEST); break;
+                        case ASCENDING_EAST:
+                            rail.setShape(Rail.Shape.ASCENDING_NORTH); break;
+                        case ASCENDING_SOUTH:
+                            rail.setShape(Rail.Shape.ASCENDING_EAST); break;
+                        case ASCENDING_WEST:
+                            rail.setShape(Rail.Shape.ASCENDING_SOUTH); break;
+                        // corner
+                        case NORTH_EAST:
+                            rail.setShape(Rail.Shape.NORTH_WEST); break;
+                        case SOUTH_EAST:
+                            rail.setShape(Rail.Shape.NORTH_EAST); break;
+                        case SOUTH_WEST:
+                            rail.setShape(Rail.Shape.SOUTH_EAST); break;
+                        case NORTH_WEST:
+                            rail.setShape(Rail.Shape.SOUTH_WEST); break;
+                        // straight
+                        case NORTH_SOUTH:
+                            rail.setShape(Rail.Shape.EAST_WEST); break;
+                        case EAST_WEST:
+                            rail.setShape(Rail.Shape.NORTH_SOUTH); break;
+                    } break;
+            }
+        }
+        if (blockData instanceof Jigsaw) {
+            if (newBlockData == null) {
+                newBlockData = blockData.clone();
+            }
+            Jigsaw jigsaw = (Jigsaw) newBlockData;
+            switch(rotation) {
+                case EAST:
+                    switch(jigsaw.getOrientation()) {
+                        // down
+                        case DOWN_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_EAST); break;
+                        case DOWN_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_SOUTH); break;
+                        case DOWN_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_WEST); break;
+                        case DOWN_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_NORTH); break;
+                        // side
+                        case NORTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.EAST_UP); break;
+                        case EAST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.SOUTH_UP); break;
+                        case SOUTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.WEST_UP); break;
+                        case WEST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.NORTH_UP); break;
+                        // up
+                        case UP_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_EAST); break;
+                        case UP_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_SOUTH); break;
+                        case UP_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_WEST); break;
+                        case UP_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_NORTH); break;
+                    } break;
+                case SOUTH:
+                    switch(jigsaw.getOrientation()) {
+                        // down
+                        case DOWN_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_SOUTH); break;
+                        case DOWN_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_WEST); break;
+                        case DOWN_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_NORTH); break;
+                        case DOWN_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_EAST); break;
+                        // side
+                        case NORTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.SOUTH_UP); break;
+                        case EAST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.WEST_UP); break;
+                        case SOUTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.NORTH_UP); break;
+                        case WEST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.EAST_UP); break;
+                        // up
+                        case UP_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_SOUTH); break;
+                        case UP_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_WEST); break;
+                        case UP_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_NORTH); break;
+                        case UP_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_EAST); break;
+                    } break;
+                case WEST:
+                    switch(jigsaw.getOrientation()) {
+                        // down
+                        case DOWN_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_WEST); break;
+                        case DOWN_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_NORTH); break;
+                        case DOWN_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_EAST); break;
+                        case DOWN_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.DOWN_SOUTH); break;
+                        // side
+                        case NORTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.WEST_UP); break;
+                        case EAST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.NORTH_UP); break;
+                        case SOUTH_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.EAST_UP); break;
+                        case WEST_UP:
+                            jigsaw.setOrientation(Jigsaw.Orientation.SOUTH_UP); break;
+                        // up
+                        case UP_NORTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_WEST); break;
+                        case UP_EAST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_NORTH); break;
+                        case UP_SOUTH:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_EAST); break;
+                        case UP_WEST:
+                            jigsaw.setOrientation(Jigsaw.Orientation.UP_SOUTH); break;
+                    } break;
+            }
+        }
+        if (newBlockData != null) {
+            return newBlockData;
+        }
+        return blockData;
+    }
+
+    public static BlockFace getNormalizedBlockFaceDirection(BlockFace initial, BlockFace correction) {
+        float initialYaw = BlockHelper.getYawFromRotation(initial);
+        float correctionYaw = BlockHelper.getYawFromRotation(correction);
+        return BlockHelper.getDirectionFromYaw(initialYaw+correctionYaw);
+    }
+
+    public static BlockFace getNormalizedBlockFaceDirectionSubtract(BlockFace initial, BlockFace correction) {
+        float initialYaw = BlockHelper.getYawFromRotation(initial);
+        float correctionYaw = BlockHelper.getYawFromRotation(correction);
+        return BlockHelper.getDirectionFromYaw(initialYaw-correctionYaw);
+    }
+
+    public static BlockFace getNormalizedBlockFaceRotation(BlockFace initial, BlockFace correction) {
+        float initialYaw = BlockHelper.getYawFromRotation(initial);
+        float correctionYaw = BlockHelper.getYawFromRotation(correction);
+        return BlockHelper.getRotationFromYaw(initialYaw+correctionYaw);
+    }
+
+    public static void setBlockData(Block block, GrowthStageBlock stageBlock, PlantBlock plantBlock, BlockFace direction) {
+        if (direction != null) {
+            block.setBlockData(BlockHelper.calculateNewBlockData(stageBlock.getBlockData(), direction.getOppositeFace()));
+        } else {
+            block.setBlockData(stageBlock.getBlockData());
+        }
         ReflectionHelper.setSkullTexture(block, stageBlock.getSkullTexture());
         if (plantBlock != null && stageBlock.isPlacedOrientation()) {
-            setRotation(block, getOppositeDirectionFromYaw(plantBlock.getBlockYaw()));
+            setRotation(block, getOppositeRotationFromYaw(plantBlock.getBlockYaw()));
         } else if (stageBlock.isRandomOrientation()) {
             boolean rotated = setRotation(block, getRandomRotatableBlockFace());
             if (!rotated) {
@@ -109,11 +443,48 @@ public class BlockHelper {
         return directionalBlockFaces[ThreadLocalRandom.current().nextInt(directionalBlockFaces.length)];
     }
 
-    public static BlockFace getOppositeDirectionFromYaw(float yaw) {
-        return getDirectionFromYaw(yaw).getOppositeFace();
+    public static BlockFace getOppositeRotationFromYaw(float yaw) {
+        return getRotationFromYaw(yaw).getOppositeFace();
     }
 
-    public static BlockFace getDirectionFromYaw(float yaw) {
+    public static float getYawFromRotation(BlockFace blockFace) {
+        switch(blockFace) {
+            case NORTH_NORTH_EAST:
+                return 22.5F;
+            case NORTH_EAST:
+                return 45.0F;
+            case EAST_NORTH_EAST:
+                return 67.5F;
+            case EAST:
+                return 90.0F;
+            case EAST_SOUTH_EAST:
+                return 112.5F;
+            case SOUTH_EAST:
+                return 135.0F;
+            case SOUTH_SOUTH_EAST:
+                return 157.5F;
+            case SOUTH:
+                return 180.0F;
+            case SOUTH_SOUTH_WEST:
+                return 202.5F;
+            case SOUTH_WEST:
+                return 225.0F;
+            case WEST_SOUTH_WEST:
+                return 247.5F;
+            case WEST:
+                return 270.0F;
+            case WEST_NORTH_WEST:
+                return 292.5F;
+            case NORTH_WEST:
+                return 315.0F;
+            case NORTH_NORTH_WEST:
+                return 337.5F;
+            default:
+                return 0.0F;
+        }
+    }
+
+    public static BlockFace getRotationFromYaw(float yaw) {
         float rotation = yaw % 360.0F;
         if (rotation < 0.0F) {
             rotation += 360.0F;
@@ -167,6 +538,26 @@ public class BlockHelper {
             return BlockFace.NORTH_NORTH_WEST;
         }
         // if ((348.75F <= rotation) && (rotation < 360.0F))
+        return BlockFace.NORTH;
+    }
+
+    public static BlockFace getDirectionFromYaw(float yaw) {
+        float rotation = yaw % 360.0F;
+        if (rotation < 0.0F) {
+            rotation += 360.0F;
+        }
+        if (0.0F <= rotation && rotation < 45F) {
+            return BlockFace.NORTH;
+        }
+        if (45F <= rotation && rotation < 135F) {
+            return BlockFace.EAST;
+        }
+        if (135F <= rotation && rotation < 225F) {
+            return BlockFace.SOUTH;
+        }
+        if (225F <= rotation && rotation < 315F) {
+            return BlockFace.WEST;
+        }
         return BlockFace.NORTH;
     }
 

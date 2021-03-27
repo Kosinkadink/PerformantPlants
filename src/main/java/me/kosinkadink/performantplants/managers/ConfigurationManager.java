@@ -314,6 +314,15 @@ public class ConfigurationManager {
                             return;
                         }
                     }
+                    // set if should rotate plant based on placement orientation
+                    if (growingConfig.isBoolean("placed-rotation")) {
+                        plant.setRotatePlant(growingConfig.getBoolean("placed-rotation"));
+                    }
+                    // set if should use random direction for plant (override placement direction)
+                    if (growingConfig.isBoolean("random-rotation")) {
+                        plant.setRandomRotate(growingConfig.getBoolean("random-rotation"));
+                        plant.setRotatePlant(true);
+                    }
                     // load stored plant growths stage blocks, if present
                     List<GrowthStageBlock> plantStageBlocks = loadGrowthStageBlocks(
                             growingConfig,

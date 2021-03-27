@@ -12,6 +12,7 @@ import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -41,14 +42,14 @@ public class ScriptOperationCreatePlantBlocks extends ScriptOperationAction {
             // don't replace block for parent blocks
             if (growthStageBlock.getLocation().equals(new RelativeLocation(0,0,0))) {
                 // update block data at location
-                BlockHelper.setBlockData(effectivePlantBlock.getBlock(), growthStageBlock, effectivePlantBlock);
+                BlockHelper.setBlockData(effectivePlantBlock.getBlock(), growthStageBlock, effectivePlantBlock, effectivePlantBlock.getDirection());
                 // set drop stage index
                 effectivePlantBlock.setDropStageIndex(-1);
                 // set growth stage block id
                 effectivePlantBlock.setStageBlockId(blockId);
             } else {
                 Block effectiveBlock = effectivePlantBlock.getBlock();
-                Block absoluteBlock = BlockHelper.getAbsoluteBlock(effectiveBlock, growthStageBlock.getLocation());
+                Block absoluteBlock = BlockHelper.getAbsoluteBlock(effectiveBlock, growthStageBlock.getLocation(), effectivePlantBlock, effectivePlantBlock.getDirection());
                 // update block data at location, if not another plant's plant block
                 if (!MetadataHelper.hasPlantBlockMetadata(absoluteBlock, effectivePlantBlock.getPlantUUID())) {
                     if (MetadataHelper.hasPlantBlockMetadata(absoluteBlock) && !growthStageBlock.isReplacePlantBlock()) {

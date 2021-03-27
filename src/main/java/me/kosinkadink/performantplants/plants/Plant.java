@@ -31,6 +31,8 @@ public class Plant {
     private final HashMap<String, ScriptTask> scriptTaskMap = new HashMap<>();
     private final StageStorage stageStorage = new StageStorage();
     private PlantData plantData;
+    private boolean rotatePlant = false;
+    private boolean randomRotate = false;
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
     private RequirementStorage growthRequirementStorage = new RequirementStorage();
@@ -195,6 +197,23 @@ public class Plant {
         this.plantData = plantData;
     }
 
+    // plant rotation
+    public boolean isRotatePlant() {
+        return rotatePlant;
+    }
+
+    public void setRotatePlant(boolean rotatePlant) {
+        this.rotatePlant = rotatePlant;
+    }
+
+    public boolean isRandomRotate() {
+        return randomRotate;
+    }
+
+    public void setRandomRotate(boolean randomRotate) {
+        this.randomRotate = randomRotate;
+    }
+
     //region Growth Stage Actions
 
     public StageStorage getStageStorage() {
@@ -286,5 +305,4 @@ public class Plant {
     }
 
     public static Plant wrappedPlant = new Plant("_wrappedPlant", new PlantItem(new ItemStack(Material.AIR)));
-
 }

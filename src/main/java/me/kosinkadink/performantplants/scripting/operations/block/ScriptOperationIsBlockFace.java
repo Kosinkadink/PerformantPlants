@@ -4,6 +4,7 @@ import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.scripting.ScriptType;
+import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.EnumHelper;
 import me.kosinkadink.performantplants.util.ScriptHelper;
 import org.bukkit.block.BlockFace;
@@ -26,6 +27,9 @@ public class ScriptOperationIsBlockFace extends ScriptOperationBlock {
         if (context.isBlockFaceSet()) {
             BlockFace blockFace = EnumHelper.getBlockFace(getBlockFace().loadValue(context).getStringValue());
             if (blockFace != null) {
+                if (context.isPlantBlockSet() && context.getPlantBlock().getPlant().isRotatePlant()) {
+                    blockFace = BlockHelper.getNormalizedBlockFaceDirection(blockFace, context.getEffectivePlantBlock().getDirection().getOppositeFace());
+                }
                 return new ScriptResult(blockFace == context.getBlockFace());
             }
         }

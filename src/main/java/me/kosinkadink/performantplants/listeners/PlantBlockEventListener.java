@@ -14,6 +14,7 @@ import me.kosinkadink.performantplants.util.PermissionHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -25,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 
 public class PlantBlockEventListener implements Listener {
 
@@ -66,6 +68,12 @@ public class PlantBlockEventListener implements Listener {
                 BlockLocation blockLocation = new BlockLocation(block);
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
+                // set block orientation
+                if (plantBlock.getPlant().isRandomRotate()) {
+                    plantBlock.setBlockYaw(BlockHelper.getYawFromRotation(BlockHelper.getRandomDirectionalBlockFace()));
+                } else {
+                    plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
+                }
                 if (plantBlock.isGrows()) {
                     // set newly placed; will check plant requirements instead of growth requirements, if present
                     plantBlock.setNewlyPlaced(true);
@@ -74,8 +82,6 @@ public class PlantBlockEventListener implements Listener {
                         return;
                     }
                 }
-                // set block orientation (only used if orientable block to be placed)
-                plantBlock.setBlockYaw(event.getPlayer().getLocation().getYaw());
                 performantPlants.getPlantManager().addPlantBlock(plantBlock);
                 ItemHelper.decrementItemStack(itemStack);
             }
@@ -309,8 +315,11 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onBlockExplode(BlockExplodeEvent event) {
         // check if exploded blocks were Plants, and if so destroy them
-        for (Block block : event.blockList()) {
+        ListIterator<Block> iterator = event.blockList().listIterator();
+        while (iterator.hasNext()) {
+            Block block = iterator.next();
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                iterator.remove();
                 BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
             }
         }
@@ -319,8 +328,11 @@ public class PlantBlockEventListener implements Listener {
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
         // check if exploded blocks were Plants, and if so destroy them
-        for (Block block : event.blockList()) {
+        ListIterator<Block> iterator = event.blockList().listIterator();
+        while (iterator.hasNext()) {
+            Block block = iterator.next();
             if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                iterator.remove();
                 BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
             }
         }
@@ -341,14 +353,22 @@ public class PlantBlockEventListener implements Listener {
         Block block = event.getBlock();
         if (MetadataHelper.hasPlantBlockMetadata(block)) {
             Block source = event.getSourceBlock();
+            if (block.getBlockData() instanceof FaceAttachable && source.getType().isAir() &&
+                    MetadataHelper.hasPlantBlockMetadata(source) && MetadataHelper.haveMatchingPlantMetadata(block, source)) {
+                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
+            }
             // only destroy block if source is now air/moving piston, block is not solid, and source is below block
-            if ((source.getType().isAir() || source.getType() == Material.MOVING_PISTON) &&
+            else if ((source.getType().isAir() || source.getType() == Material.MOVING_PISTON) &&
                     !block.getType().isSolid() &&
                     block.getLocation().getBlockY()-source.getLocation().getBlockY() > 0) {
-                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
-                // only destroy source block if it is a plant block
-                if (MetadataHelper.hasPlantBlockMetadata(source)) {
-                    BlockHelper.destroyPlantBlock(performantPlants, source, DestroyReason.RELATIVE_BREAK, null);
+                // remove if block not FaceAttachable or if it's attached to floor of destroyed block
+                if (!(block.getBlockData() instanceof FaceAttachable) ||
+                        ((FaceAttachable)block.getBlockData()).getAttachedFace() == FaceAttachable.AttachedFace.FLOOR) {
+                    BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
+                    // only destroy source block if it is a plant block
+                    if (MetadataHelper.hasPlantBlockMetadata(source)) {
+                        BlockHelper.destroyPlantBlock(performantPlants, source, DestroyReason.RELATIVE_BREAK, null);
+                    }
                 }
             }
             event.setCancelled(true);

@@ -245,14 +245,24 @@ public class PlayerInteractListener implements Listener {
                         if (block.getType() == Material.CAMPFIRE || block.getType() == Material.SOUL_CAMPFIRE) {
                             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                                 performantPlants.getLogger().info("Right clicked on campfire holding a plant item");
-                            resetMainHandAction(player);
-                            return;
+                            // cancel vanilla interaction if plant block
+                            if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                                event.setCancelled(true);
+                            } else {
+                                resetMainHandAction(player);
+                                return;
+                            }
                         }
                         if (BlockHelper.isInteractable(block) && !player.isSneaking()) {
                             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                                 performantPlants.getLogger().info("Prevented block from being placed on interactable block");
-                            resetMainHandAction(player);
-                            return;
+                            // cancel vanilla interaction if plant block
+                            if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                                event.setCancelled(true);
+                            } else {
+                                resetMainHandAction(player);
+                                return;
+                            }
                         }
                         // check if item is consumable or player is sneaking
                         plantItem = plant.getItemByItemStack(itemStack);

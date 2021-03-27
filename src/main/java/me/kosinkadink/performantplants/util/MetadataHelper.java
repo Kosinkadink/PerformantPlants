@@ -34,4 +34,18 @@ public class MetadataHelper {
         return false;
     }
 
+    public static String getPlantBlockMetadata(Block block) {
+        List<MetadataValue> metadataValues = block.getMetadata("performantplants-plant");
+        for (MetadataValue value : metadataValues) {
+            if (value.getOwningPlugin() != null && value.getOwningPlugin() instanceof PerformantPlants) {
+                return value.asString();
+            }
+        }
+        return "";
+    }
+
+    public static boolean haveMatchingPlantMetadata(Block block1, Block block2) {
+        return getPlantBlockMetadata(block1).equals(getPlantBlockMetadata(block2));
+    }
+
 }

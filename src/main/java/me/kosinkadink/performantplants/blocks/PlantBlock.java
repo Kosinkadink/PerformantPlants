@@ -17,6 +17,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -42,6 +43,7 @@ public class PlantBlock {
     // temporary state variables
     private boolean isNewlyPlaced = false;
     private boolean destroyBehaviorExecuted = false;
+    private BlockFace direction = null;
     // cached values
     private Block block = null;
 
@@ -416,6 +418,13 @@ public class PlantBlock {
         this.blockYaw = blockYaw;
     }
 
+    public BlockFace getDirection() {
+        if (direction == null && plant.isRotatePlant()) {
+            direction = BlockHelper.getDirectionFromYaw(this.getBlockYaw());
+        }
+        return direction;
+    }
+
     public boolean hasPlantData() {
         return plantData != null;
     }
@@ -563,7 +572,7 @@ public class PlantBlock {
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
             for (GrowthStageBlock growthStageBlock : plant.getGrowthStage(stageIndex).getBlocks().values()) {
                 // if keep block vanilla, just change blockData
-                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation());
+                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation(), this, this.getDirection());
                 // if not air or not relevant plant block, continue
                 if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     continue;
@@ -571,14 +580,14 @@ public class PlantBlock {
                 // if at current location, update values of this PlantBlock; don't create a new one
                 if (growthStageBlock.getLocation().equals(new RelativeLocation(0, 0, 0))) {
                     // update block data at location
-                    BlockHelper.setBlockData(block, growthStageBlock, this);
+                    BlockHelper.setBlockData(block, growthStageBlock, this, this.getDirection());
                     // set drop stage index
                     setDropStageIndex(stageIndex);
                     // set growth stage block
                     setStageBlockId(growthStageBlock.getId());
                 } else {
                     // update block data at location without plantBlock
-                    BlockHelper.setBlockData(block, growthStageBlock, null);
+                    BlockHelper.setBlockData(block, growthStageBlock, null, this.getDirection());
                     // create plant blocks at location
                     PlantBlock newPlantBlock;
                     newPlantBlock = new PlantBlock(new BlockLocation(block), plant, playerUUID, false,
@@ -766,7 +775,7 @@ public class PlantBlock {
             if (requirements.hasRequiredBlocks()) {
                 boolean enoughMatch = false;
                 for (RequiredBlock requiredBlock : requirements.getRequiredBlocks()) {
-                    Block block = BlockHelper.getAbsoluteBlock(thisBlock, requiredBlock.getLocation());
+                    Block block = BlockHelper.getAbsoluteBlock(thisBlock, requiredBlock.getLocation(), this, this.getDirection());
                     if (requiredBlock.checkIfMatches(block)) {
                         // if blacklisted, then return false
                         if (requiredBlock.isBlacklisted()) {
@@ -796,7 +805,7 @@ public class PlantBlock {
         HashMap<String,GrowthStageBlock> blocks = plant.getGrowthStage(stageIndex).getBlocks();
         for (GrowthStageBlock growthStageBlock : blocks.values()) {
             if (!growthStageBlock.isIgnoreSpace()) {
-                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation());
+                Block block = BlockHelper.getAbsoluteBlock(thisBlock, growthStageBlock.getLocation(), this, this.getDirection());
                 if (!block.isEmpty() && !MetadataHelper.hasPlantBlockMetadata(block, plantUUID)) {
                     return false;
                 }
@@ -809,13 +818,13 @@ public class PlantBlock {
         // check if there is a water or water-logged block adjacent
         ArrayList<Block> blocksToCheck = new ArrayList<>();
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0), null, null));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0), null, null));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1), null, null));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1), null, null));
         for (Block block : blocksToCheck) {
             if (BlockHelper.hasWater(block)) {
                 return true;
@@ -828,13 +837,13 @@ public class PlantBlock {
         // check if there is a water or water-logged block adjacent
         ArrayList<Block> blocksToCheck = new ArrayList<>();
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0), null, null));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0), null, null));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1), null, null));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1), null, null));
         for (Block block : blocksToCheck) {
             // if any lava found, return true
             if (block.getType() == Material.LAVA) {
@@ -849,17 +858,17 @@ public class PlantBlock {
         // check if there are any blocks nearby with required light levels
         ArrayList<Block> blocksToCheck = new ArrayList<>();
         // check 1 block up
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,1,0), null, null));
         // check 1 block to the west
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(-1,-1,0), null, null));
         // check 1 block to the east
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(1,-1,0), null, null));
         // check 1 block to the north
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,-1), null, null));
         // check 1 block to the south
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,1), null, null));
         // check 1 block down
-        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,0)));
+        blocksToCheck.add(BlockHelper.getAbsoluteBlock(thisBlock, new RelativeLocation(0,-1,0), null, null));
         boolean valid = false;
         for (Block block : blocksToCheck) {
             int lightLevel = 0;
