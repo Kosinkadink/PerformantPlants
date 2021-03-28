@@ -394,6 +394,38 @@ public class PlantBlock {
         return null;
     }
 
+    public ScriptBlock getOnFade() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnFade();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnFade();
+            }
+        }
+        return null;
+    }
+
+    public ScriptBlock getOnDecay() {
+        if (dropStageIndex == -1) {
+            GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnDecay();
+            }
+        }
+        else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
+            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (growthStageBlock != null) {
+                return growthStageBlock.getOnDecay();
+            }
+        }
+        return null;
+    }
+
     public ScriptBlock getOnDestroy() {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);

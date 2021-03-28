@@ -314,57 +314,61 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockFade(BlockFadeEvent event) {
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
+            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.FADE, null);
         }
     }
 
     @EventHandler
     public void onLeavesDecay(LeavesDecayEvent event) {
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
             event.setCancelled(true);
+            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.DECAY, null);
         }
     }
 
     @EventHandler
     public void onBlockBurn(BlockBurnEvent event) {
-        if (!event.isCancelled()) {
-            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-                event.setCancelled(true);
-                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.BURN, null);
-            }
+        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+            event.setCancelled(true);
+            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.BURN, null);
         }
     }
 
     @EventHandler
     public void onBlockExplode(BlockExplodeEvent event) {
-        // check if exploded blocks were Plants, and if so destroy them
-        ListIterator<Block> iterator = event.blockList().listIterator();
-        while (iterator.hasNext()) {
-            Block block = iterator.next();
-            if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                iterator.remove();
-                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
+        if (!event.isCancelled()) {
+            // check if exploded blocks were Plants, and if so destroy them
+            ListIterator<Block> iterator = event.blockList().listIterator();
+            while (iterator.hasNext()) {
+                Block block = iterator.next();
+                if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                    iterator.remove();
+                    BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
+                }
             }
         }
     }
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
-        // check if exploded blocks were Plants, and if so destroy them
-        ListIterator<Block> iterator = event.blockList().listIterator();
-        while (iterator.hasNext()) {
-            Block block = iterator.next();
-            if (MetadataHelper.hasPlantBlockMetadata(block)) {
-                iterator.remove();
-                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
+        if (!event.isCancelled()) {
+            // check if exploded blocks were Plants, and if so destroy them
+            ListIterator<Block> iterator = event.blockList().listIterator();
+            while (iterator.hasNext()) {
+                Block block = iterator.next();
+                if (MetadataHelper.hasPlantBlockMetadata(block)) {
+                    iterator.remove();
+                    BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
+                }
             }
         }
     }
 
     @EventHandler
     public void onBlockFromTo(BlockFromToEvent event) {
-        if (MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
+        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
                 !event.getToBlock().getType().isSolid()) {
             Block block = event.getToBlock();
             BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
@@ -374,8 +378,8 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent event) {
-        Block block = event.getBlock();
-        if (MetadataHelper.hasPlantBlockMetadata(block)) {
+        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+            Block block = event.getBlock();
             Block source = event.getSourceBlock();
             if (block.getBlockData() instanceof FaceAttachable && source.getType().isAir() &&
                     MetadataHelper.hasPlantBlockMetadata(source) && MetadataHelper.haveMatchingPlantMetadata(block, source)) {
@@ -413,10 +417,11 @@ public class PlantBlockEventListener implements Listener {
 
     private void handlePistonEvent(BlockPistonEvent event, List<Block> eventBlocks) {
         // if piston to be extended is Plant, cancel it (plant shouldn't extend)
-        if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-        }
-        else if (!event.isCancelled()) {
+        if (!event.isCancelled()) {
+            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+                event.setCancelled(true);
+                return;
+            }
             // check if any pushed blocks were Plants
             boolean anyPlantBlocks = false;
             for (Block block : eventBlocks) {

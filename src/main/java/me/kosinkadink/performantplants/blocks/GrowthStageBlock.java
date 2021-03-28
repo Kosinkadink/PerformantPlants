@@ -2,6 +2,7 @@ package me.kosinkadink.performantplants.blocks;
 
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
@@ -29,6 +30,8 @@ public class GrowthStageBlock {
     private ScriptBlock onExplode = null;
     private ScriptBlock onBurn = null;
     private ScriptBlock onPiston = null;
+    private ScriptBlock onFade = ScriptResult.FALSE;
+    private ScriptBlock onDecay = ScriptResult.FALSE;
     private ScriptBlock onDestroy = null; // default destroy behavior
     // block replacement variables
     private boolean replacePlantBlock = false;
@@ -146,6 +149,7 @@ public class GrowthStageBlock {
         this.onLeftClick = onLeftClick;
     }
 
+    // destruction behavior
     public ScriptBlock getOnBreak() {
         return onBreak;
     }
@@ -176,6 +180,22 @@ public class GrowthStageBlock {
 
     public void setOnPiston(ScriptBlock onPiston) {
         this.onPiston = onPiston;
+    }
+
+    public ScriptBlock getOnFade() {
+        return onFade;
+    }
+
+    public void setOnFade(ScriptBlock onFade) {
+        this.onFade = onFade;
+    }
+
+    public ScriptBlock getOnDecay() {
+        return onDecay;
+    }
+
+    public void setOnDecay(ScriptBlock onDecay) {
+        this.onDecay = onDecay;
     }
 
     public ScriptBlock getOnDestroy() {

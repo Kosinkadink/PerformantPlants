@@ -1,8 +1,10 @@
 package me.kosinkadink.performantplants.blocks;
 
 public enum DestroyReason {
-    BREAK, EXPLODE, BURN, PISTON, DESTROY,
-    RELATIVE_BREAK, RELATIVE_EXPLODE, RELATIVE_BURN, RELATIVE_PISTON, RELATIVE_DESTROY,
+    BREAK, EXPLODE, BURN, PISTON, FADE, DECAY,
+    DESTROY,
+    RELATIVE_BREAK, RELATIVE_EXPLODE, RELATIVE_BURN, RELATIVE_PISTON, RELATIVE_FADE, RELATIVE_DECAY,
+    RELATIVE_DESTROY,
     REPLACE;
 
     public static DestroyReason fromString(String reason) {
@@ -23,6 +25,8 @@ public enum DestroyReason {
             case RELATIVE_EXPLODE:
             case RELATIVE_BURN:
             case RELATIVE_PISTON:
+            case RELATIVE_FADE:
+            case RELATIVE_DECAY:
             case RELATIVE_DESTROY:
                 return true;
             default:
@@ -44,6 +48,12 @@ public enum DestroyReason {
             case PISTON:
             case RELATIVE_PISTON:
                 return RELATIVE_PISTON;
+            case FADE:
+            case RELATIVE_FADE:
+                return RELATIVE_FADE;
+            case DECAY:
+            case RELATIVE_DECAY:
+                return RELATIVE_DECAY;
             case DESTROY:
             case RELATIVE_DESTROY:
                 return RELATIVE_DESTROY;

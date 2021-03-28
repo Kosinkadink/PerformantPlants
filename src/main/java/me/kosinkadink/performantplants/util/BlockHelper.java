@@ -637,6 +637,18 @@ public class BlockHelper {
                         destroyBehavior = plantBlock.getOnDestroy();
                     }
                     break;
+                case RELATIVE_FADE:
+                    destroyBehavior = plantBlock.getOnFade();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
+                case RELATIVE_DECAY:
+                    destroyBehavior = plantBlock.getOnDecay();
+                    if (destroyBehavior == null) {
+                        destroyBehavior = plantBlock.getOnDestroy();
+                    }
+                    break;
                 case RELATIVE_DESTROY:
                     destroyBehavior = plantBlock.getOnDestroy();
                     break;

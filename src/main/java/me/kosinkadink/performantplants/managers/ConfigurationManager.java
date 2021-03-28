@@ -1128,6 +1128,34 @@ public class ConfigurationManager {
                     growthStageBlock.setOnPiston(plantInteractStorage);
                 }
             }
+            // set on fade behavior, if present
+            if (blockConfig.isSet("on-fade")) {
+                if (blockConfig.isBoolean("on-fade")) {
+                    growthStageBlock.setOnFade(new ScriptResult(blockConfig.getBoolean("on-fade")));
+                } else if (blockConfig.isConfigurationSection("on-fade")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-fade", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-fade section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnFade(plantInteractStorage);
+                }
+            }
+            // set on decay behavior, if present
+            if (blockConfig.isSet("on-decay")) {
+                if (blockConfig.isBoolean("on-decay")) {
+                    growthStageBlock.setOnDecay(new ScriptResult(blockConfig.getBoolean("on-decay")));
+                } else if (blockConfig.isConfigurationSection("on-decay")) {
+                    ScriptBlock plantInteractStorage = createPlantScript(blockConfig, "on-decay", context);
+                    if (plantInteractStorage == null) {
+                        performantPlants.getLogger().warning("Could not load on-decay section: " + blockConfig.getCurrentPath());
+                        return null;
+                    }
+                    // add interactions to growth stage block
+                    growthStageBlock.setOnDecay(plantInteractStorage);
+                }
+            }
             // add growth stage block to stage
             blocks.add(growthStageBlock);
         }
