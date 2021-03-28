@@ -17,7 +17,6 @@ import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.block.data.type.RedstoneWire;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BlockHelper {

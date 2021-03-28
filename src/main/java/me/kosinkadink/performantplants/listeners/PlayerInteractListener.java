@@ -34,6 +34,7 @@ public class PlayerInteractListener implements Listener {
     private final PerformantPlants performantPlants;
     private final HashMap<UUID, Boolean> mainHandActionMap = new HashMap<>();
     private final HashMap<UUID, Boolean> dropActionMap = new HashMap<>();
+    private final HashMap<UUID, Boolean> cancelOffhandMap = new HashMap<>();
 
     //region MainHandAction
     private boolean isMainHandAction(Player player) {
@@ -77,7 +78,23 @@ public class PlayerInteractListener implements Listener {
         dropActionMap.remove(player.getUniqueId());
     }
     //endregion
+    //region CancelOffhand
+    private boolean isCancelOffhand(Player player) {
+        Boolean cancelled = cancelOffhandMap.get(player.getUniqueId());
+        if (cancelled != null) {
+            return cancelled;
+        }
+        return false;
+    }
 
+    private void setCancelOffhand(Player player) {
+        cancelOffhandMap.put(player.getUniqueId(), true);
+    }
+
+    private void resetCancelOffhand(Player player) {
+        cancelOffhandMap.remove(player.getUniqueId());
+    }
+    //endregion
 
     public PlayerInteractListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
@@ -154,6 +171,13 @@ public class PlayerInteractListener implements Listener {
                 resetMainHandAction(player);
                 return;
             }
+            // if offhand was cancelled, do nothing
+            if (isCancelOffhand(player)) {
+                event.setCancelled(true);
+                resetCancelOffhand(player);
+                resetMainHandAction(player);
+                return;
+            }
             otherStack = player.getInventory().getItemInMainHand();
             // if main hand not empty and already had an action, cancel offhand action and do nothing
             boolean isMainHandEmpty = otherStack.getType() == Material.AIR;
@@ -171,6 +195,7 @@ public class PlayerInteractListener implements Listener {
         }
         else {
             // interacting with main hand
+            resetCancelOffhand(player);
             if (isDropAction(player, event.getAction())) {
                 event.setCancelled(true);
                 resetDropAction(player);
@@ -229,6 +254,10 @@ public class PlayerInteractListener implements Listener {
                         if (!plantBlockInteractEvent.isCancelled()) {
                             event.setCancelled(true);
                             setMainHandAction(player, event.getHand());
+                            // cancel upcoming offhand action, if offhand does not contain air
+                            if (!otherStack.getType().isAir()) {
+                                setCancelOffhand(player);
+                            }
                         }
                         // keep processing
                     }

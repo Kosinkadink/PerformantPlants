@@ -171,34 +171,46 @@ public class PlantBlockEventListener implements Listener {
                     .set(event.getPlayer())
                     .set(event.getPlantBlock())
                     .set(event.getBlockFace());
-            // get item in main hand
-            EquipmentSlot hand = EquipmentSlot.HAND;
-            ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
-            context.set(itemStack).set(hand);
             // get PlantInteract to use
             ScriptBlock plantInteract;
-            if (!event.isUseOnClick()) {
-                // get PlantInteract behavior for main hand, if any
-                plantInteract = event.getPlantBlock().getOnInteract();
-                // if no plant interact behavior, try again for the offhand
+            if (event.isUseOnClick()) {
+                // get click behavior (left click)
+                plantInteract = event.getPlantBlock().getOnClick();
+                // if no behavior, cancel event and return
                 if (plantInteract == null) {
-                    hand = EquipmentSlot.OFF_HAND;
-                    itemStack = event.getPlayer().getInventory().getItemInOffHand();
-                    context.set(itemStack).set(hand);
-                    plantInteract = event.getPlantBlock().getOnInteract();
+                    event.setCancelled(true);
+                    return;
+                }
+                // use item in main hand
+                ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+                context.set(itemStack).set(EquipmentSlot.HAND);
+                // try to perform actions for main hand
+                boolean performed = plantInteract.loadValue(context).getBooleanValue();
+                if (!performed) {
+                    event.setCancelled(true);
                 }
             } else {
-                plantInteract = event.getPlantBlock().getOnClick();
-            }
-            // if still no plant interact behavior, cancel event and return
-            if (plantInteract == null) {
-                event.setCancelled(true);
-                return;
-            }
-            // try to perform actions
-            boolean performed = plantInteract.loadValue(context).getBooleanValue();
-            if (!performed) {
-                event.setCancelled(true);
+                // get interact behavior (right click)
+                plantInteract = event.getPlantBlock().getOnInteract();
+                // if no behavior, cancel event and return
+                if (plantInteract == null) {
+                    event.setCancelled(true);
+                    return;
+                }
+                ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
+                ItemStack otherStack = event.getPlayer().getInventory().getItemInOffHand();
+                if (!itemStack.getType().isAir() || otherStack.getType().isAir()) {
+                    // use item in main hand
+                    context.set(itemStack).set(EquipmentSlot.HAND);
+                } else {
+                    // use item in offhand
+                    context.set(otherStack).set(EquipmentSlot.OFF_HAND);
+                }
+                // try to perform actions
+                boolean performed = plantInteract.loadValue(context).getBooleanValue();
+                if (!performed) {
+                    event.setCancelled(true);
+                }
             }
         }
     }
