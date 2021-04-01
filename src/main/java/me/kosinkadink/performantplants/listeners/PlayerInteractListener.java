@@ -240,28 +240,24 @@ public class PlayerInteractListener implements Listener {
         Block block = event.getClickedBlock();
         // check if block is farmland; if so, got trampled
         if (event.getAction() == Action.PHYSICAL) {
-            try {
-                if (block.getType() == Material.FARMLAND) {
-                    if (block.getWorld().getMaxHeight()-1 > block.getY()) {
-                        // check if block above is a plant block
-                        Block blockAbove = block.getWorld().getBlockAt(
-                                block.getX(), block.getY() + 1, block.getZ()
-                        );
-                        if (MetadataHelper.hasPlantBlockMetadata(blockAbove)) {
-                            // create PlantFarmlandTrampleEvent
-                            PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockAbove);
-                            // don't cancel event so the farmland will end up turning into dirt
-                            if (plantBlock != null) {
-                                performantPlants.getServer().getPluginManager().callEvent(
-                                        new PlantFarmlandTrampleEvent(event.getPlayer(), plantBlock, blockAbove, block)
-                                );
-                                return;
-                            }
+            if (block != null && block.getType() == Material.FARMLAND) {
+                if (block.getWorld().getMaxHeight()-1 > block.getY()) {
+                    // check if block above is a plant block
+                    Block blockAbove = block.getWorld().getBlockAt(
+                            block.getX(), block.getY() + 1, block.getZ()
+                    );
+                    if (MetadataHelper.hasPlantBlockMetadata(blockAbove)) {
+                        // create PlantFarmlandTrampleEvent
+                        PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(blockAbove);
+                        // don't cancel event so the farmland will end up turning into dirt
+                        if (plantBlock != null) {
+                            performantPlants.getServer().getPluginManager().callEvent(
+                                    new PlantFarmlandTrampleEvent(event.getPlayer(), plantBlock, blockAbove, block)
+                            );
+                            return;
                         }
                     }
                 }
-            } catch (NullPointerException e) {
-                // do nothing
             }
             return;
         }
