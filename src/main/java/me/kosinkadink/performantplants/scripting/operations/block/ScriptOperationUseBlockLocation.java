@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.scripting.operations.block;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Location;
 
 import javax.annotation.Nonnull;

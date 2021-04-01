@@ -2,9 +2,9 @@ package me.kosinkadink.performantplants.listeners;
 
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
-import me.kosinkadink.performantplants.events.PlantItemInteractEvent;
-import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
 import me.kosinkadink.performantplants.events.PlantBlockInteractEvent;
+import me.kosinkadink.performantplants.events.PlantFarmlandTrampleEvent;
+import me.kosinkadink.performantplants.events.PlantItemInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;

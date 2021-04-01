@@ -12,7 +12,6 @@ import me.kosinkadink.performantplants.scripting.ScriptType;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
