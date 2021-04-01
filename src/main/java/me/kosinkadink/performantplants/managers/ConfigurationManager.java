@@ -323,6 +323,13 @@ public class ConfigurationManager {
                         plant.setRandomRotate(growingConfig.getBoolean("random-rotation"));
                         plant.setRotatePlant(true);
                     }
+                    // set if should bypass place
+                    if (growingConfig.isBoolean("bypass-space")) {
+                        plant.setBypassSpace(growingConfig.getBoolean("bypass-space"));
+                    }
+                    if (growingConfig.isBoolean("enforce-physics")) {
+                        plant.setEnforcePhysics(growingConfig.getBoolean("enforce-physics"));
+                    }
                     // load stored plant growths stage blocks, if present
                     List<GrowthStageBlock> plantStageBlocks = loadGrowthStageBlocks(
                             growingConfig,
@@ -1155,6 +1162,13 @@ public class ConfigurationManager {
                     // add interactions to growth stage block
                     growthStageBlock.setOnDecay(plantInteractStorage);
                 }
+            }
+            // set fade and decay pass through, if present
+            if (blockConfig.isBoolean("pass-fade")) {
+                growthStageBlock.setPassFade(blockConfig.getBoolean("pass-fade"));
+            }
+            if (blockConfig.isBoolean("pass-decay")) {
+                growthStageBlock.setPassDecay(blockConfig.getBoolean("pass-decay"));
             }
             // add growth stage block to stage
             blocks.add(growthStageBlock);

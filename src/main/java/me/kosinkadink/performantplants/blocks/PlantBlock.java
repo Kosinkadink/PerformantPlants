@@ -7,8 +7,8 @@ import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
+import me.kosinkadink.performantplants.scripting.ScriptResult;
 import me.kosinkadink.performantplants.stages.GrowthStage;
-import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.storage.RequirementStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
@@ -242,9 +242,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.isBreakChildren();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isBreakChildren();
             }
         }
         return false;
@@ -258,9 +258,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.isBreakParent();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isBreakParent();
             }
         }
         return false;
@@ -274,9 +274,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.isUpdateStageOnBreak();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isUpdateStageOnBreak();
             }
         }
         return false;
@@ -290,9 +290,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.isStopGrowth();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.isStopGrowth();
             }
         }
         return false;
@@ -306,9 +306,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnRightClick();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnRightClick();
             }
         }
         return null;
@@ -322,9 +322,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnLeftClick();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnLeftClick();
             }
         }
         return null;
@@ -338,9 +338,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnBreak();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnBreak();
             }
         }
         return null;
@@ -354,9 +354,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnExplode();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnExplode();
             }
         }
         return null;
@@ -370,9 +370,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnBurn();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnBurn();
             }
         }
         return null;
@@ -386,9 +386,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnPiston();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnPiston();
             }
         }
         return null;
@@ -398,13 +398,21 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnFade();
+                ScriptBlock toReturn = stageBlock.getOnFade();
+                if (toReturn == null && !stageBlock.isPassFade()) {
+                    return ScriptResult.FALSE;
+                }
+                return toReturn;
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnFade();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                ScriptBlock toReturn = stageBlock.getOnFade();
+                if (toReturn == null && !stageBlock.isPassFade()) {
+                    return ScriptResult.FALSE;
+                }
+                return toReturn;
             }
         }
         return null;
@@ -414,13 +422,21 @@ public class PlantBlock {
         if (dropStageIndex == -1) {
             GrowthStageBlock stageBlock = plant.getGrowthStageBlock(stageBlockId);
             if (stageBlock != null) {
-                return stageBlock.getOnDecay();
+                ScriptBlock toReturn = stageBlock.getOnDecay();
+                if (toReturn == null && !stageBlock.isPassDecay()) {
+                    return ScriptResult.FALSE;
+                }
+                return toReturn;
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnDecay();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                ScriptBlock toReturn = stageBlock.getOnDecay();
+                if (toReturn == null && !stageBlock.isPassDecay()) {
+                    return ScriptResult.FALSE;
+                }
+                return toReturn;
             }
         }
         return null;
@@ -434,9 +450,9 @@ public class PlantBlock {
             }
         }
         else if (plant.hasGrowthStages() && plant.isValidStage(dropStageIndex)) {
-            GrowthStageBlock growthStageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
-            if (growthStageBlock != null) {
-                return growthStageBlock.getOnDestroy();
+            GrowthStageBlock stageBlock = plant.getGrowthStage(dropStageIndex).getGrowthStageBlock(stageBlockId);
+            if (stageBlock != null) {
+                return stageBlock.getOnDestroy();
             }
         }
         return null;

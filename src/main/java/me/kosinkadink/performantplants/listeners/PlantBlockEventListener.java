@@ -9,6 +9,7 @@ import me.kosinkadink.performantplants.locations.BlockLocation;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.util.*;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -42,7 +43,7 @@ public class PlantBlockEventListener implements Listener {
             if (performantPlants.getConfigManager().getConfigSettings().isDebug())
                 performantPlants.getLogger().info("Reviewing PlantPlaceEvent for block: " + event.getBlock().getLocation().toString());
             Block block = event.getBlock();
-            if (block.isEmpty()) {
+            if (block.isEmpty() || (event.getReplacedState() != null && event.getReplacedState().getType().isAir())) {
                 // check if empty block has plant metadata
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     // if so, destroy; erroneous existence and continue
@@ -64,6 +65,10 @@ public class PlantBlockEventListener implements Listener {
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
                 if (plantBlock.isGrows()) {
+                    // replace block with air to properly check space requirements, if replaced state is set
+                    if (event.getReplacedState() != null) {
+                        block.setType(Material.AIR);
+                    }
                     // if random rotate, try possible orientations until success or exhaustion
                     if (plantBlock.getPlant().isRandomRotate()) {
                         List<BlockFace> blockFaces = Lists.newArrayList(BlockHelper.getDirectionalBlockFaces());
@@ -81,6 +86,9 @@ public class PlantBlockEventListener implements Listener {
                         // if list is empty, then no success
                         if (blockFaces.isEmpty()) {
                             event.setCancelled(true);
+                            if (event.getReplacedState() != null) {
+                                block.setBlockData(event.getReplacedState().getBlockData());
+                            }
                             return;
                         }
                     } else {
@@ -90,12 +98,17 @@ public class PlantBlockEventListener implements Listener {
                         plantBlock.setNewlyPlaced(true);
                         if (!plantBlock.checkAllRequirements(performantPlants)) {
                             event.setCancelled(true);
+                            if (event.getReplacedState() != null) {
+                                block.setBlockData(event.getReplacedState().getBlockData());
+                            }
                             return;
                         }
                     }
                 }
                 performantPlants.getPlantManager().addPlantBlock(plantBlock);
-                ItemHelper.decrementItemStack(itemStack);
+                if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
+                    ItemHelper.decrementItemStack(itemStack);
+                }
             }
         }
     }

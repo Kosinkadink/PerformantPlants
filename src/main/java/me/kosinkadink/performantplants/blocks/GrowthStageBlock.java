@@ -3,7 +3,6 @@ package me.kosinkadink.performantplants.blocks;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.scripting.ScriptResult;
-import me.kosinkadink.performantplants.storage.DropStorage;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
@@ -30,9 +29,11 @@ public class GrowthStageBlock {
     private ScriptBlock onExplode = null;
     private ScriptBlock onBurn = null;
     private ScriptBlock onPiston = null;
-    private ScriptBlock onFade = ScriptResult.FALSE;
-    private ScriptBlock onDecay = ScriptResult.FALSE;
+    private ScriptBlock onFade = null;
+    private ScriptBlock onDecay = null;
     private ScriptBlock onDestroy = null; // default destroy behavior
+    private boolean passFade = false;
+    private boolean passDecay = false;
     // block replacement variables
     private boolean replacePlantBlock = false;
     private boolean replaceVanillaBlock = false;
@@ -204,6 +205,22 @@ public class GrowthStageBlock {
 
     public void setOnDestroy(ScriptBlock onDestroy) {
         this.onDestroy = onDestroy;
+    }
+
+    public boolean isPassFade() {
+        return passFade;
+    }
+
+    public void setPassFade(boolean passFade) {
+        this.passFade = passFade;
+    }
+
+    public boolean isPassDecay() {
+        return passDecay;
+    }
+
+    public void setPassDecay(boolean passDecay) {
+        this.passDecay = passDecay;
     }
 
     // block replacement

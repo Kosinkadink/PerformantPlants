@@ -35,6 +35,7 @@ public class PlayerInteractListener implements Listener {
     private final HashMap<UUID, Boolean> mainHandActionMap = new HashMap<>();
     private final HashMap<UUID, Boolean> dropActionMap = new HashMap<>();
     private final HashMap<UUID, Boolean> cancelOffhandMap = new HashMap<>();
+    private final HashMap<UUID, Plant> expectedPlantMap = new HashMap<>();
 
     //region MainHandAction
     private boolean isMainHandAction(Player player) {
@@ -95,6 +96,19 @@ public class PlayerInteractListener implements Listener {
         cancelOffhandMap.remove(player.getUniqueId());
     }
     //endregion
+    //region ExpectPlant
+    private Plant getExpectedPlant(Player player) {
+        return expectedPlantMap.get(player.getUniqueId());
+    }
+
+    private void setExpectedPlant(Player player, Plant plant) {
+        expectedPlantMap.put(player.getUniqueId(), plant);
+    }
+
+    private void resetExpectedPlant(Player player) {
+        expectedPlantMap.remove(player.getUniqueId());
+    }
+    //endregion
 
     public PlayerInteractListener(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;
@@ -105,6 +119,20 @@ public class PlayerInteractListener implements Listener {
         if (event.getBlockAgainst().getType() == Material.CAMPFIRE || event.getBlockAgainst().getType() == Material.SOUL_CAMPFIRE) {
             if (performantPlants.getPlantTypeManager().isPlantItemStack(event.getItemInHand())) {
                 event.setCancelled(true);
+            }
+        }
+        // get plant expected to be placed
+        Plant plant = getExpectedPlant(event.getPlayer());
+        if (plant != null) {
+            // cancel event
+            event.setCancelled(true);
+            // reset expected plant
+            resetExpectedPlant(event.getPlayer());
+            // check if allowed to place
+            if (event.canBuild()) {
+                performantPlants.getServer().getPluginManager().callEvent(
+                        new PlantPlaceEvent(event.getPlayer(), plant, event.getBlockPlaced(), event.getBlockReplacedState(), event.getHand(), true)
+                );
             }
         }
     }
@@ -195,6 +223,7 @@ public class PlayerInteractListener implements Listener {
         }
         else {
             // interacting with main hand
+            resetExpectedPlant(event.getPlayer());
             resetCancelOffhand(player);
             if (isDropAction(player, event.getAction())) {
                 event.setCancelled(true);
@@ -298,12 +327,22 @@ public class PlayerInteractListener implements Listener {
                         if (!plantItem.hasOnRightClick() || player.isSneaking()) {
                             // check if item is a seed
                             if (plant.hasSeed() && plant.getSeedItemStack().isSimilar(itemStack)) {
-                                // cancel event and send out PlantBlockEvent
-                                event.setCancelled(true);
-                                setMainHandAction(player, event.getHand());
-                                performantPlants.getServer().getPluginManager().callEvent(
-                                        new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
-                                );
+                                // if enforce physics + is block OR not bypass space and is solid,
+                                // use BlockPlaceEvent to handle placement
+                                if ((plant.isEnforcePhysics() && itemStack.getType().isBlock()) || (!plant.isBypassSpace() && itemStack.getType().isSolid())) {
+                                    // set plant the BlockPlaceEvent handler should expect when seeing this player
+                                    setExpectedPlant(player, plant);
+                                }
+                                // otherwise, send out PlantBlockEvent here
+                                else {
+                                    // cancel event and send out PlantBlockEvent
+                                    event.setCancelled(true);
+                                    setMainHandAction(player, event.getHand());
+                                    performantPlants.getServer().getPluginManager().callEvent(
+                                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
+                                    );
+                                }
+                                // return here either way
                                 return;
                             }
                             // cancel event unless plant item can and is allowed to be worn, or is edible

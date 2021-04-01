@@ -33,6 +33,8 @@ public class Plant {
     private PlantData plantData;
     private boolean rotatePlant = false;
     private boolean randomRotate = false;
+    private boolean bypassSpace = false;
+    private boolean enforcePhysics = false;
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
     private RequirementStorage growthRequirementStorage = new RequirementStorage();
@@ -212,6 +214,23 @@ public class Plant {
 
     public void setRandomRotate(boolean randomRotate) {
         this.randomRotate = randomRotate;
+    }
+
+    // bypass placement
+    public boolean isBypassSpace() {
+        return bypassSpace;
+    }
+
+    public void setBypassSpace(boolean bypassSpace) {
+        this.bypassSpace = bypassSpace;
+    }
+
+    public boolean isEnforcePhysics() {
+        return enforcePhysics;
+    }
+
+    public void setEnforcePhysics(boolean enforcePhysics) {
+        this.enforcePhysics = enforcePhysics;
     }
 
     //region Growth Stage Actions
