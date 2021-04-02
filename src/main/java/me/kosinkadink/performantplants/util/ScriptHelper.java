@@ -229,25 +229,23 @@ public class ScriptHelper {
                 Player player = context.getPlayer();
                 switch(relevantVariableName) {
                     case "_x":
-                        return Double.toString(player.getLocation().getX());
+                        return Integer.toString(player.getLocation().getBlockX());
                     case "_y":
-                        return Double.toString(player.getLocation().getY());
+                        return Integer.toString(player.getLocation().getBlockY());
                     case "_z":
+                        return Integer.toString(player.getLocation().getBlockZ());
+                    case "_x_exact":
+                        return Double.toString(player.getLocation().getX());
+                    case "_y_exact":
+                        return Double.toString(player.getLocation().getY());
+                    case "_z_exact":
                         return Double.toString(player.getLocation().getZ());
-                    case "_block_x":
-                        return Double.toString(player.getLocation().getBlockX());
-                    case "_block_y":
-                        return Double.toString(player.getLocation().getBlockY());
-                    case "_block_z":
-                        return Double.toString(player.getLocation().getBlockZ());
                     case "_world":
-                        try {
-                            return player.getLocation().getWorld().getName();
-                        } catch (NullPointerException e) {
-                            return null;
-                        }
+                        return player.getWorld().getName();
                     case "_uuid":
                         return player.getUniqueId().toString();
+                    case "_name":
+                        return player.getName();
                     default:
                         return null;
                 }
@@ -286,9 +284,9 @@ public class ScriptHelper {
                         return Double.toString(relevantPlantBlock.getLocation().getZ() + 0.5);
                     case "_world":
                         return relevantPlantBlock.getLocation().getWorldName();
-                    case "_plant_id":
+                    case "_id":
                         return relevantPlantBlock.getPlant().getId();
-                    case "_plant_uuid":
+                    case "_uuid":
                         return relevantPlantBlock.getPlantUUID().toString();
                     default:
                         return null;
