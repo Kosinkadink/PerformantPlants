@@ -56,7 +56,7 @@ public class PerformantPlants extends JavaPlugin {
                                     "item interaction will be disabled",
                     ChatColor.YELLOW));
         }
-        if (pluginManager.getPlugin("PlaceholderAPI") != null) {
+        if (hasPlaceholderAPI()) {
             new PerformantPlantExpansion(this).register();
         }
     }
@@ -179,6 +179,10 @@ public class PerformantPlants extends JavaPlugin {
 
     public boolean hasProtocolLib() {
         return protocolManager != null;
+    }
+
+    public boolean hasPlaceholderAPI() {
+        return getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
     }
 
     public CommandManager getCommandManager() {

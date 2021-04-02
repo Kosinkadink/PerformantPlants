@@ -7,12 +7,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ScriptHelper {
-
-    private static final Pattern variablesPattern = Pattern.compile("\\$([-_a-zA-Z0-9%\\\\.{}]+?)\\$");
 
     public static ScriptType getType(Object o) {
         if (o == null) {
@@ -99,24 +95,6 @@ public class ScriptHelper {
         return null;
     }
 
-    public static String setVariables(ExecutionContext context, String text) {
-        // figure out which variables are present in the string
-        Matcher matcher = variablesPattern.matcher(text);
-        StringBuffer stringBuffer = new StringBuffer(text.length());
-        while (matcher.find()) {
-            String variableName = matcher.group(1);
-            // see if variable is recognized;
-            String value = getVariableValue(context, variableName);
-            if (value == null) {
-                matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement("$"+variableName+"$"));
-            } else {
-                matcher.appendReplacement(stringBuffer, Matcher.quoteReplacement(value));
-            }
-        }
-        matcher.appendTail(stringBuffer);
-        return stringBuffer.toString();
-    }
-
     public static boolean updateAnyDataVariableValue(ExecutionContext context, String variableName, Object value) {
         // if variable name contains period, then it refers to a plant variable
         if (variableName.contains(".")) {
@@ -177,7 +155,53 @@ public class ScriptHelper {
         return null;
     }
 
-    private static String[] getVariableNameParts(String variableName) {
+    public static String sanitizeVariableNameForLoading(String variableName) {
+        StringBuilder finalString = new StringBuilder();
+        int index = 0;
+        while (index < variableName.length()) {
+            char character = variableName.charAt(index);
+            if (character == '[') {
+                PlaceholderHelper.ReplaceResult result = getVariableComponentInBracket(variableName, index+1);
+                index = result.getIndex();
+                finalString.append(character).append(result.getReplacement());
+            } else {
+                finalString.append(character);
+            }
+            index++;
+        }
+        return finalString.toString();
+    }
+
+    private static PlaceholderHelper.ReplaceResult getVariableComponentInBracket(String variableName, int startIndex) {
+        StringBuilder finalString = new StringBuilder();
+        int bracketCounter = 1;
+        int index = startIndex;
+        while (index < variableName.length()) {
+            char character = variableName.charAt(index);
+            if (character == '[') {
+                bracketCounter++;
+                finalString.append(character);
+            }
+            else if (character == ']') {
+                bracketCounter--;
+                finalString.append(character);
+                if (bracketCounter == 0) {
+                    return new PlaceholderHelper.ReplaceResult(index, finalString.toString(), true);
+                }
+            }
+            // use '_' instead of '.' for final string
+            else if (character == '.') {
+                finalString.append('_');
+            }
+            else {
+                finalString.append(character);
+            }
+            index++;
+        }
+        return new PlaceholderHelper.ReplaceResult(index-1, finalString.toString(), false);
+    }
+
+    protected static String[] getVariableNameParts(String variableName) {
         String[] variableParts = variableName.split("\\.");
         if (variableParts.length == 4) {
             return variableParts;
@@ -187,7 +211,7 @@ public class ScriptHelper {
         return null;
     }
 
-    private static String getVariableValue(ExecutionContext context, String variableName) {
+    protected static String getVariableValue(ExecutionContext context, String variableName) {
         Object variableValue = null;
         // check if it is a property name
         if (variableName.startsWith("_")) {

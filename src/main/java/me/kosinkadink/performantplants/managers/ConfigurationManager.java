@@ -3036,7 +3036,9 @@ public class ConfigurationManager {
                 return null;
             }
             // if no plant data present or data does not contain variable name, return null
-            Object variableValue = ScriptHelper.getAnyDataVariableValue(context, variableName);
+            Object variableValue = ScriptHelper.getAnyDataVariableValue(context,
+                    ScriptHelper.sanitizeVariableNameForLoading(variableName)
+            );
             if (variableValue == null) {
                 performantPlants.getLogger().warning(String.format("Variable '%s' not found, so this PlantScript will not be " +
                         "loaded until that is fixed in section: %s", variableName, section.getCurrentPath()));
@@ -3710,7 +3712,7 @@ public class ConfigurationManager {
         return new ScriptOperationIf(condition, ifTrue, ifFalse);
     }
     ScriptOperation createScriptOperationDoIf(ConfigurationSection section, boolean directValue, ExecutionContext context) {
-        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "condition", "script");
+        ArrayList<ScriptBlock> operands = createScriptOperationBinary(section, directValue, context, "condition", "then");
         if (operands == null) {
             return null;
         }
