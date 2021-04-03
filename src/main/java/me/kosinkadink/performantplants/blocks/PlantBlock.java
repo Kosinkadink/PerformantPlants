@@ -826,20 +826,9 @@ public class PlantBlock {
                 for (RequiredBlock requiredBlock : requirements.getRequiredBlocks()) {
                     Block block = BlockHelper.getAbsoluteBlock(thisBlock, requiredBlock.getLocation(), this, this.getDirection());
                     if (requiredBlock.checkIfMatches(block)) {
-                        // if blacklisted, then return false
-                        if (requiredBlock.isBlacklisted()) {
-                            return false;
-                        }
                         enoughMatch = true;
-                    } else if (requiredBlock.isRequired()) {
+                    } else if (requiredBlock.isCritical()) {
                         return false;
-                    }
-                    // check if not air, if set
-                    if (requiredBlock.isNotAir()) {
-                        if (block.getBlockData().getMaterial().isAir()) {
-                            return false;
-                        }
-                        enoughMatch = true;
                     }
                 }
                 return enoughMatch;

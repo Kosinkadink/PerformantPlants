@@ -3,6 +3,7 @@ package me.kosinkadink.performantplants.managers;
 import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.RequiredBlock;
+import me.kosinkadink.performantplants.blocks.RequiredCondition;
 import me.kosinkadink.performantplants.hooks.HookAction;
 import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.plants.Drop;
@@ -872,6 +873,121 @@ public class ConfigurationManager {
         return null;
     }
 
+    RequiredBlock loadRequiredBlock(ConfigurationSection section) {
+        if (section != null) {
+            // get offset
+            int xRel = 0;
+            int yRel = 0;
+            int zRel = 0;
+            if (section.isSet("offset")) {
+                if (section.isInt("offset.x")) {
+                    xRel = section.getInt("offset.x");
+                }
+                if (section.isInt("offset.y")) {
+                    yRel = section.getInt("offset.y");
+                }
+                if (section.isInt("offset.z")) {
+                    zRel = section.getInt("offset.z");
+                }
+            }
+            // create BlockSettings from values
+            RequiredBlock requiredBlock = new RequiredBlock(xRel, yRel, zRel);
+            if (section.isBoolean("critical")) {
+                requiredBlock.setCritical(section.getBoolean("critical"));
+            }
+            // set not air, if set
+            if (section.isBoolean("not-air")) {
+                requiredBlock.setNotAir(section.getBoolean("not-air"));
+            }
+            // add conditions, if present
+            if (section.isConfigurationSection("conditions")) {
+                ConfigurationSection conditionsSection = section.getConfigurationSection("conditions");
+                if (conditionsSection != null) {
+                    for (String placeholder : conditionsSection.getKeys(false)) {
+                        ConfigurationSection conditionSection = conditionsSection.getConfigurationSection(placeholder);
+                        if (conditionSection == null) {
+                            continue;
+                        }
+                        RequiredCondition condition = new RequiredCondition();
+                        // check if vanilla values present
+                        if (conditionSection.isString("material")) {
+                            String materialName = conditionSection.getString("material");
+                            if (materialName == null) {
+                                performantPlants.getLogger().warning("Material not provided and condition will " +
+                                        "be skipped in required condition section: " + conditionSection.getCurrentPath());
+                                continue;
+                            }
+                            Material material = Material.getMaterial(materialName);
+                            if (material == null) {
+                                performantPlants.getLogger().warning("Material '" + materialName + "' not " +
+                                        "recognized, condition will be skipped in required condition section: " +
+                                        conditionSection.getCurrentPath());
+                                continue;
+                            }
+                            // set block data
+                            ArrayList<String> blockDataStrings = new ArrayList<>(conditionSection.getStringList("data"));
+                            condition.setBlockData(material, blockDataStrings);
+                            // get skull texture, if present
+                            if (conditionSection.isString("skull-texture")) {
+                                condition.setSkullTexture(conditionSection.getString("skull-texture"));
+                            }
+                        }
+                        // if no vanilla material, check for plant block values
+                        else if (conditionSection.isString("plant-id")) {
+                            // set plant id
+                            String plantId = conditionSection.getString("plant-id");
+                            YamlConfiguration plantYaml = plantConfigMap.get(plantId);
+                            if (plantYaml == null) {
+                                performantPlants.getLogger().warning(String.format("Plant-id '%s' not recognized, " +
+                                        "condition will be skipped in required condition section: %s",
+                                        plantId, conditionSection.getCurrentPath()));
+                                continue;
+                            }
+                            if (!plantYaml.isConfigurationSection("growing")) {
+                                performantPlants.getLogger().warning(String.format("Valid plant with plant-id '%s' is not placeable, " +
+                                                "condition will be skipped in required condition section: %s",
+                                        plantId, conditionSection.getCurrentPath()));
+                                continue;
+                            }
+                            condition.setPlantId(plantId);
+                            // set stage, if present
+                            if (conditionSection.isString("stage")) {
+                                condition.setStage(conditionSection.getString("stage"));
+                            }
+                            if (conditionSection.isString("block-id")) {
+                                condition.setBlockId(conditionSection.getString("block-id"));
+                            }
+                            // set blockId, if present
+                        }
+                        // if neither are there, this condition is useless and should not be used (log as warning)
+                        else {
+                            performantPlants.getLogger().warning("Neither material nor plant-id was set, " +
+                                    "condition will be skipped in required condition section: " +
+                                    conditionSection.getCurrentPath());
+                            continue;
+                        }
+                        // set blacklisted value, if present
+                        if (conditionSection.isBoolean("blacklisted")) {
+                            condition.setBlacklisted(conditionSection.getBoolean("blacklisted"));
+                        }
+                        // add condition to required block
+                        requiredBlock.addCondition(condition);
+                    }
+                }
+            }
+            // check if this required block actually does anything
+            if (!requiredBlock.isNotAir() && requiredBlock.isConditionsEmpty()) {
+                performantPlants.getLogger().warning("No conditions or useful params set on required block, " +
+                        "will be skipped in section: " +
+                        section.getCurrentPath());
+                return null;
+            }
+            return requiredBlock;
+        }
+        performantPlants.getLogger().warning("No section passed in for required block parsing");
+        return null;
+    }
+
     DropSettings loadDropConfig(ConfigurationSection section, ExecutionContext context) {
         if (section != null) {
             DropSettings dropSettings = new DropSettings();
@@ -1339,37 +1455,10 @@ public class ConfigurationManager {
                     performantPlants.getLogger().warning("config section was null for required block in section: " + requiredBlocksSection.getCurrentPath());
                     return false;
                 }
-                BlockSettings blockSettings = loadBlockConfig(requiredBlockSection);
-                if (blockSettings == null) {
-                    performantPlants.getLogger().warning("blockSettings for required block returned null in section: " + requiredBlockSection.getCurrentPath());
-                    return false;
+                RequiredBlock requiredBlock = loadRequiredBlock(requiredBlockSection);
+                if (requiredBlock != null) {
+                    requirementStorage.addRequiredBlock(requiredBlock);
                 }
-                RequiredBlock requiredBlock;
-                try {
-                    requiredBlock = new RequiredBlock(
-                            blockSettings.getXRel(),
-                            blockSettings.getYRel(),
-                            blockSettings.getZRel(),
-                            blockSettings.getMaterial(),
-                            blockSettings.getBlockDataStrings());
-                } catch (IllegalArgumentException e) {
-                    performantPlants.getLogger().warning(String.format("Could not create required block in section %s due to: %s",
-                            requiredBlockSection.getCurrentPath(), e.getMessage()));
-                    return false;
-                }
-                // set required, if set
-                if (requiredBlockSection.isBoolean("required")) {
-                    requiredBlock.setRequired(requiredBlockSection.getBoolean("required"));
-                }
-                // set blacklisted, if set
-                if (requiredBlockSection.isBoolean("blacklisted")) {
-                    requiredBlock.setBlacklisted(requiredBlockSection.getBoolean("blacklisted"));
-                }
-                // set not air, if set
-                if (requiredBlockSection.isBoolean("not-air")) {
-                    requiredBlock.setNotAir(requiredBlockSection.getBoolean("not-air"));
-                }
-                requirementStorage.addRequiredBlock(requiredBlock);
             }
         }
         return true;
