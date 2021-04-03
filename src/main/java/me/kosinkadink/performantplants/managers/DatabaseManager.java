@@ -35,7 +35,6 @@ import java.util.*;
 public class DatabaseManager {
 
     private final PerformantPlants performantPlants;
-    private final String storageDir = "storage/";
     private final HashMap<String, File> databaseFiles = new HashMap<>();
     private File statisticsDatabaseFile;
     private File globalDataDatabaseFile;
@@ -54,10 +53,12 @@ public class DatabaseManager {
     void loadDatabases() {
         // load per-world plant dbs
         performantPlants.getLogger().info("Loading plant databases...");
+        String storageDir = "storage/";
+        String dbExtension = ".sqlite";
         for (World world : Bukkit.getWorlds()) {
             // check if db for world exists
             String worldName = world.getName();
-            File file = new File(performantPlants.getDataFolder(),storageDir + worldName);
+            File file = new File(performantPlants.getDataFolder(), storageDir + worldName + dbExtension);
             if (!file.exists()) {
                 // if doesn't exist, make sure directories are created
                 file.getParentFile().mkdirs();
@@ -70,19 +71,19 @@ public class DatabaseManager {
         }
         performantPlants.getLogger().info("Loaded plant databases");
         // load statistics db; also create db file if doesn't already exist
-        File file = new File(performantPlants.getDataFolder(), storageDir + "statistics");
+        File file = new File(performantPlants.getDataFolder(), storageDir + "statistics" + dbExtension);
         boolean loaded = loadStatisticsDatabase(file);
         if (loaded) {
             statisticsDatabaseFile = file;
         }
         // load global plant data db; also create db file if doesn't already exist
-        file = new File(performantPlants.getDataFolder(), storageDir + "global_data");
+        file = new File(performantPlants.getDataFolder(), storageDir + "global_data" + dbExtension);
         loaded = loadGlobalDataDatabase(file);
         if (loaded) {
             globalDataDatabaseFile = file;
         }
         // load task scheduling db; also create db file if doesn't already exist
-        file = new File(performantPlants.getDataFolder(), storageDir + "task_scheduling");
+        file = new File(performantPlants.getDataFolder(), storageDir + "task_scheduling" + dbExtension);
         loaded = loadTaskSchedulingDatabase(file);
         if (loaded) {
             taskSchedulingDatabaseFile = file;
