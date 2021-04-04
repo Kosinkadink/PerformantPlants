@@ -61,6 +61,10 @@ public class PlantChunkStorage {
             if (!plantChunk.removePlantBlock(block)) {
                 return false;
             }
+            // remove anchors, if exists
+            if (block.hasAnchors()) {
+                performantPlants.getAnchorManager().removePlantBlockFromAnchorBlocks(block);
+            }
             // add block to removal set
             addBlockForRemoval(block);
             // remove metadata from block

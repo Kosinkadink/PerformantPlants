@@ -15,8 +15,8 @@ import java.util.HashMap;
 
 public class PlantManager {
 
-    private PerformantPlants performantPlants;
-    private static HashMap<String, PlantChunkStorage> plantChunkStorageMap = new HashMap<>();
+    private final PerformantPlants performantPlants;
+    private static final HashMap<String, PlantChunkStorage> plantChunkStorageMap = new HashMap<>();
 
     public PlantManager(PerformantPlants performantPlantsClass) {
         performantPlants = performantPlantsClass;

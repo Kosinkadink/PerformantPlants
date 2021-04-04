@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.util;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.AnchorBlock;
 import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
@@ -603,6 +604,7 @@ public class BlockHelper {
         return block.getLocation().add(0.5,0.5,0.5);
     }
 
+    //region Destroy Plant Block
     public static boolean destroyPlantBlock(PerformantPlants performantPlants, Block block, PlantBlock plantBlock,
                                             DestroyReason reason, ExecutionContext context) {
         // if destroy behavior was already executed for this plant block, do nothing
@@ -693,6 +695,10 @@ public class BlockHelper {
                 destroyPlantBlock(performantPlants, parentLocation, newReason, context);
             }
         }
+        // if block is an anchor, then destroy anchored blocks
+        if (removed && MetadataHelper.hasAnchorBlockMetadata(block)) {
+            destroyAnchoredBlocks(performantPlants, plantBlock.getLocation());
+        }
         return true;
     }
 
@@ -730,5 +736,26 @@ public class BlockHelper {
         }
         return false;
     }
+    //endregion
+
+    //region Destroy Anchored Blocks
+    public static boolean destroyAnchoredBlocks(PerformantPlants performantPlants, BlockLocation blockLocation) {
+        AnchorBlock anchorBlock = performantPlants.getAnchorManager().getAnchorBlock(blockLocation);
+        if (anchorBlock != null) {
+            for (BlockLocation anchoredLocation: new ArrayList<>(anchorBlock.getBlockLocations())) {
+                destroyPlantBlock(
+                        performantPlants, anchoredLocation, DestroyReason.RELATIVE_DESTROY, null);
+            }
+            return true;
+        } else {
+            MetadataHelper.removeAnchorBlockMetadata(performantPlants, blockLocation.getBlock());
+            return false;
+        }
+    }
+
+    public static boolean destroyAnchoredBlocks(PerformantPlants performantPlants, Block block) {
+        return destroyAnchoredBlocks(performantPlants, new BlockLocation(block));
+    }
+    //endregion
 
 }

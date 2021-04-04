@@ -1,6 +1,7 @@
 package me.kosinkadink.performantplants.plants;
 
 import me.kosinkadink.performantplants.blocks.GrowthStageBlock;
+import me.kosinkadink.performantplants.locations.RelativeLocation;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.PlantData;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
@@ -16,6 +17,7 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Plant {
 
@@ -38,6 +40,8 @@ public class Plant {
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
     private RequirementStorage growthRequirementStorage = new RequirementStorage();
+    // anchors
+    private final HashSet<RelativeLocation> anchorLocations = new HashSet<>();
     // growth time - overridden by specific stage growth times
     private ScriptBlock growthTime = new ScriptResult(-1);
 
@@ -188,6 +192,19 @@ public class Plant {
 
     public void setGrowthRequirementStorage(RequirementStorage growthRequirementStorage) {
         this.growthRequirementStorage = growthRequirementStorage;
+    }
+
+    // anchors
+    public boolean hasAnchors() {
+        return !anchorLocations.isEmpty();
+    }
+
+    public ArrayList<RelativeLocation> getAnchorLocations() {
+        return new ArrayList<>(anchorLocations);
+    }
+
+    public void addAnchorLocation(RelativeLocation relativeLocation) {
+        anchorLocations.add(relativeLocation);
     }
 
     // plant data

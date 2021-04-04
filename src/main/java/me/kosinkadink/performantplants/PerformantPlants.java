@@ -30,6 +30,7 @@ public class PerformantPlants extends JavaPlugin {
     private RecipeManager recipeManager;
     private VanillaDropManager vanillaDropManager;
     private TaskManager taskManager;
+    private AnchorManager anchorManager;
 
     private PlayerInteractListener playerInteractListener;
 
@@ -115,6 +116,7 @@ public class PerformantPlants extends JavaPlugin {
         commandManager = new CommandManager(this);
         plantManager = new PlantManager(this);
         plantTypeManager = new PlantTypeManager(this);
+        anchorManager = new AnchorManager(this);
         recipeManager = new RecipeManager(this);
         vanillaDropManager = new VanillaDropManager(this);
         taskManager = new TaskManager(this);
@@ -219,6 +221,10 @@ public class PerformantPlants extends JavaPlugin {
 
     public TaskManager getTaskManager() {
         return taskManager;
+    }
+
+    public AnchorManager getAnchorManager() {
+        return anchorManager;
     }
 
     public PlayerInteractListener getPlayerInteractListener() {

@@ -26,6 +26,7 @@ public class PlantBlock {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
+    private final ArrayList<BlockLocation> anchorLocations = new ArrayList<>();
     private final HashSet<BlockLocation> childLocations = new HashSet<>();
     private final Plant plant;
     private int stageIndex;
@@ -150,12 +151,31 @@ public class PlantBlock {
         childLocations.remove(blockLocation);
     }
 
+    public boolean hasAnchors() {
+        return !anchorLocations.isEmpty();
+    }
+
+    public ArrayList<BlockLocation> getAnchorLocations() {
+        return anchorLocations;
+    }
+
+    public void addAnchorLocation(BlockLocation anchorLocation) {
+        anchorLocations.add(anchorLocation);
+    }
+
     public Block getBlock() {
         if (block != null) {
             return block;
         }
         block = location.getBlock();
         return block;
+    }
+
+    public BlockLocation getEffectiveLocation() {
+        if (hasParent()) {
+            return getParentLocation();
+        }
+        return getLocation();
     }
 
     public Block getEffectiveBlock() {
