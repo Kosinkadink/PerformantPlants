@@ -636,6 +636,18 @@ public class PlantBlock {
         }
         // if requirements are met, perform growth actions
         if (canGrow && !executedStage) {
+            // add anchors
+            if (isNewlyPlaced && plant.hasAnchors()) {
+                for (RelativeLocation relativeLocation : plant.getAnchorLocations()) {
+                    Block block = BlockHelper.getAbsoluteBlock(getBlock(), relativeLocation, this, this.getDirection());
+                    if (block.isEmpty()) {
+                        continue;
+                    }
+                    BlockLocation anchorLocation = new BlockLocation(block);
+                    addAnchorLocation(anchorLocation);
+                    performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
+                }
+            }
             setNewlyPlaced(false);
             Block thisBlock = getBlock();
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();

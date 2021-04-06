@@ -31,7 +31,19 @@ public class AnchorManager {
         return anchorBlockMap.get(plantBlock.getLocation());
     }
 
-    public void addAnchorBlock(AnchorBlock anchorBlock) {
+    public void addAnchorBlock(BlockLocation anchor, BlockLocation anchored) {
+        AnchorBlock anchorBlock = getAnchorBlock(anchor);
+        if (anchorBlock != null) {
+            anchorBlock.addPlantBlock(anchored);
+        } else {
+            anchorBlock = new AnchorBlock(anchor);
+            anchorBlock.addPlantBlock(anchored);
+            addAnchorBlock(anchorBlock);
+        }
+    }
+
+    protected void addAnchorBlock(AnchorBlock anchorBlock) {
+        MetadataHelper.setAnchorBlockMetadata(performantPlants, anchorBlock);
         anchorBlockMap.put(anchorBlock.getLocation(), anchorBlock);
     }
 

@@ -330,25 +330,40 @@ public class PlantBlockEventListener implements Listener {
 
     @EventHandler
     public void onBlockFade(BlockFadeEvent event) {
-        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.FADE, null);
+        if (!event.isCancelled()) {
+            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+                event.setCancelled(true);
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.FADE, null);
+            }
+            else if (MetadataHelper.hasAnchorBlockMetadata(event.getBlock())) {
+                BlockHelper.destroyAnchoredBlocks(performantPlants, event.getBlock());
+            }
         }
     }
 
     @EventHandler
     public void onLeavesDecay(LeavesDecayEvent event) {
-        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.DECAY, null);
+        if (!event.isCancelled()) {
+            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+                event.setCancelled(true);
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.DECAY, null);
+            }
+            else if (MetadataHelper.hasAnchorBlockMetadata(event.getBlock())) {
+                BlockHelper.destroyAnchoredBlocks(performantPlants, event.getBlock());
+            }
         }
     }
 
     @EventHandler
     public void onBlockBurn(BlockBurnEvent event) {
-        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
-            event.setCancelled(true);
-            BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.BURN, null);
+        if (!event.isCancelled()) {
+            if (MetadataHelper.hasPlantBlockMetadata(event.getBlock())) {
+                event.setCancelled(true);
+                BlockHelper.destroyPlantBlock(performantPlants, event.getBlock(), DestroyReason.BURN, null);
+            }
+            else if (MetadataHelper.hasAnchorBlockMetadata(event.getBlock())) {
+                BlockHelper.destroyAnchoredBlocks(performantPlants, event.getBlock());
+            }
         }
     }
 
@@ -362,6 +377,10 @@ public class PlantBlockEventListener implements Listener {
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     iterator.remove();
                     BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
+                }
+                else if (MetadataHelper.hasAnchorBlockMetadata(block)) {
+                    // don't need to remove from list, since anchor block just needs vanilla behavior
+                    BlockHelper.destroyAnchoredBlocks(performantPlants, block);
                 }
             }
         }
@@ -378,17 +397,26 @@ public class PlantBlockEventListener implements Listener {
                     iterator.remove();
                     BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.EXPLODE, null);
                 }
+                else if (MetadataHelper.hasAnchorBlockMetadata(block)) {
+                    // don't need to remove from list, since anchor block just needs vanilla behavior
+                    BlockHelper.destroyAnchoredBlocks(performantPlants, block);
+                }
             }
         }
     }
 
     @EventHandler
     public void onBlockFromTo(BlockFromToEvent event) {
-        if (!event.isCancelled() && MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
-                !event.getToBlock().getType().isSolid()) {
-            Block block = event.getToBlock();
-            BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
-            event.setCancelled(true);
+        if (!event.isCancelled()) {
+            if (MetadataHelper.hasPlantBlockMetadata(event.getToBlock()) &&
+                    !event.getToBlock().getType().isSolid()) {
+                Block block = event.getToBlock();
+                BlockHelper.destroyPlantBlock(performantPlants, block, DestroyReason.RELATIVE_BREAK, null);
+                event.setCancelled(true);
+            }
+            else if (MetadataHelper.hasAnchorBlockMetadata(event.getToBlock())) {
+                BlockHelper.destroyAnchoredBlocks(performantPlants, event.getToBlock());
+            }
         }
     }
 
@@ -440,19 +468,23 @@ public class PlantBlockEventListener implements Listener {
             }
             // check if any pushed blocks were Plants
             boolean anyPlantBlocks = false;
+            boolean anyAnchorBlocks = false;
             for (Block block : eventBlocks) {
                 if (MetadataHelper.hasPlantBlockMetadata(block)) {
                     anyPlantBlocks = true;
                     break;
                 }
+                if (MetadataHelper.hasAnchorBlockMetadata(block)) {
+                    anyAnchorBlocks = true;
+                }
             }
             if (anyPlantBlocks) {
                 // destroy any plant blocks immediately being moved by piston
                 if (MetadataHelper.hasPlantBlockMetadata(eventBlocks.get(0))) {
-                    BlockHelper.destroyPlantBlock(performantPlants, eventBlocks.get(0), DestroyReason.PISTON, null);
                     if (eventBlocks.get(0).getType().isSolid()) {
                         event.setCancelled(true);
                     }
+                    BlockHelper.destroyPlantBlock(performantPlants, eventBlocks.get(0), DestroyReason.PISTON, null);
                 } else {
                     // otherwise, need to see if solid non-plant blocks are moving any plant blocks
                     HashSet<Block> stickyBlocks = new HashSet<>();
@@ -460,12 +492,18 @@ public class PlantBlockEventListener implements Listener {
                     HashSet<Block> solidPlantBlocks = new HashSet<>();
                     ArrayList<Block> plantBlocks = new ArrayList<>();
                     ArrayList<Block> plantBlocksToDestroy = new ArrayList<>();
+                    ArrayList<Block> anchorBlocks = new ArrayList<>();
                     for (Block block : eventBlocks) {
                         if (MetadataHelper.hasPlantBlockMetadata(block)) {
                             if (block.getType().isSolid()) {
-                                solidPlantBlocks.add(block);
+                                event.setCancelled(true);
+                                return;
+                                // solidPlantBlocks.add(block);
                             }
                             plantBlocks.add(block);
+                        }
+                        else if (MetadataHelper.hasAnchorBlockMetadata(block)) {
+                            anchorBlocks.add(block);
                         }
                         // check if sticky block and/or solid
                         else {
@@ -505,6 +543,17 @@ public class PlantBlockEventListener implements Listener {
                             event.setCancelled(true);
                             return;
                         }
+                    }
+                    // unregister anchor blocks (to trigger destruction of connected plant blocks)
+                    for (Block anchorBlock : anchorBlocks) {
+                        BlockHelper.destroyAnchoredBlocks(performantPlants, anchorBlock);
+                    }
+                }
+            }
+            else if (anyAnchorBlocks) {
+                for (Block block : eventBlocks) {
+                    if (MetadataHelper.hasAnchorBlockMetadata(block)) {
+                        BlockHelper.destroyAnchoredBlocks(performantPlants, block);
                     }
                 }
             }

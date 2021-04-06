@@ -315,6 +315,19 @@ public class ConfigurationManager {
                             return;
                         }
                     }
+                    // set anchors, if present
+                    if (growingConfig.isConfigurationSection("anchors")) {
+                        List<RelativeLocation> anchorLocations = getAnchorBlockLocations(growingConfig.getConfigurationSection("anchors"));
+                        if (anchorLocations != null) {
+                            for (RelativeLocation anchorLocation : anchorLocations) {
+                                plant.addAnchorLocation(anchorLocation);
+                            }
+                        } else {
+                            performantPlants.getLogger().warning(String.format("anchors could not be loaded for " +
+                                    "plant '%s'", plantId));
+                            return;
+                        }
+                    }
                     // set if should rotate plant based on placement orientation
                     if (growingConfig.isBoolean("placed-rotation")) {
                         plant.setRotatePlant(growingConfig.getBoolean("placed-rotation"));
@@ -1290,6 +1303,39 @@ public class ConfigurationManager {
             blocks.add(growthStageBlock);
         }
         return blocks;
+    }
+
+    List<RelativeLocation> getAnchorBlockLocations(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        List<RelativeLocation> anchorLocations = new ArrayList<>();
+        for (String placeholder : section.getKeys(false)) {
+            ConfigurationSection anchorSection = section.getConfigurationSection(placeholder);
+            if (anchorSection != null) {
+                // get offset
+                int xRel = 0;
+                int yRel = 0;
+                int zRel = 0;
+                if (anchorSection.isInt("x")) {
+                    xRel = anchorSection.getInt("x");
+                }
+                if (anchorSection.isInt("y")) {
+                    yRel = anchorSection.getInt("y");
+                }
+                if (anchorSection.isInt("z")) {
+                    zRel = anchorSection.getInt("z");
+                }
+                // if everything is zero, log warning and ignore this anchor block
+                if (xRel == 0 && yRel == 0 && zRel == 0) {
+                    performantPlants.getLogger().warning(String.format("Anchor '%s' cannot have x, y, and z all set " +
+                            "to 0; will be skipped in section: %s", placeholder, anchorSection.getCurrentPath()));
+                    continue;
+                }
+                anchorLocations.add(new RelativeLocation(xRel, yRel, zRel));
+            }
+        }
+        return anchorLocations;
     }
 
     ScriptColor createColor(ConfigurationSection section, ExecutionContext context) {
