@@ -131,7 +131,7 @@ public class PlayerInteractListener implements Listener {
             // check if allowed to place
             if (event.canBuild()) {
                 performantPlants.getServer().getPluginManager().callEvent(
-                        new PlantPlaceEvent(event.getPlayer(), plant, event.getBlockPlaced(), event.getBlockReplacedState(), event.getHand(), true)
+                        new PlantPlaceEvent(event.getPlayer(), plant, event.getBlockPlaced(), event.getBlockReplacedState(), event.getBlockAgainst(), event.getHand(), true)
                 );
             }
         }
@@ -335,7 +335,7 @@ public class PlayerInteractListener implements Listener {
                                     event.setCancelled(true);
                                     setMainHandAction(player, event.getHand());
                                     performantPlants.getServer().getPluginManager().callEvent(
-                                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), event.getHand(), true)
+                                            new PlantPlaceEvent(player, plant, block.getRelative(event.getBlockFace()), block, event.getHand(), true)
                                     );
                                 }
                                 // return here either way

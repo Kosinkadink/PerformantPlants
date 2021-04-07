@@ -68,6 +68,10 @@ public class PlantBlockEventListener implements Listener {
                 PlantBlock plantBlock = new PlantBlock(blockLocation, event.getPlant(),
                         event.getPlayer().getUniqueId(), event.getGrows());
                 if (plantBlock.isGrows()) {
+                    // if use clicked as anchor, add clicked block as anchor
+                    if (plantBlock.getPlant().isUseClickedAsAnchor() && event.getBlockAgainst() != null) {
+                        plantBlock.addAnchorLocation(new BlockLocation(event.getBlockAgainst()));
+                    }
                     // replace block with air to properly check space requirements, if replaced state is set
                     if (event.getReplacedState() != null) {
                         block.setType(Material.AIR);

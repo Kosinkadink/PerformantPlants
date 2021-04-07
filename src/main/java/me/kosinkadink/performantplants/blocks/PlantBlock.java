@@ -637,15 +637,23 @@ public class PlantBlock {
         // if requirements are met, perform growth actions
         if (canGrow && !executedStage) {
             // add anchors
-            if (isNewlyPlaced && plant.hasAnchors()) {
-                for (RelativeLocation relativeLocation : plant.getAnchorLocations()) {
-                    Block block = BlockHelper.getAbsoluteBlock(getBlock(), relativeLocation, this, this.getDirection());
-                    if (block.isEmpty()) {
-                        continue;
+            if (isNewlyPlaced) {
+                if (plant.isUseClickedAsAnchor()) {
+                    // anchor to use should already be in local anchorLocations list; register it
+                    for (BlockLocation anchorLocation : anchorLocations) {
+                        performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
                     }
-                    BlockLocation anchorLocation = new BlockLocation(block);
-                    addAnchorLocation(anchorLocation);
-                    performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
+                }
+                if (plant.hasAnchors()){
+                    for (RelativeLocation relativeLocation : plant.getAnchorLocations()) {
+                        Block block = BlockHelper.getAbsoluteBlock(getBlock(), relativeLocation, this, this.getDirection());
+                        if (block.isEmpty()) {
+                            continue;
+                        }
+                        BlockLocation anchorLocation = new BlockLocation(block);
+                        addAnchorLocation(anchorLocation);
+                        performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
+                    }
                 }
             }
             setNewlyPlaced(false);

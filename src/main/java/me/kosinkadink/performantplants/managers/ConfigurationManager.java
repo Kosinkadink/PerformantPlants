@@ -328,6 +328,10 @@ public class ConfigurationManager {
                             return;
                         }
                     }
+                    // set if should use clicked block during placement as anchor
+                    if (growingConfig.isBoolean("use-clicked-as-anchor")) {
+                        plant.setUseClickedAsAnchor(growingConfig.getBoolean("use-clicked-as-anchor"));
+                    }
                     // set if should rotate plant based on placement orientation
                     if (growingConfig.isBoolean("placed-rotation")) {
                         plant.setRotatePlant(growingConfig.getBoolean("placed-rotation"));

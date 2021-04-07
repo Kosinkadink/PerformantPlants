@@ -17,24 +17,27 @@ public class PlantPlaceEvent extends Event implements Cancellable {
     private final Player player;
     private final Plant plant;
     private final Block block;
+    private final Block blockAgainst;
     private final BlockState replacedState;
     private final EquipmentSlot hand;
     private final boolean grows;
 
-    public PlantPlaceEvent(Player player, Plant plant, Block block, EquipmentSlot hand, boolean grows) {
+    public PlantPlaceEvent(Player player, Plant plant, Block block, Block blockAgainst, EquipmentSlot hand, boolean grows) {
         this.player = player;
         this.plant = plant;
         this.block = block;
         this.replacedState = null;
+        this.blockAgainst = blockAgainst;
         this.hand = hand;
         this.grows = grows;
     }
 
-    public PlantPlaceEvent(Player player, Plant plant, Block block, BlockState replacedState, EquipmentSlot hand, boolean grows) {
+    public PlantPlaceEvent(Player player, Plant plant, Block block, BlockState replacedState, Block blockAgainst, EquipmentSlot hand, boolean grows) {
         this.player = player;
         this.plant = plant;
         this.block = block;
         this.replacedState = replacedState;
+        this.blockAgainst = blockAgainst;
         this.hand = hand;
         this.grows = grows;
     }
@@ -53,6 +56,10 @@ public class PlantPlaceEvent extends Event implements Cancellable {
 
     public BlockState getReplacedState() {
         return replacedState;
+    }
+
+    public Block getBlockAgainst() {
+        return blockAgainst;
     }
 
     public EquipmentSlot getHand() {

@@ -37,6 +37,7 @@ public class Plant {
     private boolean randomRotate = false;
     private boolean bypassSpace = false;
     private boolean enforcePhysics = false;
+    private boolean useClickedAsAnchor = false;
     // growth requirements
     private RequirementStorage plantRequirementStorage = new RequirementStorage();
     private RequirementStorage growthRequirementStorage = new RequirementStorage();
@@ -205,6 +206,14 @@ public class Plant {
 
     public void addAnchorLocation(RelativeLocation relativeLocation) {
         anchorLocations.add(relativeLocation);
+    }
+
+    public boolean isUseClickedAsAnchor() {
+        return useClickedAsAnchor;
+    }
+
+    public void setUseClickedAsAnchor(boolean useClickedAsAnchor) {
+        this.useClickedAsAnchor = useClickedAsAnchor;
     }
 
     // plant data
