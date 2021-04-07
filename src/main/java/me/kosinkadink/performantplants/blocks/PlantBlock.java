@@ -26,6 +26,7 @@ public class PlantBlock {
     private final BlockLocation location;
     private BlockLocation parentLocation;
     private BlockLocation guardianLocation;
+    private final ArrayList<BlockLocation> anchorLocations = new ArrayList<>();
     private final HashSet<BlockLocation> childLocations = new HashSet<>();
     private final Plant plant;
     private int stageIndex;
@@ -150,12 +151,31 @@ public class PlantBlock {
         childLocations.remove(blockLocation);
     }
 
+    public boolean hasAnchors() {
+        return !anchorLocations.isEmpty();
+    }
+
+    public ArrayList<BlockLocation> getAnchorLocations() {
+        return anchorLocations;
+    }
+
+    public void addAnchorLocation(BlockLocation anchorLocation) {
+        anchorLocations.add(anchorLocation);
+    }
+
     public Block getBlock() {
         if (block != null) {
             return block;
         }
         block = location.getBlock();
         return block;
+    }
+
+    public BlockLocation getEffectiveLocation() {
+        if (hasParent()) {
+            return getParentLocation();
+        }
+        return getLocation();
     }
 
     public Block getEffectiveBlock() {
@@ -616,6 +636,26 @@ public class PlantBlock {
         }
         // if requirements are met, perform growth actions
         if (canGrow && !executedStage) {
+            // add anchors
+            if (isNewlyPlaced) {
+                if (plant.isUseClickedAsAnchor()) {
+                    // anchor to use should already be in local anchorLocations list; register it
+                    for (BlockLocation anchorLocation : anchorLocations) {
+                        performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
+                    }
+                }
+                if (plant.hasAnchors()){
+                    for (RelativeLocation relativeLocation : plant.getAnchorLocations()) {
+                        Block block = BlockHelper.getAbsoluteBlock(getBlock(), relativeLocation, this, this.getDirection());
+                        if (block.isEmpty()) {
+                            continue;
+                        }
+                        BlockLocation anchorLocation = new BlockLocation(block);
+                        addAnchorLocation(anchorLocation);
+                        performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, location);
+                    }
+                }
+            }
             setNewlyPlaced(false);
             Block thisBlock = getBlock();
             HashMap<GrowthStageBlock,PlantBlock> blocksWithGuardiansAdded = new HashMap<>();
