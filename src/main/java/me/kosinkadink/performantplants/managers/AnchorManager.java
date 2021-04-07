@@ -4,19 +4,26 @@ import me.kosinkadink.performantplants.PerformantPlants;
 import me.kosinkadink.performantplants.blocks.AnchorBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.BlockLocationPair;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.block.Block;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AnchorManager {
 
     private final PerformantPlants performantPlants;
-    private static final HashMap<BlockLocation, AnchorBlock> anchorBlockMap = new HashMap<>();
+    private static final ConcurrentHashMap<BlockLocation, AnchorBlock> anchorBlockMap = new ConcurrentHashMap<>();
+    private final HashSet<BlockLocationPair> locationPairsToDelete = new HashSet<>();
 
     public AnchorManager(PerformantPlants performantPlants) {
         this.performantPlants = performantPlants;
+    }
+
+    public ConcurrentHashMap<BlockLocation, AnchorBlock> getAnchorBlockMap() {
+        return anchorBlockMap;
     }
 
     public AnchorBlock getAnchorBlock(BlockLocation blockLocation) {
@@ -40,11 +47,26 @@ public class AnchorManager {
             anchorBlock.addPlantBlock(anchored);
             addAnchorBlock(anchorBlock);
         }
+        // remove pair from removal
+        removeLocationPairFromRemoval(anchor, anchored);
     }
 
     protected void addAnchorBlock(AnchorBlock anchorBlock) {
         MetadataHelper.setAnchorBlockMetadata(performantPlants, anchorBlock);
         anchorBlockMap.put(anchorBlock.getLocation(), anchorBlock);
+    }
+
+    public boolean removePlantBlockLocationFromAnchorBlock(BlockLocation anchorLocation, BlockLocation plantLocation) {
+        AnchorBlock anchorBlock = getAnchorBlock(anchorLocation);
+        if (anchorBlock != null) {
+            boolean removed = anchorBlock.removePlantBlock(plantLocation);
+            if (removed) {
+                // add pair for removal
+                addLocationPairForRemoval(anchorLocation, plantLocation);
+            }
+            return removed;
+        }
+        return false;
     }
 
     public boolean removePlantBlockFromAnchorBlocks(PlantBlock plantBlock) {
@@ -55,6 +77,8 @@ public class AnchorManager {
                 boolean removed = anchorBlock.removePlantBlock(plantBlock.getLocation());
                 if (removed) {
                     atLeastOneRemoved = true;
+                    // add pair for removal
+                    addLocationPairForRemoval(anchorBlock.getLocation(), plantBlock.getLocation());
                 }
                 // if no more plant blocks to anchor, remove anchor block
                 if (anchorBlock.isEmpty()) {
@@ -72,6 +96,22 @@ public class AnchorManager {
             return true;
         }
         return false;
+    }
+
+    protected void addLocationPairForRemoval(BlockLocation anchorLocation, BlockLocation plantLocation) {
+        locationPairsToDelete.add(new BlockLocationPair(anchorLocation, plantLocation));
+    }
+
+    public void removeLocationPairFromRemoval(BlockLocationPair locationPair) {
+        locationPairsToDelete.remove(locationPair);
+    }
+
+    public void removeLocationPairFromRemoval(BlockLocation anchorLocation, BlockLocation plantLocation) {
+        removeLocationPairFromRemoval(new BlockLocationPair(anchorLocation, plantLocation));
+    }
+
+    public HashSet<BlockLocationPair> getLocationPairsToDelete() {
+        return locationPairsToDelete;
     }
 
 }

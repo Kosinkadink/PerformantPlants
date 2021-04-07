@@ -1,11 +1,13 @@
 package me.kosinkadink.performantplants.managers;
 
 import me.kosinkadink.performantplants.PerformantPlants;
+import me.kosinkadink.performantplants.blocks.AnchorBlock;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import me.kosinkadink.performantplants.chunks.PlantChunk;
 import me.kosinkadink.performantplants.exceptions.PlantHookJsonParseException;
 import me.kosinkadink.performantplants.hooks.*;
 import me.kosinkadink.performantplants.locations.BlockLocation;
+import me.kosinkadink.performantplants.locations.BlockLocationPair;
 import me.kosinkadink.performantplants.locations.ChunkLocation;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.scripting.ExecutionContext;
@@ -36,6 +38,7 @@ public class DatabaseManager {
 
     private final PerformantPlants performantPlants;
     private final HashMap<String, File> databaseFiles = new HashMap<>();
+    private File anchorsDatabaseFile;
     private File statisticsDatabaseFile;
     private File globalDataDatabaseFile;
     private File taskSchedulingDatabaseFile;
@@ -49,7 +52,6 @@ public class DatabaseManager {
     }
 
     //region Load Data
-
     void loadDatabases() {
         // load per-world plant dbs
         performantPlants.getLogger().info("Loading plant databases...");
@@ -70,9 +72,15 @@ public class DatabaseManager {
             }
         }
         performantPlants.getLogger().info("Loaded plant databases");
+        // load anchors db; also create db file if doesn't already exist
+        File file = new File(performantPlants.getDataFolder(), storageDir + "anchors" + dbExtension);
+        boolean loaded = loadAnchorsDatabase(file);
+        if (loaded) {
+            anchorsDatabaseFile = file;
+        }
         // load statistics db; also create db file if doesn't already exist
-        File file = new File(performantPlants.getDataFolder(), storageDir + "statistics" + dbExtension);
-        boolean loaded = loadStatisticsDatabase(file);
+        file = new File(performantPlants.getDataFolder(), storageDir + "statistics" + dbExtension);
+        loaded = loadStatisticsDatabase(file);
         if (loaded) {
             statisticsDatabaseFile = file;
         }
@@ -121,6 +129,24 @@ public class DatabaseManager {
 
         // all done now
         performantPlants.getLogger().info("Successfully loaded plant db at url: " + url);
+        return true;
+    }
+
+    boolean loadAnchorsDatabase(File file) {
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        String url = getUrlFromFile(file);
+        // Load anchors from anchors table
+        boolean success = addAnchorsFromDatabase(conn, url);
+        if (!success) {
+            return false;
+        }
+        // all done now
+        performantPlants.getLogger().info("Successfully loaded anchors db at url: " + url);
         return true;
     }
 
@@ -181,17 +207,19 @@ public class DatabaseManager {
         performantPlants.getLogger().info("Successfully loaded tasks db at url: " + url);
         return true;
     }
-
     //endregion
 
     //region Save Data
-
     public void saveDatabases() {
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Saving plants into databases...");
         for (Map.Entry<String, File> entry : databaseFiles.entrySet()) {
             saveDatabase(entry.getValue(), entry.getKey());
         }
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Saved plants into databases");
+        // save anchors db
+        if (anchorsDatabaseFile != null) {
+            saveAnchorsDatabase(anchorsDatabaseFile);
+        }
         // save statistics db
         if (statisticsDatabaseFile != null) {
             saveStatisticsDatabase(statisticsDatabaseFile);
@@ -225,7 +253,8 @@ public class DatabaseManager {
         createTableData(conn);
         // get plantChunkStorage for current world
         PlantChunkStorage plantChunkStorage = performantPlants.getPlantManager().getPlantChunkStorage(worldName);
-        // remove any blocks set for removal
+
+        // PART 1: remove any blocks set for removal
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Removing blocks from db for world: " + worldName + "...");
         ArrayList<BlockLocation> blocksToRemoveCache = new ArrayList<>();
         // =========== TRANSACTION START
@@ -258,7 +287,8 @@ public class DatabaseManager {
         }
         blocksToRemoveCache.clear();
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing blocks from db for world: " + worldName);
-        // add/update all blocks for each chunk
+
+        // PART 2: add/update all blocks for each chunk
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating blocks in db for world: " + worldName + "...");
         // =========== TRANSACTION START
         try {
@@ -304,6 +334,74 @@ public class DatabaseManager {
         // =========== TRANSACTION END
         if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info(String.format("Done updating blocks in %d chunks in db for world: %s", chunksSaved, worldName));
         return true;
+    }
+
+    boolean saveAnchorsDatabase(File file) {
+        // Create dirs if file does not exist
+        if (!file.exists()) {
+            // if doesn't exist, make sure directories are created
+            file.getParentFile().mkdirs();
+        }
+        // Connect to db
+        Connection conn = connect(file);
+        if (conn == null) {
+            // could not connect to db
+            return false;
+        }
+        // Create tables if don't already exist
+        createTableAnchors(conn);
+
+        // PART 1: remove any anchors set for removal
+        ArrayList<BlockLocationPair> locationPairsToRemoveCache = new ArrayList<>();
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (BlockLocationPair locationPair : new ArrayList<>(performantPlants.getAnchorManager().getLocationPairsToDelete())) {
+            boolean success = removeBlockLocationPairFromAnchors(conn, locationPair);
+            if (success) {
+                locationPairsToRemoveCache.add(locationPair);
+            }
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        // remove cached removal location pairs from being removed next time
+        for (BlockLocationPair locationPair : locationPairsToRemoveCache) {
+            performantPlants.getAnchorManager().removeLocationPairFromRemoval(locationPair);
+        }
+        locationPairsToRemoveCache.clear();
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done removing anchors from db");
+
+        // PART 2: add/update all anchors
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Updating anchors...");
+        // =========== TRANSACTION START
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("BEGIN;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred starting transaction; " + e.toString());
+        }
+        for (Map.Entry<BlockLocation, AnchorBlock> entry : performantPlants.getAnchorManager().getAnchorBlockMap().entrySet()) {
+            insertAnchorBlockIntoTableAnchors(conn, entry.getValue());
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute("COMMIT;");
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred committing transaction; " + e.toString());
+        }
+        // =========== TRANSACTION END
+        if (performantPlants.getConfigManager().getConfigSettings().isDebug()) performantPlants.getLogger().info("Done updating anchors");
+        return true;
+
     }
 
     boolean saveStatisticsDatabase(File file) {
@@ -601,11 +699,9 @@ public class DatabaseManager {
         /////////////////////////////////////
         return true;
     }
-
     //endregion
 
     //region PlantBlocks Table
-
     boolean createTablePlantBlocks(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS plantblocks (\n"
@@ -689,11 +785,9 @@ public class DatabaseManager {
         //main.getLogger().info("Removed BlockLocation from plantblocks: " + blockLocation.toString());
         return true;
     }
-
     //endregion
 
     //region Data Table
-
     boolean createTableData(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS data (\n"
@@ -755,11 +849,9 @@ public class DatabaseManager {
         //main.getLogger().info("Removed BlockLocation from data: " + blockLocation.toString());
         return true;
     }
-
     //endregion
 
     //region GlobalPlantData Table
-
     boolean createTableGlobalPlantData(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS globalPlantData (\n"
@@ -824,11 +916,9 @@ public class DatabaseManager {
         }
         return true;
     }
-
     //endregion
 
-    // region Task and Hooks Tables
-
+    //region Task and Hooks Tables
     boolean createTableTasks(Connection conn) {
         String sql = "CREATE TABLE IF NOT EXISTS tasks (\n"
                 + "    taskUUID TEXT NOT NULL,\n"
@@ -998,11 +1088,9 @@ public class DatabaseManager {
         }
         return true;
     }
-
-    // endregion
+    //endregion
 
     //region Parents Table
-
     boolean createTableParents(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS parents (\n"
@@ -1068,11 +1156,9 @@ public class DatabaseManager {
         //main.getLogger().info("Removed BlockLocation from parents: " + blockLocation.toString());
         return true;
     }
-
     //endregion
 
     //region Guardians Table
-
     boolean createTableGuardians(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS guardians (\n"
@@ -1138,11 +1224,93 @@ public class DatabaseManager {
         //main.getLogger().info("Removed BlockLocation from guardians: " + blockLocation.toString());
         return true;
     }
+    //endregion
 
+    //region Anchors Table
+    boolean createTableAnchors(Connection conn) {
+        // Create table if doesn't already exist
+        String sql = "CREATE TABLE IF NOT EXISTS anchors (\n"
+                + "    x INTEGER,\n"
+                + "    y INTEGER,\n"
+                + "    z INTEGER,\n"
+                + "    ax INTEGER,\n"
+                + "    ay INTEGER,\n"
+                + "    az INTEGER,\n"
+                + "    world TEXT,\n"
+                + "    PRIMARY KEY (x,y,z,ax,ay,az,world)"
+                + ");";
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe(
+                    "Exception occurred creating table 'anchors'; " + e.toString()
+            );
+            return false;
+        }
+        return true;
+    }
+
+    boolean insertAnchorBlockIntoTableAnchors(Connection conn, AnchorBlock anchorBlock)  {
+        String sql = "REPLACE INTO anchors(x, y, z, ax, ay, az, world)\n"
+                + "VALUES(?,?,?,?,?,?,?)";
+        boolean anySuccess = false;
+        for (BlockLocation plantLocation : anchorBlock.getBlockLocations()) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                // set values; index starts at 1
+                pstmt.setInt(   1, plantLocation.getX());
+                pstmt.setInt(   2, plantLocation.getY());
+                pstmt.setInt(   3, plantLocation.getZ());
+                pstmt.setInt(   4, anchorBlock.getLocation().getX());
+                pstmt.setInt(   5, anchorBlock.getLocation().getY());
+                pstmt.setInt(   6, anchorBlock.getLocation().getZ());
+                pstmt.setString(7, anchorBlock.getLocation().getWorldName());
+                // execute
+                pstmt.executeUpdate();
+                anySuccess = true;
+            } catch (SQLException e) {
+                performantPlants.getLogger().warning(String.format("Could not insert PlantBlock '%s' and " +
+                        "anchor '%s'; %s" + plantLocation.toString(), anchorBlock.getLocation().toString(), e.toString()));
+            }
+        }
+        //main.getLogger().info("Stored PlantBlock in guardians in db: " + block.toString());
+        return anySuccess;
+    }
+
+    boolean removeBlockLocationPairFromAnchors(Connection conn, BlockLocationPair locationPair) {
+        String sql = "DELETE FROM anchors\n"
+                + "    WHERE x = ?"
+                + "    AND y = ?"
+                + "    AND z = ?"
+                + "    AND ax = ?"
+                + "    AND ay = ?"
+                + "    AND az = ?"
+                + "    AND world = ?";
+        BlockLocation anchorLocation = locationPair.getLocation1();
+        BlockLocation plantLocation = locationPair.getLocation2();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // set values; index starts at 1
+            pstmt.setInt(   1, plantLocation.getX());
+            pstmt.setInt(   2, plantLocation.getY());
+            pstmt.setInt(   3, plantLocation.getZ());
+            pstmt.setInt(   4, anchorLocation.getX());
+            pstmt.setInt(   5, anchorLocation.getY());
+            pstmt.setInt(   6, anchorLocation.getZ());
+            pstmt.setString(7, anchorLocation.getWorldName());
+            // execute
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning(
+                    "Could not remove BlockLocationPair from : " + locationPair.toString() + "; " + e.toString()
+            );
+            return false;
+        }
+        //main.getLogger().info("Removed BlockLocation from guardians: " + blockLocation.toString());
+        return true;
+    }
     //endregion
 
     //region PlantsSold Table
-
     boolean createTablePlantsSold(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS plantsSold (\n"
@@ -1199,11 +1367,9 @@ public class DatabaseManager {
         }
         return true;
     }
-
     //endregion
 
     //region PlantTags Table
-
     boolean createTablePlantTags(Connection conn) {
         // Create table if doesn't already exist
         String sql = "CREATE TABLE IF NOT EXISTS plantTags (\n"
@@ -1258,11 +1424,9 @@ public class DatabaseManager {
         }
         return true;
     }
-
     //endregion
 
     //region Add Plant Blocks
-
     boolean addPlantBlocksFromDatabase(Connection conn, String worldName, String url) {
         // Create table if doesn't already exist
         createTablePlantBlocks(conn);
@@ -1322,11 +1486,9 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load plant; " + e.toString());
         }
     }
-
     //endregion
 
     //region Add Data
-
     boolean addDataFromDatabase(Connection conn, String worldName, String url) {
         // Create table if doesn't already exsit
         createTableData(conn);
@@ -1402,11 +1564,9 @@ public class DatabaseManager {
         }
         return null;
     }
-
     //end region
 
     //region Add Global Plant Data
-
     boolean addGlobalPlantDataFromDatabase(Connection conn, String url) {
         // create table if doesn't already exist
         createTableGlobalPlantData(conn);
@@ -1478,11 +1638,9 @@ public class DatabaseManager {
         }
         return null;
     }
-
     //end region
 
     //region Add Tasks
-
     boolean addTasksAndHooksFromDatabase(Connection conn, String url) {
         // create tasks table if doesn't already exist
         createTableTasks(conn);
@@ -1797,11 +1955,9 @@ public class DatabaseManager {
         }
         return hookIdentifiers;
     }
-
     //end region
 
     //region Add Parents
-
     boolean addParentsFromDatabase(Connection conn, String worldName, String url) {
         // Create table if doesn't already exist
         createTableParents(conn);
@@ -1849,11 +2005,9 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load parent; " + e.toString());
         }
     }
-
     //endregion
 
     //region Add Guardians
-
     boolean addGuardiansFromDatabase(Connection conn, String worldName, String url) {
         // Create table if doesn't already exist
         createTableGuardians(conn);
@@ -1901,11 +2055,58 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
         }
     }
+    //endregion
 
+    //region Add Anchors
+    boolean addAnchorsFromDatabase(Connection conn, String url) {
+        // Create table if doesn't already exist
+        createTableAnchors(conn);
+        // Get and load all anchors stored in db
+        String sql = "SELECT x, y, z, ax, ay, az, world FROM anchors;";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            // loop through result set
+            while (rs.next()) {
+                // create anchor location pair from database row
+                addAnchorsFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            performantPlants.getLogger().severe("Exception occurred loading anchors from url: " + url + "; " + e.toString());
+            return false;
+        }
+        return true;
+    }
+
+    void addAnchorsFromResultSet(ResultSet rs) {
+        try {
+            // create plantLocation from db entry
+            BlockLocation plantLocation = new BlockLocation(
+                    rs.getInt("x"),
+                    rs.getInt("y"),
+                    rs.getInt("z"),
+                    rs.getString("world"));
+            // create anchorLocation from db entry
+            BlockLocation anchorLocation = new BlockLocation(
+                    rs.getInt("ax"),
+                    rs.getInt("ay"),
+                    rs.getInt("az"),
+                    rs.getString("world"));
+            // add guardian to child block
+            PlantBlock plantBlock = performantPlants.getPlantManager().getPlantBlock(plantLocation);
+            if (plantBlock != null) {
+                plantBlock.addAnchorLocation(anchorLocation);
+                performantPlants.getAnchorManager().addAnchorBlock(anchorLocation, plantLocation);
+            } else {
+                // if plant block null, then mark location pair for removal (invalid entry)
+                performantPlants.getAnchorManager().addLocationPairForRemoval(anchorLocation, plantLocation);
+            }
+        } catch (SQLException e) {
+            performantPlants.getLogger().warning("SQLException occurred trying to load guardian; " + e.toString());
+        }
+    }
     //endregion
 
     //region Add PlantsSold
-
     boolean addPlantsSoldFromDatabase(Connection conn, String url) {
         // Create table if doesn't already exist
         createTablePlantsSold(conn);
@@ -1939,11 +2140,9 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load plantsSold; " + e.toString());
         }
     }
-
     //endregion
 
     //region Add PlantTags
-
     boolean addPlantTagsFromDatabase(Connection conn, String url) {
         // Create table if doesn't already exist
         createTablePlantTags(conn);
@@ -1976,7 +2175,6 @@ public class DatabaseManager {
             performantPlants.getLogger().warning("SQLException occurred trying to load plantTags; " + e.toString());
         }
     }
-
     //endregion
 
     Connection connect(File file) {
