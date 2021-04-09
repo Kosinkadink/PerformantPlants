@@ -161,16 +161,20 @@ public class PlayerInteractListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        ItemStack itemStack;
-        if (event.getHand() == EquipmentSlot.OFF_HAND) {
-            itemStack = event.getPlayer().getInventory().getItemInOffHand();
-        } else {
-            itemStack = event.getPlayer().getInventory().getItemInMainHand();
-        }
-        PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
-        // don't let plant items be used to feed animals/be interacted with entities, unless allowed
-        if (plantItem != null && !plantItem.isAllowEntityInteract()) {
-            event.setCancelled(true);
+        if (!event.isCancelled()) {
+            ItemStack itemStack;
+            if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                itemStack = event.getPlayer().getInventory().getItemInOffHand();
+            } else {
+                itemStack = event.getPlayer().getInventory().getItemInMainHand();
+            }
+            PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
+            // don't let plant items be used to feed animals/be interacted with entities, unless allowed
+            if (plantItem != null && !plantItem.isAllowEntityInteract()) {
+                event.setCancelled(true);
+                return;
+            }
+            // TODO: add entity PlantScript interaction
         }
     }
 

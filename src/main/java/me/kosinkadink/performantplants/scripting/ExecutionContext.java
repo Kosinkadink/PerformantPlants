@@ -4,6 +4,8 @@ import me.kosinkadink.performantplants.blocks.DestroyReason;
 import me.kosinkadink.performantplants.blocks.PlantBlock;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -20,6 +22,7 @@ public class ExecutionContext {
     private Location location = null;
     private BlockFace blockFace = null;
     private DestroyReason destroyReason = null;
+    private Entity entity = null;
 
     public ExecutionContext() {
 
@@ -34,7 +37,8 @@ public class ExecutionContext {
                 .set(equipmentSlot)
                 .set(location)
                 .set(blockFace)
-                .set(destroyReason);
+                .set(destroyReason)
+                .set(entity);
     }
 
     //region Wrapper
@@ -235,6 +239,47 @@ public class ExecutionContext {
 
     public ExecutionContext set(DestroyReason destroyReason) {
         return setDestroyReason(destroyReason);
+    }
+    //endregion
+
+    //region Entity
+    public Entity getEntity() {
+        return entity;
+    }
+
+    public LivingEntity getEntityLiving() {
+        if (isEntityLivingSet()) {
+            return (LivingEntity) entity;
+        }
+        return null;
+    }
+
+    public Player getEntityPlayer() {
+        if (isEntityPlayerSet()) {
+            return (Player) entity;
+        }
+        return null;
+    }
+
+    public boolean isEntitySet() {
+        return entity != null;
+    }
+
+    public boolean isEntityLivingSet() {
+        return isEntitySet() && entity instanceof LivingEntity;
+    }
+
+    public boolean isEntityPlayerSet() {
+        return isEntitySet() && entity instanceof Player;
+    }
+
+    public ExecutionContext setEntity(Entity entity) {
+        this.entity = entity;
+        return this;
+    }
+
+    public ExecutionContext set(Entity entity) {
+        return setEntity(entity);
     }
     //endregion
 }
