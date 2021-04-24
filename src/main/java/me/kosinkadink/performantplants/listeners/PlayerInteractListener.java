@@ -8,12 +8,14 @@ import me.kosinkadink.performantplants.events.PlantItemInteractEvent;
 import me.kosinkadink.performantplants.events.PlantPlaceEvent;
 import me.kosinkadink.performantplants.plants.Plant;
 import me.kosinkadink.performantplants.plants.PlantItem;
+import me.kosinkadink.performantplants.scripting.ExecutionContext;
 import me.kosinkadink.performantplants.scripting.ScriptBlock;
 import me.kosinkadink.performantplants.util.BlockHelper;
 import me.kosinkadink.performantplants.util.ItemHelper;
 import me.kosinkadink.performantplants.util.MetadataHelper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -170,11 +172,31 @@ public class PlayerInteractListener implements Listener {
             }
             PlantItem plantItem = performantPlants.getPlantTypeManager().getPlantItemByItemStack(itemStack);
             // don't let plant items be used to feed animals/be interacted with entities, unless allowed
-            if (plantItem != null && !plantItem.isAllowEntityInteract()) {
-                event.setCancelled(true);
-                return;
+            if (plantItem != null) {
+                // entity interaction
+                boolean performed = false;
+                ExecutionContext context = new ExecutionContext()
+                        .set(event.getPlayer())
+                        .set(event.getHand())
+                        .set(event.getRightClicked())
+                        .set(itemStack);
+                // check if has onPlayer action and if entity is Player
+                if (plantItem.hasOnPlayer() && event.getRightClicked() instanceof Player) {
+                    performed = plantItem.getOnPlayer().loadValue(context).getBooleanValue();
+                }
+                // check if has onLiving action and if entity is LivingEntity
+                else if (plantItem.hasOnLiving() && event.getRightClicked() instanceof LivingEntity) {
+                    performed = plantItem.getOnLiving().loadValue(context).getBooleanValue();
+                }
+                // check if has onEntity
+                else if (plantItem.hasOnEntity()) {
+                    performed = plantItem.getOnEntity().loadValue(context).getBooleanValue();
+                }
+                // cancel event if plant action performed OR vanilla interaction is not allowed
+                if (performed || !plantItem.isAllowEntityInteract()) {
+                    event.setCancelled(true);
+                }
             }
-            // TODO: add entity PlantScript interaction
         }
     }
 

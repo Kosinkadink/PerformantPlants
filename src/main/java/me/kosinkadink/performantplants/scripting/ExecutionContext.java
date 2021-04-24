@@ -33,6 +33,7 @@ public class ExecutionContext {
                 .set(wrapper)
                 .set(player)
                 .set(plantBlock)
+                .set(plantData)
                 .set(itemStack)
                 .set(equipmentSlot)
                 .set(location)

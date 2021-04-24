@@ -11,11 +11,17 @@ public class PlantItem {
     private ItemStack itemStack;
     private double buyPrice;
     private double sellPrice;
+    // general block/air interactions
     private ScriptBlock onRightClick = null;
     private ScriptBlock onLeftClick = null;
     private ScriptBlock onConsume = null;
     private ScriptBlock onDrop = null;
     private ScriptBlock onDropAll = null;
+    // entity interactions
+    private ScriptBlock onPlayer = null;
+    private ScriptBlock onLiving = null;
+    private ScriptBlock onEntity = null;
+
     private int burnTime = 0;
 
     private boolean vanillaItem = false;
@@ -164,6 +170,45 @@ public class PlantItem {
 
     public void setOnDropAll(ScriptBlock onDropAll) {
         this.onDropAll = onDropAll;
+    }
+    //endregion
+
+    //region Entity Interaction
+    // player
+    public boolean hasOnPlayer() {
+        return onPlayer != null;
+    }
+
+    public ScriptBlock getOnPlayer() {
+        return onPlayer;
+    }
+
+    public void setOnPlayer(ScriptBlock onPlayer) {
+        this.onPlayer = onPlayer;
+    }
+    // living
+    public boolean hasOnLiving() {
+        return onLiving != null;
+    }
+
+    public ScriptBlock getOnLiving() {
+        return onLiving;
+    }
+
+    public void setOnLiving(ScriptBlock onLiving) {
+        this.onLiving = onLiving;
+    }
+    //entity
+    public boolean hasOnEntity() {
+        return onEntity != null;
+    }
+
+    public ScriptBlock getOnEntity() {
+        return onEntity;
+    }
+
+    public void setOnEntity(ScriptBlock onEntity) {
+        this.onEntity = onEntity;
     }
     //endregion
 
